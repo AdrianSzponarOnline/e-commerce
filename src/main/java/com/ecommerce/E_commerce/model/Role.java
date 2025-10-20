@@ -10,7 +10,6 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "roles")
-@Builder
 public class Role implements GrantedAuthority {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -79,6 +78,15 @@ public class Role implements GrantedAuthority {
 
     public Role(ERole role) {
         this.role = role;
+    }
+
+    public Role(Long roleID, ERole role, String description, Instant createdAt, Instant updatedAt, Instant deletedAt) {
+        this.roleID = roleID;
+        this.role = role;
+        this.description = description;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.deletedAt = deletedAt;
     }
 
     public ERole getRole() {

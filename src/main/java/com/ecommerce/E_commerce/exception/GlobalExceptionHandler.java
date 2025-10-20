@@ -67,6 +67,11 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.CONFLICT, "Email Already Exists", e.getMessage());
     }
 
+    @ExceptionHandler(SeoSlugAlreadyExistsException.class)
+    public ResponseEntity<Object> handleSeoSlugAlreadyExistsException(SeoSlugAlreadyExistsException e) {
+        return buildErrorResponse(HttpStatus.CONFLICT, "Slug Already Exists", e.getMessage());
+    }
+
 
     private ResponseEntity<Object> buildErrorResponse(HttpStatus status, String error, String message) {
         Map<String, Object> body = new HashMap<>();

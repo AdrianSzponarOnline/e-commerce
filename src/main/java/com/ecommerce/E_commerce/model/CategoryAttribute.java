@@ -2,6 +2,7 @@ package com.ecommerce.E_commerce.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,10 +15,12 @@ import java.time.Instant;
 @Getter
 @Setter
 @Entity
-@Table(name = "category_attributes")
+@Table(name = "category_attributes", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"category_id", "name"})
+})
 public class CategoryAttribute {
     @Id
-    @ColumnDefault("nextval('category_attributes_id_seq'::regclass)")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 
@@ -29,13 +32,14 @@ public class CategoryAttribute {
 
     @Size(max = 100)
     @NotNull
+    @Pattern(regexp = "^[^<>]*$", message = "must not contain HTML or script characters")
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @Size(max = 50)
     @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, length = 50)
-    private String type;
+    private CategoryAttributeType type;
 
     @NotNull
     @ColumnDefault("now()")
@@ -53,6 +57,17 @@ public class CategoryAttribute {
     @NotNull
     @ColumnDefault("true")
     @Column(name = "is_active", nullable = false)
-    private Boolean isActive = false;
+    private Boolean isActive = true;
+
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = Instant.now();
+    }
 
 }

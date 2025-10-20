@@ -1,0 +1,18 @@
+package com.ecommerce.E_commerce.repository;
+
+import com.ecommerce.E_commerce.model.Category;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface CategoryRepository extends JpaRepository<Category, Long> {
+    boolean existsBySeoSlug(String seoSlug);
+
+    java.util.Optional<Category> findBySeoSlug(String seoSlug);
+
+    java.util.List<Category> findAllByIsActiveTrue();
+
+    java.util.List<Category> findAllByParent_Id(Long parentId);
+}
+
+
