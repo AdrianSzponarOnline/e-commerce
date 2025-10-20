@@ -1,0 +1,1 @@
+-- Flyway baseline placeholder. Configure baseline-on-migrate=true for initial adoption.
