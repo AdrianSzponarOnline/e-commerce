@@ -1,232 +1,245 @@
-# E-commerce Platform - Instrukcja Uruchomienia i Użytkowania
+# E-commerce System
 
-## Opis Projektu
+## Przegląd
+Kompleksowy system e-commerce zbudowany w Spring Boot z obsługą produktów, kategorii, atrybutów, użytkowników i autoryzacji JWT.
 
-Platforma e-commerce zbudowana w Spring Boot 3.5.6 z wykorzystaniem PostgreSQL, Spring Security, JWT i OpenAPI. Projekt zawiera system autoryzacji, zarządzanie użytkownikami, produktami, kategoriami, zamówieniami i płatnościami.
+## Funkcjonalności
 
-## Wymagania Systemowe
+### Zaimplementowane
+- **Autoryzacja i uwierzytelnianie** - JWT tokeny, role użytkowników
+- **Zarządzanie kategoriami** - Hierarchiczne kategorie z atrybutami
+- **Zarządzanie produktami** - Pełne CRUD z dynamicznymi atrybutami
+- **System atrybutów** - Dynamiczne atrybuty produktów (rozmiar, kolor, etc.)
+- **Generowanie SKU** - Automatyczne SKU na podstawie atrybutów
+- **Wyszukiwanie i filtrowanie** - Zaawansowane zapytania z paginacją
+- **Bezpieczeństwo** - Role-based access control (RBAC)
+- **Testy** - 130+ testów jednostkowych i integracyjnych
+- **Migracje bazy danych** - Flyway migrations
+- **MapStruct** - Automatyczne mapowanie DTO ↔ Entity
 
-- **Java 17** lub nowsza
-- **Maven 3.6+**
-- **PostgreSQL 12+**
-- **IDE** (IntelliJ IDEA, Eclipse, VS Code)
+### W trakcie rozwoju
+- System zamówień
+- System płatności
+- Newsletter
+- Zarządzanie obrazami produktów
 
-## Instalacja i Konfiguracja
+##  Architektura
 
-### 1. Instalacja PostgreSQL
+### Technologie
+- **Backend:** Spring Boot 3.x, Spring Security, Spring Data JPA
+- **Baza danych:** PostgreSQL (produkcja), H2 (testy)
+- **Mapowanie:** MapStruct
+- **Migracje:** Flyway
+- **Testy:** JUnit 5, Mockito
+- **Build:** Maven
 
-1. Pobierz i zainstaluj PostgreSQL z [oficjalnej strony](https://www.postgresql.org/download/)
-2. Podczas instalacji zapamiętaj hasło dla użytkownika `postgres`
-3. Uruchom PostgreSQL i upewnij się, że działa na porcie 5432
-
-### 2. Konfiguracja Bazy Danych
-
-1. Otwórz pgAdmin lub psql
-2. Utwórz nową bazę danych:
-```sql
-CREATE DATABASE ecommerce_db;
+### Struktura pakietów
 ```
-
-### 3. Konfiguracja Aplikacji
-
-1. Skopiuj plik `application-example.properties` do `application.properties`:
-```bash
-cp src/main/resources/application-example.properties src/main/resources/application.properties
-```
-
-2. Edytuj plik `src/main/resources/application.properties` i ustaw:
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/ecommerce_db
-spring.datasource.username=postgres
-spring.datasource.password=TWOJE_HASLO_POSTGRES
-
-# Konfiguracja JWT
-security.jwt.secret-key=3cfa76ef14937c1c0ea519f8fc057a80fcd04a7420f8e8bcd0a7567c272e007b
-security.jwt.expiration-time=3600000
-```
-
-Zastąp `TWOJE_HASLO_POSTGRES` rzeczywistym hasłem do bazy danych.
-
-**Uwaga**: W środowisku produkcyjnym należy wygenerować nowy, bezpieczny klucz JWT zamiast używać domyślnego.
-
-## Uruchomienie Aplikacji
-
-### Metoda 1: Przez IDE
-
-1. Otwórz projekt w swoim IDE
-2. Znajdź klasę `ECommerceApplication.java`
-3. Kliknij prawym przyciskiem i wybierz "Run ECommerceApplication"
-
-### Metoda 2: Przez Maven
-
-```bash
-# W katalogu głównym projektu
-mvn spring-boot:run
-```
-
-### Metoda 3: JAR
-
-```bash
-# Kompilacja
-mvn clean package
-
-# Uruchomienie
-java -jar target/E-commerce-0.0.1-SNAPSHOT.jar
-```
-
-## Dostęp do Aplikacji
-
-- **Aplikacja**: http://localhost:8080
-- **Swagger UI**: http://localhost:8080/swagger-ui.html
-- **API Documentation**: http://localhost:8080/v3/api-docs
-
-## Struktura API
-
-### Endpointy Autoryzacji (`/api/auth`)
-
-#### 1. Rejestracja Użytkownika
-```http
-POST /api/auth/register
-Content-Type: application/json
-
-{
-    "email": "jan.kowalski@example.com",
-    "password": "haslo123"
-}
-```
-
-#### 2. Logowanie
-```http
-POST /api/auth/login
-Content-Type: application/json
-
-{
-    "email": "jan.kowalski@example.com",
-    "password": "haslo123"
-}
-```
-
-**Odpowiedź:**
-```json
-{
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "type": "Bearer"
-}
-```
-
-#### 3. Informacje o Zalogowanym Użytkowniku
-```http
-GET /api/auth/me
-Authorization: Bearer YOUR_JWT_TOKEN
-```
-
-## Przykłady Użycia
-
-### 1. Rejestracja Nowego Użytkownika
-
-```bash
-curl -X POST http://localhost:8080/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "anna.nowak@example.com",
-    "password": "bezpiecznehaslo123"
-  }'
-```
-
-### 2. Logowanie
-
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "anna.nowak@example.com",
-    "password": "bezpiecznehaslo123"
-  }'
-```
-
-### 3. Sprawdzenie Informacji o Użytkowniku
-
-```bash
-curl -X GET http://localhost:8080/api/auth/me \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
-```
-
-## Struktura Bazy Danych
-
-Aplikacja automatycznie tworzy następujące tabele:
-
-- **users** - użytkownicy
-- **roles** - role użytkowników
-- **user_roles** - przypisania ról
-- **addresses** - adresy użytkowników
-- **categories** - kategorie produktów
-- **products** - produkty
-- **orders** - zamówienia
-- **order_items** - pozycje zamówień
-- **payments** - płatności
-- **product_images** - zdjęcia produktów
-- **newsletter_subscriptions** - subskrypcje newslettera
-
-## Domyślne Dane
-
-Po uruchomieniu aplikacji zostaną utworzone:
-
-- **Role**: `ROLE_USER`, `ROLE_OWNER`
-- **Użytkownik testowy**: `user1@example.com` (hasło: `password`)
-
-## Bezpieczeństwo
-
-- Aplikacja używa JWT do autoryzacji
-- Hasła są hashowane za pomocą BCrypt
-- Token JWT wygasa po 1 godzinie (3600000 ms)
-- Klucz JWT jest skonfigurowany w `application.properties`
-- Wszystkie endpointy (oprócz rejestracji i logowania) wymagają autoryzacji
-
-## Rozwiązywanie Problemów
-
-### Problem: Błąd połączenia z bazą danych
-- Sprawdź czy PostgreSQL jest uruchomiony
-- Zweryfikuj dane połączenia w `application.properties`
-- Upewnij się, że baza danych `ecommerce_db` istnieje
-
-### Problem: Port 8080 zajęty
-- Zmień port w `application.properties`:
-```properties
-server.port=8081
-```
-
-### Problem: Błędy kompilacji
-- Upewnij się, że masz Java 17
-- Wykonaj `mvn clean install`
-
-## Rozwój
-
-### Dodawanie Nowych Endpointów
-
-1. Utwórz nowy kontroler w pakiecie `controller`
-2. Dodaj odpowiednie serwisy w pakiecie `service`
-3. Zdefiniuj DTO w pakiecie `dto`
-4. Dodaj testy w pakiecie `test`
-
-### Struktura Pakietów
-
-```
-src/main/java/com/ecommerce/E_commerce/
+com.ecommerce.E_commerce/
 ├── config/          # Konfiguracja (Security, JWT)
-├── controller/      # Kontrolery REST
+├── controller/      # REST Controllers
 ├── dto/            # Data Transfer Objects
-├── exception/      # Obsługa wyjątków
-├── model/          # Encje JPA
-├── repository/     # Repozytoria danych
-└── service/        # Logika biznesowa
+├── exception/      # Custom exceptions
+├── mapper/         # MapStruct mappers
+├── model/          # JPA Entities
+├── repository/     # JPA Repositories
+└── service/        # Business Logic
 ```
 
-## Wsparcie
+##  Modele danych
 
-W przypadku problemów:
-1. Sprawdź logi aplikacji
-2. Zweryfikuj konfigurację bazy danych
-3. Upewnij się, że wszystkie zależności są zainstalowane
+### Główne encje
+- **User** - Użytkownicy systemu
+- **Role** - Role użytkowników (USER, ADMIN, OWNER)
+- **Category** - Kategorie produktów (hierarchiczne)
+- **CategoryAttribute** - Atrybuty kategorii
+- **Product** - Produkty
+- **ProductAttributeValue** - Wartości atrybutów produktów
+- **Order** - Zamówienia (w przygotowaniu)
+- **OrderItem** - Pozycje zamówień (w przygotowaniu)
 
----
+### Relacje
+- User ↔ Role (Many-to-Many)
+- Category ↔ CategoryAttribute (One-to-Many)
+- Category ↔ Product (One-to-Many)
+- Product ↔ ProductAttributeValue (One-to-Many)
+- CategoryAttribute ↔ ProductAttributeValue (One-to-Many)
 
+##  Bezpieczeństwo
+
+### Role i uprawnienia
+- **USER** - Podstawowe operacje (odczyt)
+- **ADMIN** - Zarządzanie użytkownikami
+- **OWNER** - Pełne uprawnienia (CRUD wszystkich zasobów)
+
+### Zabezpieczone endpointy
+- Wszystkie operacje CUD wymagają roli `ROLE_OWNER`
+- Endpointy odczytu są publiczne
+- JWT token wymagany dla operacji wymagających autoryzacji
+
+##  Uruchamianie
+
+### Wymagania
+- Java 17+
+- Maven 3.6+
+- PostgreSQL 12+ (produkcja)
+
+### Konfiguracja
+1. Skopiuj `application-example.properties` do `application.properties`
+2. Skonfiguruj połączenie z bazą danych
+3. Ustaw klucz JWT
+
+```properties
+# Database
+spring.datasource.url=jdbc:postgresql://localhost:5432/ecommerce
+spring.datasource.username=your_username
+spring.datasource.password=your_password
+
+# JWT
+jwt.secret=your-secret-key
+jwt.expiration=86400000
+```
+
+### Uruchamianie
+```bash
+# Kompilacja i testy
+mvn clean test
+
+# Uruchomienie aplikacji
+mvn spring-boot:run
+
+# Uruchomienie z profilem testowym
+mvn spring-boot:run -Dspring.profiles.active=test
+```
+
+##  API Documentation
+
+### Główne API
+- **Auth API:** `/api/auth` - Logowanie, rejestracja
+- **Categories API:** `/api/categories` - Zarządzanie kategoriami
+- **Category Attributes API:** `/api/categories/{categoryId}/attributes` - Atrybuty kategorii
+- **Products API:** `/api/products` - Zarządzanie produktami
+- **Product Attribute Values API:** `/api/product-attribute-values` - Wartości atrybutów
+
+### Dokumentacja
+- [Kompletna dokumentacja API](API_DOCUMENTATION.md)
+- [Dokumentacja produktów](PRODUCT_API_DOCUMENTATION.md)
+
+##  Testy
+
+### Pokrycie testami
+- **SkuGeneratorTest:** 8 testów
+- **ProductServiceImplTest:** 72 testy  
+- **ProductAttributeValueServiceImplTest:** 33 testy
+- **CategoryMapperTest:** 4 testy
+- **CategoryAttributeMapperTest:** 2 testy
+- **CategoryServiceImplTest:** 4 testy
+- **CategoryAttributeServiceImplTest:** 4 testy
+- **CategoryAttributeControllerTest:** 1 test
+- **CategoryDtoValidationTest:** 1 test
+- **ECommerceApplicationTests:** 1 test
+
+**Łącznie:** 130 testów
+
+### Uruchamianie testów
+```bash
+# Wszystkie testy
+mvn test
+
+# Konkretna klasa testowa
+mvn test -Dtest=ProductServiceImplTest
+
+# Testy z raportem pokrycia
+mvn test jacoco:report
+```
+
+## Baza danych
+
+### Migracje
+- `V1__baseline.sql` - Podstawowa struktura bazy danych
+- `V2__category_attribute_updates.sql` - Aktualizacje atrybutów kategorii
+- `V3__insert_craft_categories.sql` - Wstawienie kategorii rzemieślniczych
+- `V4__add_sku_unique_constraint.sql` - Unikalne ograniczenie dla SKU
+
+### Uruchamianie migracji
+```bash
+# Automatycznie przy starcie aplikacji
+mvn spring-boot:run
+
+# Ręcznie (jeśli potrzebne)
+mvn flyway:migrate
+```
+
+##  Przykłady użycia
+
+### Tworzenie produktu z atrybutami
+```bash
+curl -X POST "http://localhost:8080/api/products" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "iPhone 15",
+    "description": "Najnowszy iPhone",
+    "price": 3999.99,
+    "vatRate": 23.0,
+    "seoSlug": "iphone-15",
+    "categoryId": 1,
+    "attributeValues": [
+      {
+        "categoryAttributeId": 1,
+        "value": "6.1 inch"
+      },
+      {
+        "categoryAttributeId": 2,
+        "value": "Space Black"
+      }
+    ]
+  }'
+```
+
+### Wyszukiwanie produktów z filtrami
+```bash
+curl -X GET "http://localhost:8080/api/products/filter?categoryId=1&minPrice=1000&maxPrice=5000&isFeatured=true&page=0&size=10&sortBy=price&sortDir=asc"
+```
+
+### Pobieranie atrybutów produktu
+```bash
+curl -X GET "http://localhost:8080/api/product-attribute-values/product/1"
+```
+
+##  Konfiguracja
+
+### Profile aplikacji
+- `default` - Produkcja (PostgreSQL)
+- `test` - Testy (H2 in-memory)
+- `example` - Przykładowa konfiguracja
+
+### Zmienne środowiskowe
+```bash
+export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/ecommerce
+export SPRING_DATASOURCE_USERNAME=your_username
+export SPRING_DATASOURCE_PASSWORD=your_password
+export JWT_SECRET=your-secret-key
+export JWT_EXPIRATION=86400000
+```
+
+##  Changelog
+
+### v1.0.0 (2024-01-01)
+- ✅ Implementacja systemu autoryzacji JWT
+- ✅ Zarządzanie kategoriami i atrybutami kategorii
+- ✅ Kompleksowy system produktów z dynamicznymi atrybutami
+- ✅ Automatyczne generowanie SKU
+- ✅ Zaawansowane wyszukiwanie i filtrowanie
+- ✅ 130+ testów jednostkowych i integracyjnych
+- ✅ Kompletna dokumentacja API
+
+
+
+## Autorzy
+
+- **Adrian Szponar** - *Główny deweloper* - [AdrianSzponarOnline](https://github.com/AdrianSzponarOnline)
+
+
+
+*Dokumentacja wygenerowana automatycznie - ostatnia aktualizacja: 2024-01-01*

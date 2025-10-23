@@ -1,7 +1,7 @@
 # Product API Documentation
 
 ## Przegląd
-API produktów zapewnia pełną funkcjonalność CRUD oraz zaawansowane wyszukiwanie i filtrowanie produktów z obsługą paginacji i sortowania.
+API produktów zapewnia pełną funkcjonalność CRUD oraz zaawansowane wyszukiwanie i filtrowanie produktów z obsługą paginacji i sortowania. System obsługuje dynamiczne atrybuty produktów, automatyczne generowanie SKU oraz integrację z kategoriami i atrybutami kategorii.
 
 ## Base URL
 ```
@@ -16,6 +16,17 @@ API produktów zapewnia pełną funkcjonalność CRUD oraz zaawansowane wyszukiw
   - `PUT /api/products/{id}` - aktualizacja produktów  
   - `DELETE /api/products/{id}` - usuwanie produktów
   - `GET /api/products/active?isActive=false` - pobieranie nieaktywnych produktów
+
+## Funkcjonalności
+- ✅ Pełne CRUD operacje na produktach
+- ✅ Dynamiczne atrybuty produktów (rozmiar, kolor, materiał, etc.)
+- ✅ Automatyczne generowanie SKU na podstawie atrybutów
+- ✅ Zaawansowane wyszukiwanie i filtrowanie
+- ✅ Paginacja i sortowanie
+- ✅ Integracja z kategoriami i atrybutami kategorii
+- ✅ Operacje bulk dla atrybutów produktów
+- ✅ Statystyki i analityka
+- ✅ Bezpieczeństwo na poziomie metody
 
 ## Dostępne Metody
 
@@ -38,7 +49,13 @@ API produktów zapewnia pełną funkcjonalność CRUD oraz zaawansowane wyszukiw
   "thumbnailUrl": "string",
   "seoSlug": "string (required, max 255)",
   "categoryId": "Long (required)",
-  "isFeatured": "Boolean (optional, default false)"
+  "isFeatured": "Boolean (optional, default false)",
+  "attributeValues": [
+    {
+      "categoryAttributeId": "Long (required)",
+      "value": "String (required, max 255)"
+    }
+  ]
 }
 ```
 
@@ -607,3 +624,83 @@ GET /api/products/category/1/featured?isFeatured=true&sortBy=name&sortDir=asc
 - `400 Bad Request` - Błędne żądanie
 - `404 Not Found` - Zasób nie został znaleziony
 - `500 Internal Server Error` - Błąd serwera
+
+---
+
+## Product Attribute Values API
+
+### Przegląd
+System atrybutów produktów pozwala na dynamiczne definiowanie cech produktów (rozmiar, kolor, materiał, etc.) i ich wartości. Atrybuty są powiązane z kategoriami i mogą być używane do generowania SKU.
+
+### Base URL
+```
+/api/product-attribute-values
+```
+
+### Główne endpointy
+- `POST /api/product-attribute-values` - Tworzenie wartości atrybutu
+- `POST /api/product-attribute-values/bulk` - Tworzenie wielu wartości (bulk)
+- `PUT /api/product-attribute-values/{id}` - Aktualizacja wartości atrybutu
+- `PUT /api/product-attribute-values/product/{productId}` - Aktualizacja wszystkich atrybutów produktu
+- `DELETE /api/product-attribute-values/{id}` - Usuwanie wartości atrybutu
+- `DELETE /api/product-attribute-values/product/{productId}` - Usuwanie wszystkich atrybutów produktu
+- `GET /api/product-attribute-values/{id}` - Pobieranie wartości atrybutu po ID
+- `GET /api/product-attribute-values/product/{productId}` - Pobieranie wszystkich atrybutów produktu
+- `GET /api/product-attribute-values/category-attribute/{categoryAttributeId}` - Pobieranie wartości według atrybutu kategorii
+- `GET /api/product-attribute-values/search/value?value=15.6` - Wyszukiwanie wartości
+- `GET /api/product-attribute-values/attribute-type/{type}` - Pobieranie według typu atrybutu
+- `GET /api/product-attribute-values/product/{productId}/key-attributes` - Kluczowe atrybuty produktu
+
+### Przykład tworzenia wartości atrybutu
+```json
+{
+  "productId": 1,
+  "categoryAttributeId": 1,
+  "value": "15.6 inch"
+}
+```
+
+### Przykład odpowiedzi
+```json
+{
+  "id": 1,
+  "productId": 1,
+  "productName": "Laptop Gaming",
+  "categoryAttributeId": 1,
+  "categoryAttributeName": "Screen Size",
+  "categoryAttributeType": "TEXT",
+  "isKeyAttribute": true,
+  "value": "15.6 inch",
+  "createdAt": "2024-01-01T10:00:00Z",
+  "updatedAt": "2024-01-01T10:00:00Z",
+  "isActive": true
+}
+```
+
+### Przykład bulk operacji
+```json
+[
+  {
+    "productId": 1,
+    "categoryAttributeId": 1,
+    "value": "15.6 inch"
+  },
+  {
+    "productId": 1,
+    "categoryAttributeId": 2,
+    "value": "Black"
+  }
+]
+```
+
+### Walidacja atrybutów produktu
+- `productId` - ID produktu (wymagane)
+- `categoryAttributeId` - ID atrybutu kategorii (wymagane)
+- `value` - Wartość atrybutu (wymagane, max 255 znaków)
+
+### Uwagi techniczne
+- Atrybuty produktów są automatycznie usuwane przy usuwaniu produktu
+- Bulk operacje są bardziej wydajne dla dużej liczby atrybutów
+- Wszystkie operacje CUD wymagają roli `ROLE_OWNER`
+- Endpointy odczytu są publiczne
+- Paginacja jest domyślnie ustawiona na 10 elementów na stronę
