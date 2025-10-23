@@ -46,10 +46,21 @@ public class CategoryController {
         return ResponseEntity.ok(categoryService.listAll());
     }
 
+    @GetMapping("/public")
+    public ResponseEntity<List<CategoryDTO>> listAllPublic() {
+        return ResponseEntity.ok(categoryService.listAll());
+    }
+
     @GetMapping("/active")
     public ResponseEntity<List<CategoryDTO>> listActive() {
         return ResponseEntity.ok(categoryService.listActive());
     }
+
+    @GetMapping("/public/active")
+    public ResponseEntity<List<CategoryDTO>> listActivePublic() {
+        return ResponseEntity.ok(categoryService.listActive());
+    }
+
 
     @GetMapping("/parent/{parentId}")
     public ResponseEntity<List<CategoryDTO>> listByParent(@PathVariable("parentId") Long parentId) {

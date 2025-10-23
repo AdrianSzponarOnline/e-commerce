@@ -40,10 +40,6 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, "Invalid request", userMessage);
     }
 
-    @ExceptionHandler(AlreadyTransferredException.class)
-    public ResponseEntity<Object> handleAlreadyTransferredException(AlreadyTransferredException e) {
-        return buildErrorResponse(HttpStatus.CONFLICT, "Already transferred", e.getMessage());
-    }
     @ExceptionHandler(RoleNotFountException.class)
     public ResponseEntity<Object> handleRoleNotFountException(RoleNotFountException e) {
         return buildErrorResponse(HttpStatus.NOT_FOUND, "Role not fount", e.getMessage());

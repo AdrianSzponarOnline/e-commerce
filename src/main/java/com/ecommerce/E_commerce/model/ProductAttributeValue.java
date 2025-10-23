@@ -53,4 +53,14 @@ public class ProductAttributeValue {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = false;
 
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = Instant.now();
+    }
 }

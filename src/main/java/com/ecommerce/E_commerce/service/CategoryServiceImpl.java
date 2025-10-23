@@ -13,8 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class CategoryServiceImpl implements CategoryService {
@@ -120,6 +123,25 @@ public class CategoryServiceImpl implements CategoryService {
             }
             cursor = cursor.getParent();
         }
+    }
+    public static List<CategoryDTO> buildTree(List<CategoryDTO> allCategories) {
+        Map<Long, CategoryDTO> mapById = allCategories.stream()
+                .collect(Collectors.toMap(CategoryDTO::id, c -> c));
+
+        List<CategoryDTO> roots = new ArrayList<>();
+
+        for (CategoryDTO category : allCategories) {
+            if (category.parentId() == null) {
+                roots.add(category);
+            } else {
+                CategoryDTO parent = mapById.get(category.parentId());
+                if (parent != null) {
+                    parent.children().add(category);
+                }
+            }
+        }
+
+        return roots;
     }
 }
 

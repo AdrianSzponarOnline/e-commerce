@@ -49,8 +49,8 @@ public class CategoryMapperTest {
         assertEquals(1L, dto.parentId());
         assertNotNull(dto.children());
         assertEquals(2, dto.children().size());
-        assertTrue(dto.children().stream().map(ChildCategoryDTO::name).anyMatch(n -> n.equals("child-one")));
-        assertTrue(dto.children().stream().map(ChildCategoryDTO::seoSlug).anyMatch(s -> s.equals("child-two")));
+        assertTrue(dto.children().stream().map(CategoryDTO::name).anyMatch(n -> n.equals("child-one")));
+        assertTrue(dto.children().stream().map(CategoryDTO::seoSlug).anyMatch(s -> s.equals("child-two")));
     }
 }
 

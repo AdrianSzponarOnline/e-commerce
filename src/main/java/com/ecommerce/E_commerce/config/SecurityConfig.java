@@ -57,12 +57,18 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(authorize -> {
                     authorize
+                            .requestMatchers("/error").permitAll()
                             .requestMatchers(
+                                    "/api/categories/public",
+                                    "/api/categories/public/**",
+                                    "/api/categories/public/active",
                                     "/api/auth/login",
                                     "/api/auth/register",
                                     "/api/auth/register/owner",
                                     "/api/owners/register",
-                                    "/api/users/register/owner"
+                                    "/api/users/register/owner",
+                                    "/api/categories/*/attributes",
+                                    "/api/categories/*/attributes/**"
                             ).permitAll();
                     if (isDevOrTest) {
                         authorize.requestMatchers(

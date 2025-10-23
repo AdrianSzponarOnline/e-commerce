@@ -1,9 +1,6 @@
 package com.ecommerce.E_commerce.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -12,11 +9,15 @@ import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "products")
+@Table(name = "products", uniqueConstraints = {
+        @UniqueConstraint(columnNames = "sku")
+})
 public class Product {
     @Id
     @ColumnDefault("nextval('products_id_seq'::regclass)")
@@ -71,6 +72,14 @@ public class Product {
     @Column(name = "seo_slug", nullable = false)
     private String seoSlug;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    @NotNull
+    private Category category;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProductAttributeValue> attributeValues = new ArrayList<>();
+
     @NotNull
     @ColumnDefault("now()")
     @Column(name = "created_at", nullable = false)
@@ -89,4 +98,14 @@ public class Product {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = false;
 
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = Instant.now();
+    }
 }

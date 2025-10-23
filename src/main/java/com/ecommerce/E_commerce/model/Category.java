@@ -5,8 +5,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -15,8 +14,7 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 
-@Getter
-@Setter
+@Data
 @Entity
 @Table(name = "categories")
 public class Category {
@@ -41,13 +39,17 @@ public class Category {
     @JsonManagedReference
     private Set<Category> children = new HashSet<>();
 
-    @Lob
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     @Size(max = 255)
     @NotNull
     @Column(name = "seo_slug", nullable = false)
     private String seoSlug;
+
+    @Size(max = 255)
+    @Column(name = "sku_template", length = 255)
+    private String skuTemplate;
 
     @NotNull
     @Column(name = "created_at", nullable = false)
@@ -70,6 +72,7 @@ public class Category {
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
     }
+
 
     @PreUpdate
     public void preUpdate() {

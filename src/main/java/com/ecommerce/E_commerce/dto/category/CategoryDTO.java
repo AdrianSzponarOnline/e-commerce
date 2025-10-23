@@ -1,6 +1,7 @@
 package com.ecommerce.E_commerce.dto.category;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 
 public record CategoryDTO(
@@ -12,6 +13,6 @@ public record CategoryDTO(
         Instant createdAt,
         Instant updatedAt,
         Long parentId,
-        Set<ChildCategoryDTO> children
+        List<CategoryDTO> children
 ) {
 }
