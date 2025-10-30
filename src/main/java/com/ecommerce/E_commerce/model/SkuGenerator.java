@@ -27,7 +27,6 @@ public class SkuGenerator {
         String categoryCode = abbreviate(product.getCategory().getName(), 3);
         String productCode = abbreviate(product.getName(), 3);
 
-        // Join all key attributes (e.g., 15", i7 -> 15I7)
         String keyAttributes = product.getAttributeValues().stream()
                 .filter(attr -> attr.getCategoryAttribute() != null && attr.getCategoryAttribute().isKeyAttribute())
                 .map(ProductAttributeValue::getValue)

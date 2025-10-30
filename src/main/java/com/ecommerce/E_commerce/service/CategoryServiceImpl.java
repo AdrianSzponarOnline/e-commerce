@@ -14,10 +14,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class CategoryServiceImpl implements CategoryService {
@@ -86,23 +85,26 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public List<CategoryDTO> listAll() {
-        return categoryRepository.findAll().stream()
+        List<CategoryDTO> flat = categoryRepository.findAll().stream()
                 .map(categoryMapper::toCategoryDTO)
                 .toList();
+        return buildTree(flat);
     }
 
     @Override
     public List<CategoryDTO> listActive() {
-        return categoryRepository.findAllByIsActiveTrue().stream()
+        List<CategoryDTO> flat = categoryRepository.findAllByIsActiveTrue().stream()
                 .map(categoryMapper::toCategoryDTO)
                 .toList();
+        return buildTree(flat);
     }
 
     @Override
     public List<CategoryDTO> listByParent(Long parentId) {
-        return categoryRepository.findAllByParent_Id(parentId).stream()
+        List<CategoryDTO> flat = categoryRepository.findAllByParent_Id(parentId).stream()
                 .map(categoryMapper::toCategoryDTO)
                 .toList();
+        return buildTree(flat);
     }
 
     @Override
@@ -125,22 +127,32 @@ public class CategoryServiceImpl implements CategoryService {
         }
     }
     public static List<CategoryDTO> buildTree(List<CategoryDTO> allCategories) {
-        Map<Long, CategoryDTO> mapById = allCategories.stream()
-                .collect(Collectors.toMap(CategoryDTO::id, c -> c));
+        if (allCategories == null || allCategories.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, CategoryDTO> copyById = new HashMap<>();
+        for (CategoryDTO c : allCategories) {
+            copyById.put(c.id(), new CategoryDTO(
+                    c.id(), c.name(), c.description(), c.seoSlug(), c.isActive(),
+                    c.createdAt(), c.updatedAt(), c.parentId(), new ArrayList<>()
+            ));
+        }
 
         List<CategoryDTO> roots = new ArrayList<>();
-
-        for (CategoryDTO category : allCategories) {
-            if (category.parentId() == null) {
-                roots.add(category);
+        for (CategoryDTO c : allCategories) {
+            CategoryDTO current = copyById.get(c.id());
+            if (c.parentId() == null) {
+                roots.add(current);
             } else {
-                CategoryDTO parent = mapById.get(category.parentId());
+                CategoryDTO parent = copyById.get(c.parentId());
                 if (parent != null) {
-                    parent.children().add(category);
+                    parent.children().add(current);
+                } else {
+                    roots.add(current);
                 }
             }
         }
-
         return roots;
     }
 }
