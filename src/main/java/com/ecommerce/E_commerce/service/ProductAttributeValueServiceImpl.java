@@ -25,17 +25,10 @@ import java.util.stream.Collectors;
 @Transactional
 public class ProductAttributeValueServiceImpl implements ProductAttributeValueService {
 
-    @Autowired
-    private ProductAttributeValueRepository productAttributeValueRepository;
-    
-    @Autowired
-    private ProductRepository productRepository;
-    
-    @Autowired
-    private CategoryAttributeRepository categoryAttributeRepository;
-    
-    @Autowired
-    private ProductAttributeValueMapper productAttributeValueMapper;
+    private final ProductRepository productRepository;
+    private final ProductAttributeValueRepository productAttributeValueRepository;
+    private final CategoryAttributeRepository categoryAttributeRepository;
+    private final ProductAttributeValueMapper productAttributeValueMapper;
 
     @Override
     public ProductAttributeValueDTO create(ProductAttributeValueCreateDTO dto) {
@@ -267,5 +260,16 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
         return productAttributeValues.stream()
                 .map(productAttributeValueMapper::toProductAttributeValueDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Autowired
+    public ProductAttributeValueServiceImpl(ProductRepository productRepository,
+                                            ProductAttributeValueRepository productAttributeValueRepository,
+                                            CategoryAttributeRepository categoryAttributeRepository,
+                                            ProductAttributeValueMapper productAttributeValueMapper) {
+        this.productRepository = productRepository;
+        this.productAttributeValueRepository = productAttributeValueRepository;
+        this.categoryAttributeRepository = categoryAttributeRepository;
+        this.productAttributeValueMapper = productAttributeValueMapper;
     }
 }

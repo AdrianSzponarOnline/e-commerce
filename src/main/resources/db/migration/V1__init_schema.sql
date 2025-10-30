@@ -468,14 +468,12 @@ ALTER TABLE public.users OWNER TO postgres;
 ALTER TABLE ONLY public.addresses
     ADD CONSTRAINT addresses_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: categories categories_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.categories
     ADD CONSTRAINT categories_pkey PRIMARY KEY (id);
-
 
 --
 -- Name: categories categories_seo_slug_key; Type: CONSTRAINT; Schema: public; Owner: postgres
@@ -484,14 +482,12 @@ ALTER TABLE ONLY public.categories
 ALTER TABLE ONLY public.categories
     ADD CONSTRAINT categories_seo_slug_key UNIQUE (seo_slug);
 
-
 --
 -- Name: category_attributes category_attributes_category_id_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.category_attributes
     ADD CONSTRAINT category_attributes_category_id_name_key UNIQUE (category_id, name);
-
 
 --
 -- Name: category_attributes category_attributes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
@@ -500,14 +496,12 @@ ALTER TABLE ONLY public.category_attributes
 ALTER TABLE ONLY public.category_attributes
     ADD CONSTRAINT category_attributes_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: newsletter_subscriptions newsletter_subscriptions_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.newsletter_subscriptions
     ADD CONSTRAINT newsletter_subscriptions_email_key UNIQUE (email);
-
 
 --
 -- Name: newsletter_subscriptions newsletter_subscriptions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
@@ -516,14 +510,12 @@ ALTER TABLE ONLY public.newsletter_subscriptions
 ALTER TABLE ONLY public.newsletter_subscriptions
     ADD CONSTRAINT newsletter_subscriptions_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: order_items order_items_order_id_product_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.order_items
     ADD CONSTRAINT order_items_order_id_product_id_key UNIQUE (order_id, product_id);
-
 
 --
 -- Name: order_items order_items_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
@@ -532,14 +524,12 @@ ALTER TABLE ONLY public.order_items
 ALTER TABLE ONLY public.order_items
     ADD CONSTRAINT order_items_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: orders orders_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.orders
     ADD CONSTRAINT orders_pkey PRIMARY KEY (id);
-
 
 --
 -- Name: pages pages_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
@@ -548,14 +538,12 @@ ALTER TABLE ONLY public.orders
 ALTER TABLE ONLY public.pages
     ADD CONSTRAINT pages_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: pages pages_slug_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.pages
     ADD CONSTRAINT pages_slug_key UNIQUE (slug);
-
 
 --
 -- Name: payments payments_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
@@ -564,14 +552,12 @@ ALTER TABLE ONLY public.pages
 ALTER TABLE ONLY public.payments
     ADD CONSTRAINT payments_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: product_attribute_values product_attribute_values_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.product_attribute_values
     ADD CONSTRAINT product_attribute_values_pkey PRIMARY KEY (id);
-
 
 --
 -- Name: product_attribute_values product_attribute_values_product_id_category_attribute_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
@@ -580,14 +566,12 @@ ALTER TABLE ONLY public.product_attribute_values
 ALTER TABLE ONLY public.product_attribute_values
     ADD CONSTRAINT product_attribute_values_product_id_category_attribute_id_key UNIQUE (product_id, category_attribute_id);
 
-
 --
 -- Name: product_images product_images_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.product_images
     ADD CONSTRAINT product_images_pkey PRIMARY KEY (id);
-
 
 --
 -- Name: products products_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
@@ -596,14 +580,12 @@ ALTER TABLE ONLY public.product_images
 ALTER TABLE ONLY public.products
     ADD CONSTRAINT products_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: products products_seo_slug_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.products
     ADD CONSTRAINT products_seo_slug_key UNIQUE (seo_slug);
-
 
 --
 -- Name: products products_sku_key; Type: CONSTRAINT; Schema: public; Owner: postgres
@@ -612,14 +594,12 @@ ALTER TABLE ONLY public.products
 ALTER TABLE ONLY public.products
     ADD CONSTRAINT products_sku_key UNIQUE (sku);
 
-
 --
 -- Name: roles roles_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.roles
     ADD CONSTRAINT roles_name_key UNIQUE (name);
-
 
 --
 -- Name: roles roles_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
@@ -628,14 +608,12 @@ ALTER TABLE ONLY public.roles
 ALTER TABLE ONLY public.roles
     ADD CONSTRAINT roles_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: categories uq_category_name_per_parent; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.categories
     ADD CONSTRAINT uq_category_name_per_parent UNIQUE (parent_id, name);
-
 
 --
 -- Name: user_roles user_roles_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
@@ -644,14 +622,12 @@ ALTER TABLE ONLY public.categories
 ALTER TABLE ONLY public.user_roles
     ADD CONSTRAINT user_roles_pkey PRIMARY KEY (user_id, role_id);
 
-
 --
 -- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_email_key UNIQUE (email);
-
 
 --
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
@@ -660,13 +636,11 @@ ALTER TABLE ONLY public.users
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: idx_one_thumbnail_per_product; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX idx_one_thumbnail_per_product ON public.product_images USING btree (product_id);
-
 
 --
 -- Name: addresses addresses_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
@@ -675,14 +649,12 @@ CREATE INDEX idx_one_thumbnail_per_product ON public.product_images USING btree 
 ALTER TABLE ONLY public.addresses
     ADD CONSTRAINT addresses_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE RESTRICT;
 
-
 --
 -- Name: categories categories_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.categories
     ADD CONSTRAINT categories_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.categories(id) ON DELETE RESTRICT;
-
 
 --
 -- Name: category_attributes category_attributes_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
@@ -691,14 +663,12 @@ ALTER TABLE ONLY public.categories
 ALTER TABLE ONLY public.category_attributes
     ADD CONSTRAINT category_attributes_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.categories(id) ON DELETE CASCADE;
 
-
 --
 -- Name: newsletter_subscriptions newsletter_subscriptions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.newsletter_subscriptions
     ADD CONSTRAINT newsletter_subscriptions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
-
 
 --
 -- Name: order_items order_items_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
@@ -707,14 +677,12 @@ ALTER TABLE ONLY public.newsletter_subscriptions
 ALTER TABLE ONLY public.order_items
     ADD CONSTRAINT order_items_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id) ON DELETE CASCADE;
 
-
 --
 -- Name: order_items order_items_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.order_items
     ADD CONSTRAINT order_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE RESTRICT;
-
 
 --
 -- Name: orders orders_address_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
@@ -723,14 +691,12 @@ ALTER TABLE ONLY public.order_items
 ALTER TABLE ONLY public.orders
     ADD CONSTRAINT orders_address_id_fkey FOREIGN KEY (address_id) REFERENCES public.addresses(id) ON DELETE RESTRICT;
 
-
 --
 -- Name: orders orders_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.orders
     ADD CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE RESTRICT;
-
 
 --
 -- Name: payments payments_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
@@ -739,14 +705,12 @@ ALTER TABLE ONLY public.orders
 ALTER TABLE ONLY public.payments
     ADD CONSTRAINT payments_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id) ON DELETE CASCADE;
 
-
 --
 -- Name: product_attribute_values product_attribute_values_category_attribute_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.product_attribute_values
     ADD CONSTRAINT product_attribute_values_category_attribute_id_fkey FOREIGN KEY (category_attribute_id) REFERENCES public.category_attributes(id) ON DELETE CASCADE;
-
 
 --
 -- Name: product_attribute_values product_attribute_values_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
@@ -755,14 +719,12 @@ ALTER TABLE ONLY public.product_attribute_values
 ALTER TABLE ONLY public.product_attribute_values
     ADD CONSTRAINT product_attribute_values_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE CASCADE;
 
-
 --
 -- Name: product_images product_images_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.product_images
     ADD CONSTRAINT product_images_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE CASCADE;
-
 
 --
 -- Name: products products_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
@@ -771,14 +733,12 @@ ALTER TABLE ONLY public.product_images
 ALTER TABLE ONLY public.products
     ADD CONSTRAINT products_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.categories(id) ON DELETE RESTRICT;
 
-
 --
 -- Name: user_roles user_roles_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.user_roles
     ADD CONSTRAINT user_roles_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(id) ON DELETE CASCADE;
-
 
 --
 -- Name: user_roles user_roles_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
@@ -787,8 +747,6 @@ ALTER TABLE ONLY public.user_roles
 ALTER TABLE ONLY public.user_roles
     ADD CONSTRAINT user_roles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
-
 --
 -- PostgreSQL database dump complete
 --
-

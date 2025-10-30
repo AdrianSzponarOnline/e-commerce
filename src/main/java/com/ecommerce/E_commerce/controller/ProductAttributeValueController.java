@@ -5,6 +5,7 @@ import com.ecommerce.E_commerce.dto.productattributevalue.ProductAttributeValueD
 import com.ecommerce.E_commerce.dto.productattributevalue.ProductAttributeValueUpdateDTO;
 import com.ecommerce.E_commerce.service.ProductAttributeValueService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +24,7 @@ public class ProductAttributeValueController {
 
     private final ProductAttributeValueService productAttributeValueService;
 
+    @Autowired
     public ProductAttributeValueController(ProductAttributeValueService productAttributeValueService) {
         this.productAttributeValueService = productAttributeValueService;
     }
