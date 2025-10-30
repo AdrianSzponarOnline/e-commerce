@@ -6,9 +6,6 @@ import com.ecommerce.E_commerce.dto.product.ProductUpdateDTO;
 import com.ecommerce.E_commerce.service.ProductService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -74,12 +71,7 @@ public class ProductController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
-        
-        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
-            Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        
-        Page<ProductDTO> products = productService.findAll(pageable);
+        Page<ProductDTO> products = productService.findAll(page, size, sortBy, sortDir);
         return ResponseEntity.ok(products);
     }
 
@@ -90,12 +82,7 @@ public class ProductController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "name") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
-        
-        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
-            Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        
-        Page<ProductDTO> products = productService.findByCategory(categoryId, pageable);
+        Page<ProductDTO> products = productService.findByCategory(categoryId, page, size, sortBy, sortDir);
         return ResponseEntity.ok(products);
     }
 
@@ -106,12 +93,7 @@ public class ProductController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "name") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
-        
-        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
-            Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        
-        Page<ProductDTO> products = productService.findByCategorySlug(categorySlug, pageable);
+        Page<ProductDTO> products = productService.findByCategorySlug(categorySlug, page, size, sortBy, sortDir);
         return ResponseEntity.ok(products);
     }
 
@@ -123,12 +105,7 @@ public class ProductController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "price") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
-        
-        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
-            Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        
-        Page<ProductDTO> products = productService.findByPriceRange(minPrice, maxPrice, pageable);
+        Page<ProductDTO> products = productService.findByPriceRange(minPrice, maxPrice, page, size, sortBy, sortDir);
         return ResponseEntity.ok(products);
     }
 
@@ -139,12 +116,7 @@ public class ProductController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "name") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
-        
-        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
-            Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        
-        Page<ProductDTO> products = productService.findByFeatured(isFeatured, pageable);
+        Page<ProductDTO> products = productService.findByFeatured(isFeatured, page, size, sortBy, sortDir);
         return ResponseEntity.ok(products);
     }
 
@@ -155,12 +127,7 @@ public class ProductController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "name") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
-        
-        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
-            Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        
-        Page<ProductDTO> products = productService.findByActive(isActive, pageable);
+        Page<ProductDTO> products = productService.findByActive(isActive, page, size, sortBy, sortDir);
         return ResponseEntity.ok(products);
     }
 
@@ -172,12 +139,7 @@ public class ProductController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "name") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
-        
-        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
-            Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        
-        Page<ProductDTO> products = productService.searchByName(name, pageable);
+        Page<ProductDTO> products = productService.searchByName(name, page, size, sortBy, sortDir);
         return ResponseEntity.ok(products);
     }
 
@@ -188,12 +150,7 @@ public class ProductController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "name") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
-        
-        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
-            Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        
-        Page<ProductDTO> products = productService.searchByDescription(description, pageable);
+        Page<ProductDTO> products = productService.searchByDescription(description, page, size, sortBy, sortDir);
         return ResponseEntity.ok(products);
     }
 
@@ -206,12 +163,7 @@ public class ProductController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "price") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
-        
-        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
-            Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        
-        Page<ProductDTO> products = productService.findByCategoryAndPriceRange(categoryId, minPrice, maxPrice, pageable);
+        Page<ProductDTO> products = productService.findByCategoryAndPriceRange(categoryId, minPrice, maxPrice, page, size, sortBy, sortDir);
         return ResponseEntity.ok(products);
     }
 
@@ -224,12 +176,7 @@ public class ProductController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "name") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
-        
-        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
-            Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        
-        Page<ProductDTO> products = productService.findByCategoryAndFeatured(categoryId, isFeatured, pageable);
+        Page<ProductDTO> products = productService.findByCategoryAndFeatured(categoryId, isFeatured, page, size, sortBy, sortDir);
         return ResponseEntity.ok(products);
     }
 
@@ -242,12 +189,7 @@ public class ProductController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "price") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
-        
-        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
-            Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        
-        Page<ProductDTO> products = productService.findByPriceRangeAndFeatured(minPrice, maxPrice, isFeatured, pageable);
+        Page<ProductDTO> products = productService.findByPriceRangeAndFeatured(minPrice, maxPrice, isFeatured, page, size, sortBy, sortDir);
         return ResponseEntity.ok(products);
     }
 

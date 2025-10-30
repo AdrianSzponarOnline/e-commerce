@@ -272,4 +272,5 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
         this.categoryAttributeRepository = categoryAttributeRepository;
         this.productAttributeValueMapper = productAttributeValueMapper;
     }
+
 }

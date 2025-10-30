@@ -1,10 +1,10 @@
 # Developer Guide - E-commerce System
 
-## 🎯 Przegląd techniczny
+##  Przegląd techniczny
 
 Ten przewodnik zawiera szczegółowe informacje techniczne dla deweloperów pracujących z systemem e-commerce.
 
-## 🏗️ Architektura systemu
+##  Architektura systemu
 
 ### Warstwy aplikacji
 ```
@@ -61,7 +61,7 @@ CREATE USER ecommerce_user WITH PASSWORD 'your_password';
 GRANT ALL PRIVILEGES ON DATABASE ecommerce TO ecommerce_user;
 ```
 
-## 📁 Struktura projektu
+##  Struktura projektu
 
 ### Główne katalogi
 ```
@@ -88,7 +88,7 @@ src/
         └── service/       # Service tests
 ```
 
-## 🔐 System bezpieczeństwa
+## System bezpieczeństwa
 
 ### Konfiguracja JWT
 ```java
@@ -135,7 +135,7 @@ public record ProductCreateDTO(
 ) {}
 ```
 
-## 🗄️ Model danych
+##  Model danych
 
 ### Główne encje
 
@@ -207,7 +207,7 @@ private Category category;
 private Set<Role> roles;
 ```
 
-## 🔄 MapStruct Configuration
+##  MapStruct Configuration
 
 ### Podstawowa konfiguracja
 ```java
@@ -240,7 +240,7 @@ public interface ProductAttributeValueMapper {
 }
 ```
 
-## 🧪 Testowanie
+##  Testowanie
 
 ### Struktura testów
 ```java
@@ -311,7 +311,7 @@ void setUp() {
 }
 ```
 
-## 🚀 Generowanie SKU
+## Generowanie SKU
 
 ### Algorytm generowania
 ```java
@@ -354,7 +354,7 @@ void generate_ShouldCreateCorrectSku_WhenProductHasKeyAttributes() {
 }
 ```
 
-## 📊 Paginacja i sortowanie
+##  Paginacja i sortowanie
 
 ### Implementacja w Repository
 ```java
@@ -400,7 +400,7 @@ public ResponseEntity<Page<ProductDTO>> getAllProducts(
 }
 ```
 
-## 🔄 Bulk Operations
+##  Bulk Operations
 
 ### Implementacja bulk create
 ```java
@@ -437,7 +437,7 @@ public List<ProductAttributeValueDTO> updateByProduct(Long productId, List<Produ
 }
 ```
 
-## 🗃️ Migracje bazy danych
+##  Migracje bazy danych
 
 ### Tworzenie migracji
 ```sql
@@ -457,6 +457,28 @@ CREATE INDEX idx_product_images_product_id ON product_images(product_id);
 CREATE INDEX idx_product_images_primary ON product_images(is_primary);
 ```
 
+## Obrazy produktów – implementacja
+
+### Serwis
+- `ProductImageServiceImpl` zapisuje pliki do `${app.upload-dir}/products/{productId}` i wystawia URL `/uploads/products/{productId}/{filename}`.
+- Walidacja: typ (`image/jpeg,png,webp`), rozmiar (domyślnie 5 MB), limit zdjęć (10), jedna miniatura (reszta odznaczana).
+
+### Konfiguracja
+```properties
+app.upload-dir=uploads
+app.upload-max-bytes=5242880
+app.upload-allowed-types=image/jpeg,image/png,image/webp
+app.max-images-per-product=10
+```
+
+### Serwowanie statyczne
+- `WebConfig` mapuje `/uploads/**` na katalog `${app.upload-dir}`.
+
+### Testy
+- Jednostkowe: `ProductImageServiceImplTest` (walidacje, miniatura, zapis URL)
+- WebMvc: `ProductImageControllerTest` (multipart, lista, delete)
+- Integracyjne (H2): `ProductImageIntegrationTest` (pełny flow) – profil `test` wyłącza security.
+
 ### Uruchamianie migracji
 ```bash
 # Sprawdzenie statusu migracji
@@ -469,7 +491,7 @@ mvn flyway:migrate
 mvn flyway:undo
 ```
 
-## 🔍 Debugging i logowanie
+##  Debugging i logowanie
 
 ### Konfiguracja logowania
 ```properties
@@ -504,7 +526,7 @@ public class ProductServiceImpl implements ProductService {
 }
 ```
 
-## 🚀 Performance Optimization
+##  Performance Optimization
 
 ### Lazy Loading
 ```java
@@ -543,7 +565,7 @@ public ProductDTO update(Long id, ProductUpdateDTO dto) {
 }
 ```
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Częste problemy
 
@@ -581,7 +603,7 @@ public ProductDTO create(ProductCreateDTO dto) {
 }
 ```
 
-## 📈 Monitoring i metryki
+##  Monitoring i metryki
 
 ### Health Checks
 ```java
@@ -660,4 +682,4 @@ public class ProductMetrics {
 
 ---
 
-*Przewodnik dewelopera - ostatnia aktualizacja: 2024-01-01*
+*Przewodnik dewelopera - ostatnia aktualizacja: 2025-10-30*

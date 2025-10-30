@@ -59,27 +59,12 @@ class ProductAttributeValueServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        productAttributeValueService = new ProductAttributeValueServiceImpl();
-        // Use reflection to inject mocks
-        try {
-            java.lang.reflect.Field repoField = ProductAttributeValueServiceImpl.class.getDeclaredField("productAttributeValueRepository");
-            repoField.setAccessible(true);
-            repoField.set(productAttributeValueService, productAttributeValueRepository);
-
-            java.lang.reflect.Field productRepoField = ProductAttributeValueServiceImpl.class.getDeclaredField("productRepository");
-            productRepoField.setAccessible(true);
-            productRepoField.set(productAttributeValueService, productRepository);
-
-            java.lang.reflect.Field categoryAttrRepoField = ProductAttributeValueServiceImpl.class.getDeclaredField("categoryAttributeRepository");
-            categoryAttrRepoField.setAccessible(true);
-            categoryAttrRepoField.set(productAttributeValueService, categoryAttributeRepository);
-
-            java.lang.reflect.Field mapperField = ProductAttributeValueServiceImpl.class.getDeclaredField("productAttributeValueMapper");
-            mapperField.setAccessible(true);
-            mapperField.set(productAttributeValueService, productAttributeValueMapper);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to inject dependencies", e);
-        }
+        productAttributeValueService = new ProductAttributeValueServiceImpl(
+                productRepository,
+                productAttributeValueRepository,
+                categoryAttributeRepository,
+                productAttributeValueMapper
+        );
 
         // Setup test data
         testCategory = new Category();

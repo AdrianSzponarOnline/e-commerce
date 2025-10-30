@@ -50,4 +50,18 @@ public interface ProductService {
     long countByFeatured(Boolean isFeatured);
     long countByActive(Boolean isActive);
     
+    // Overloads that encapsulate Sort/Pageable creation
+    Page<ProductDTO> findAll(int page, int size, String sortBy, String sortDir);
+    Page<ProductDTO> findByCategory(Long categoryId, int page, int size, String sortBy, String sortDir);
+    Page<ProductDTO> findByCategorySlug(String categorySlug, int page, int size, String sortBy, String sortDir);
+    Page<ProductDTO> findByPriceRange(BigDecimal minPrice, BigDecimal maxPrice, int page, int size, String sortBy, String sortDir);
+    Page<ProductDTO> findByFeatured(Boolean isFeatured, int page, int size, String sortBy, String sortDir);
+    @PreAuthorize("hasRole('OWNER') or #isActive == true")
+    Page<ProductDTO> findByActive(Boolean isActive, int page, int size, String sortBy, String sortDir);
+    Page<ProductDTO> searchByName(String name, int page, int size, String sortBy, String sortDir);
+    Page<ProductDTO> searchByDescription(String description, int page, int size, String sortBy, String sortDir);
+    Page<ProductDTO> findByCategoryAndPriceRange(Long categoryId, BigDecimal minPrice, BigDecimal maxPrice, int page, int size, String sortBy, String sortDir);
+    Page<ProductDTO> findByCategoryAndFeatured(Long categoryId, Boolean isFeatured, int page, int size, String sortBy, String sortDir);
+    Page<ProductDTO> findByPriceRangeAndFeatured(BigDecimal minPrice, BigDecimal maxPrice, Boolean isFeatured, int page, int size, String sortBy, String sortDir);
+    
 }

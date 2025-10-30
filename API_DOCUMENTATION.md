@@ -9,6 +9,7 @@ Kompletna dokumentacja API dla systemu e-commerce z obsługą produktów, katego
 - **Category Attributes API:** `/api/categories/{categoryId}/attributes`
 - **Products API:** `/api/products`
 - **Product Attribute Values API:** `/api/product-attribute-values`
+ - **Product Images API:** `/api/products/{productId}/images`
 
 ## Autoryzacja
 - **Publiczne endpointy** - dostępne dla wszystkich użytkowników
@@ -506,7 +507,56 @@ Kompletna dokumentacja API dla systemu e-commerce z obsługą produktów, katego
 
 ---
 
-## 6. Modele danych
+## 6. Product Images API (`/api/products/{productId}/images`)
+
+### 6.1 Lista obrazów
+**Endpoint:** `GET /api/products/{productId}/images`  
+**Autoryzacja:** Public
+
+**Response:**
+```json
+[
+  {
+    "id": 10,
+    "productId": 3,
+    "url": "/uploads/products/3/abc.jpg",
+    "altText": "front",
+    "isThumbnail": true,
+    "createdAt": "2025-10-11T17:10:58Z",
+    "updatedAt": "2025-10-11T17:10:58Z"
+  }
+]
+```
+
+### 6.2 Upload obrazu
+**Endpoint:** `POST /api/products/{productId}/images`  
+**Autoryzacja:** `ROLE_OWNER`
+
+**Multipart form-data:**
+- `file` (wymagany)
+- `altText` (opcjonalny)
+- `isThumbnail` (opcjonalny, domyślnie false)
+
+**Walidacja:**
+- Typy: `image/jpeg,image/png,image/webp`
+- Max rozmiar: `5 MB`
+- Limit na produkt: `10`
+
+**Response:** `201 Created` + `ProductImageDTO`
+
+### 6.3 Ustawienie miniatury
+**Endpoint:** `POST /api/products/{productId}/images/{imageId}/thumbnail`  
+**Autoryzacja:** `ROLE_OWNER`
+
+Zdejmuje flagę `isThumbnail` z innych obrazów produktu i ustawia `thumbnail_url` w produkcie.
+
+### 6.4 Usunięcie obrazu
+**Endpoint:** `DELETE /api/products/{productId}/images/{imageId}`  
+**Autoryzacja:** `ROLE_OWNER`
+
+---
+
+## 7. Modele danych
 
 ### 6.1 CategoryAttributeType
 ```json
@@ -530,7 +580,7 @@ Kompletna dokumentacja API dla systemu e-commerce z obsługą produktów, katego
 
 ---
 
-## 7. Kody błędów
+## 8. Kody błędów
 
 ### 7.1 HTTP Status Codes
 - `200 OK` - Sukces
@@ -562,7 +612,7 @@ Kompletna dokumentacja API dla systemu e-commerce z obsługą produktów, katego
 
 ---
 
-## 8. Przykłady użycia
+## 9. Przykłady użycia
 
 ### 8.1 Tworzenie produktu z atrybutami
 ```bash
@@ -601,7 +651,7 @@ curl -X GET "http://localhost:8080/api/product-attribute-values/product/1"
 
 ---
 
-## 9. Testy
+## 10. Testy
 
 ### 9.1 Pokrycie testami
 - **SkuGeneratorTest:** 8 testów
@@ -631,7 +681,7 @@ mvn test jacoco:report
 
 ---
 
-## 10. Migracje bazy danych
+## 11. Migracje bazy danych
 
 ### 10.1 Dostępne migracje
 - `V1__baseline.sql` - Podstawowa struktura bazy danych
@@ -650,7 +700,7 @@ mvn flyway:migrate
 
 ---
 
-## 11. Konfiguracja
+## 12. Konfiguracja
 
 ### 11.1 Wymagane zmienne środowiskowe
 ```properties
@@ -675,7 +725,7 @@ spring.flyway.locations=classpath:db/migration
 
 ---
 
-## 12. Bezpieczeństwo
+## 13. Bezpieczeństwo
 
 ### 12.1 Role i uprawnienia
 - **USER** - Podstawowe operacje (odczyt)

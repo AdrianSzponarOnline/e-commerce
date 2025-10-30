@@ -4,8 +4,6 @@ import com.ecommerce.E_commerce.dto.product.ProductCreateDTO;
 import com.ecommerce.E_commerce.dto.product.ProductDTO;
 import com.ecommerce.E_commerce.dto.product.ProductUpdateDTO;
 import com.ecommerce.E_commerce.dto.productattributevalue.ProductAttributeValueCreateDTO;
-import com.ecommerce.E_commerce.dto.productattributevalue.ProductAttributeValueDTO;
-import com.ecommerce.E_commerce.dto.productattributevalue.ProductAttributeValueUpdateDTO;
 import com.ecommerce.E_commerce.exception.ResourceNotFoundException;
 import com.ecommerce.E_commerce.mapper.ProductMapper;
 import com.ecommerce.E_commerce.model.Category;
@@ -15,7 +13,9 @@ import com.ecommerce.E_commerce.repository.CategoryRepository;
 import com.ecommerce.E_commerce.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +39,17 @@ public class ProductServiceImpl implements ProductService {
     
     @Autowired
     private ProductAttributeValueService productAttributeValueService;
+
+    @Autowired
+    public ProductServiceImpl(ProductRepository productRepository,
+                              CategoryRepository categoryRepository,
+                              ProductMapper productMapper,
+                              ProductAttributeValueService productAttributeValueService) {
+        this.productRepository = productRepository;
+        this.categoryRepository = categoryRepository;
+        this.productMapper = productMapper;
+        this.productAttributeValueService = productAttributeValueService;
+    }
 
     @Override
     public ProductDTO create(ProductCreateDTO dto) {
@@ -229,6 +240,79 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public long countByActive(Boolean isActive) {
         return productRepository.countByIsActive(isActive);
+    }
+
+    private Pageable buildPageable(int page, int size, String sortBy, String sortDir) {
+        Sort sort = (sortDir != null && sortDir.equalsIgnoreCase("desc"))
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+        return PageRequest.of(page, size, sort);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductDTO> findAll(int page, int size, String sortBy, String sortDir) {
+        return findAll(buildPageable(page, size, sortBy, sortDir));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductDTO> findByCategory(Long categoryId, int page, int size, String sortBy, String sortDir) {
+        return findByCategory(categoryId, buildPageable(page, size, sortBy, sortDir));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductDTO> findByCategorySlug(String categorySlug, int page, int size, String sortBy, String sortDir) {
+        return findByCategorySlug(categorySlug, buildPageable(page, size, sortBy, sortDir));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductDTO> findByPriceRange(BigDecimal minPrice, BigDecimal maxPrice, int page, int size, String sortBy, String sortDir) {
+        return findByPriceRange(minPrice, maxPrice, buildPageable(page, size, sortBy, sortDir));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductDTO> findByFeatured(Boolean isFeatured, int page, int size, String sortBy, String sortDir) {
+        return findByFeatured(isFeatured, buildPageable(page, size, sortBy, sortDir));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductDTO> findByActive(Boolean isActive, int page, int size, String sortBy, String sortDir) {
+        return findByActive(isActive, buildPageable(page, size, sortBy, sortDir));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductDTO> searchByName(String name, int page, int size, String sortBy, String sortDir) {
+        return searchByName(name, buildPageable(page, size, sortBy, sortDir));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductDTO> searchByDescription(String description, int page, int size, String sortBy, String sortDir) {
+        return searchByDescription(description, buildPageable(page, size, sortBy, sortDir));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductDTO> findByCategoryAndPriceRange(Long categoryId, BigDecimal minPrice, BigDecimal maxPrice, int page, int size, String sortBy, String sortDir) {
+        return findByCategoryAndPriceRange(categoryId, minPrice, maxPrice, buildPageable(page, size, sortBy, sortDir));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductDTO> findByCategoryAndFeatured(Long categoryId, Boolean isFeatured, int page, int size, String sortBy, String sortDir) {
+        return findByCategoryAndFeatured(categoryId, isFeatured, buildPageable(page, size, sortBy, sortDir));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductDTO> findByPriceRangeAndFeatured(BigDecimal minPrice, BigDecimal maxPrice, Boolean isFeatured, int page, int size, String sortBy, String sortDir) {
+        return findByPriceRangeAndFeatured(minPrice, maxPrice, isFeatured, buildPageable(page, size, sortBy, sortDir));
     }
 
 }

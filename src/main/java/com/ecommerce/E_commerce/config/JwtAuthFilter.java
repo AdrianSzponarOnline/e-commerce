@@ -20,6 +20,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
+@org.springframework.context.annotation.Profile("!test")
 public class JwtAuthFilter extends OncePerRequestFilter {
     private final JWTService jwtService;
     private final UserService userService;

@@ -14,6 +14,7 @@ Kompleksowy system e-commerce zbudowany w Spring Boot z obsługą produktów, ka
 - **Wyszukiwanie i filtrowanie** - Zaawansowane zapytania z paginacją
 - **Bezpieczeństwo** - Role-based access control (RBAC)
 - **Testy** - 130+ testów jednostkowych i integracyjnych
+- **Obrazy produktów** - upload, lista, usuwanie, miniatura, serwowanie z `/uploads/**`
 - **Migracje bazy danych** - Flyway migrations
 - **MapStruct** - Automatyczne mapowanie DTO ↔ Entity
 
@@ -21,7 +22,6 @@ Kompleksowy system e-commerce zbudowany w Spring Boot z obsługą produktów, ka
 - System zamówień
 - System płatności
 - Newsletter
-- Zarządzanie obrazami produktów
 
 ##  Architektura
 
@@ -120,6 +120,7 @@ mvn spring-boot:run -Dspring.profiles.active=test
 - **Category Attributes API:** `/api/categories/{categoryId}/attributes` - Atrybuty kategorii
 - **Products API:** `/api/products` - Zarządzanie produktami
 - **Product Attribute Values API:** `/api/product-attribute-values` - Wartości atrybutów
+ - **Product Images API:** `/api/products/{productId}/images` - Zarządzanie obrazami produktów
 
 ### Dokumentacja
 - [Kompletna dokumentacja API](API_DOCUMENTATION.md)
@@ -160,6 +161,37 @@ mvn test jacoco:report
 - `V2__category_attribute_updates.sql` - Aktualizacje atrybutów kategorii
 - `V3__insert_craft_categories.sql` - Wstawienie kategorii rzemieślniczych
 - `V4__add_sku_unique_constraint.sql` - Unikalne ograniczenie dla SKU
+
+##  Obrazy produktów
+
+### Endpoints
+- `GET /api/products/{productId}/images` – lista obrazów
+- `POST /api/products/{productId}/images` – upload (multipart form: `file`, opcjonalnie `altText`, `isThumbnail`)
+- `POST /api/products/{productId}/images/{imageId}/thumbnail` – ustaw miniaturę
+- `DELETE /api/products/{productId}/images/{imageId}` – usuń obraz
+
+Wymagania uprawnień: operacje modyfikujące wymagają roli OWNER.
+
+### Walidacja uploadu
+- Dozwolone typy: `image/jpeg,image/png,image/webp`
+- Maks. rozmiar: `5 MB`
+- Limit na produkt: `10` obrazów
+- Jedna miniatura na produkt – ustawienie nowej zdejmuje flagę z poprzedniej
+
+### Konfiguracja
+```properties
+app.upload-dir=uploads
+app.upload-max-bytes=5242880
+app.upload-allowed-types=image/jpeg,image/png,image/webp
+app.max-images-per-product=10
+```
+
+Pliki są zapisywane w `${app.upload-dir}/products/{productId}/...` i serwowane pod `/uploads/**`.
+
+### Testy
+- Jednostkowe serwisu: `ProductImageServiceImplTest`
+- Web MVC kontrolera: `ProductImageControllerTest`
+- Integracyjne (H2): `ProductImageIntegrationTest`
 
 ### Uruchamianie migracji
 ```bash
