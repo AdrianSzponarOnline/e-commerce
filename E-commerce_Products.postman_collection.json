@@ -1,0 +1,656 @@
+{
+	"info": {
+		"_postman_id": "e-commerce-products-collection",
+		"name": "E-commerce Products API",
+		"description": "Collection for testing Products API endpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login - Owner",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"jwt_token\", jsonData.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"owner@example.com\",\n    \"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Login - User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"jwt_token\", jsonData.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"testuser@example.com\",\n    \"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "CRUD Operations",
+			"item": [
+				{
+					"name": "Create Product",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Test Product\",\n    \"description\": \"This is a test product description\",\n    \"shortDescription\": \"Short description\",\n    \"price\": 99.99,\n    \"vatRate\": 23.0,\n    \"shippingCost\": 10.00,\n    \"estimatedDeliveryTime\": \"3-5 dni roboczych\",\n    \"seoSlug\": \"test-product\",\n    \"categoryId\": 5,\n    \"isFeatured\": true,\n    \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/products",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products"]
+						}
+					}
+				},
+				{
+					"name": "Update Product",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Updated Product Name\",\n    \"price\": 149.99,\n    \"isFeatured\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/products/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Product",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"url": {
+							"raw": "{{base_url}}/api/products/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Get Single Product",
+			"item": [
+				{
+					"name": "Get Product by ID",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/products/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Product by Slug",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/products/slug/rzezba-anioka-z-drewna-debowego",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products", "slug", "rzezba-anioka-z-drewna-debowego"]
+						}
+					}
+				},
+				{
+					"name": "Get Product by SKU",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/products/sku/RD-ANG-001",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products", "sku", "RD-ANG-001"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Get All Products",
+			"item": [
+				{
+					"name": "Get All Products (Paginated)",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/products?page=0&size=10&sortBy=name&sortDir=asc",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products"],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sortBy",
+									"value": "name"
+								},
+								{
+									"key": "sortDir",
+									"value": "asc"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Products by Category",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/products/category/5?page=0&size=10&sortBy=name&sortDir=asc",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products", "category", "5"],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sortBy",
+									"value": "name"
+								},
+								{
+									"key": "sortDir",
+									"value": "asc"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Products by Category Slug",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/products/category-slug/rzeźby-drewniane?page=0&size=10&sortBy=name&sortDir=asc",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products", "category-slug", "rzeźby-drewniane"],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sortBy",
+									"value": "name"
+								},
+								{
+									"key": "sortDir",
+									"value": "asc"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Products by Price Range",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/products/price-range?minPrice=100&maxPrice=500&page=0&size=10&sortBy=price&sortDir=asc",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products", "price-range"],
+							"query": [
+								{
+									"key": "minPrice",
+									"value": "100"
+								},
+								{
+									"key": "maxPrice",
+									"value": "500"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sortBy",
+									"value": "price"
+								},
+								{
+									"key": "sortDir",
+									"value": "asc"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Featured Products",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/products/featured?isFeatured=true&page=0&size=10&sortBy=name&sortDir=asc",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products", "featured"],
+							"query": [
+								{
+									"key": "isFeatured",
+									"value": "true"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sortBy",
+									"value": "name"
+								},
+								{
+									"key": "sortDir",
+									"value": "asc"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Active Products",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/products/active?isActive=true&page=0&size=10&sortBy=name&sortDir=asc",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products", "active"],
+							"query": [
+								{
+									"key": "isActive",
+									"value": "true"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sortBy",
+									"value": "name"
+								},
+								{
+									"key": "sortDir",
+									"value": "asc"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Search",
+			"item": [
+				{
+					"name": "Search Products by Name",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/products/search/name?name=rzeźba&page=0&size=10&sortBy=name&sortDir=asc",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products", "search", "name"],
+							"query": [
+								{
+									"key": "name",
+									"value": "rzeźba"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sortBy",
+									"value": "name"
+								},
+								{
+									"key": "sortDir",
+									"value": "asc"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Search Products by Description",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/products/search/description?description=drewno&page=0&size=10&sortBy=name&sortDir=asc",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products", "search", "description"],
+							"query": [
+								{
+									"key": "description",
+									"value": "drewno"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sortBy",
+									"value": "name"
+								},
+								{
+									"key": "sortDir",
+									"value": "asc"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Advanced Filters",
+			"item": [
+				{
+					"name": "Get Products by Category and Price Range",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/products/category/5/price-range?minPrice=100&maxPrice=1000&page=0&size=10&sortBy=price&sortDir=asc",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products", "category", "5", "price-range"],
+							"query": [
+								{
+									"key": "minPrice",
+									"value": "100"
+								},
+								{
+									"key": "maxPrice",
+									"value": "1000"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sortBy",
+									"value": "price"
+								},
+								{
+									"key": "sortDir",
+									"value": "asc"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Products by Category and Featured",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/products/category/5/featured?isFeatured=true&page=0&size=10&sortBy=name&sortDir=asc",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products", "category", "5", "featured"],
+							"query": [
+								{
+									"key": "isFeatured",
+									"value": "true"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sortBy",
+									"value": "name"
+								},
+								{
+									"key": "sortDir",
+									"value": "asc"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Products by Price Range and Featured",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/products/price-range/featured?minPrice=100&maxPrice=1000&isFeatured=true&page=0&size=10&sortBy=price&sortDir=asc",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products", "price-range", "featured"],
+							"query": [
+								{
+									"key": "minPrice",
+									"value": "100"
+								},
+								{
+									"key": "maxPrice",
+									"value": "1000"
+								},
+								{
+									"key": "isFeatured",
+									"value": "true"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sortBy",
+									"value": "price"
+								},
+								{
+									"key": "sortDir",
+									"value": "asc"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Statistics",
+			"item": [
+				{
+					"name": "Get Product Count by Category",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/products/stats/category/5/count",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products", "stats", "category", "5", "count"]
+						}
+					}
+				},
+				{
+					"name": "Get Featured Product Count",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/products/stats/featured/count?isFeatured=true",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products", "stats", "featured", "count"],
+							"query": [
+								{
+									"key": "isFeatured",
+									"value": "true"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Active Product Count",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/products/stats/active/count?isActive=true",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products", "stats", "active", "count"],
+							"query": [
+								{
+									"key": "isActive",
+									"value": "true"
+								}
+							]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
+

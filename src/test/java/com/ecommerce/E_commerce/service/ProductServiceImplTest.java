@@ -1,5 +1,6 @@
 package com.ecommerce.E_commerce.service;
 
+import com.ecommerce.E_commerce.dto.category.CategoryDTO;
 import com.ecommerce.E_commerce.dto.product.ProductCreateDTO;
 import com.ecommerce.E_commerce.dto.product.ProductDTO;
 import com.ecommerce.E_commerce.dto.product.ProductUpdateDTO;
@@ -117,6 +118,18 @@ class ProductServiceImplTest {
                 null // attributeValues
         );
 
+        CategoryDTO testCategoryDTO = new CategoryDTO(
+                1L,
+                "Electronics",
+                null,
+                "electronics",
+                true,
+                Instant.now(),
+                Instant.now(),
+                null,
+                new ArrayList<>()
+        );
+        
         testProductDTO = new ProductDTO(
                 1L,
                 "Test Laptop",
@@ -130,12 +143,10 @@ class ProductServiceImplTest {
                 "3-5 days",
                 "https://example.com/laptop.jpg",
                 "test-laptop",
-                testCategory,
+                testCategoryDTO,
                 new ArrayList<>(),
                 Instant.now(),
-                Instant.now(),
-                null,
-                true
+                Instant.now()
         );
     }
 

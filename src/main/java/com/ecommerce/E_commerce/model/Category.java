@@ -1,6 +1,7 @@
 package com.ecommerce.E_commerce.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -15,6 +16,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Data
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Entity
 @Table(name = "categories")
 public class Category {
@@ -46,10 +48,6 @@ public class Category {
     @NotNull
     @Column(name = "seo_slug", nullable = false)
     private String seoSlug;
-
-    @Size(max = 255)
-    @Column(name = "sku_template", length = 255)
-    private String skuTemplate;
 
     @NotNull
     @Column(name = "created_at", nullable = false)

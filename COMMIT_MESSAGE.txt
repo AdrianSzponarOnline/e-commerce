@@ -1,0 +1,42 @@
+refactor: fix JSON serialization and enhance security configuration
+
+Major changes:
+- Fix deep nested JSON issue in ProductDTO by replacing entities with DTOs
+  * Change Category entity to CategoryDTO in ProductDTO
+  * Change ProductAttributeValue entities to ProductAttributeValueDTO list
+  * Update ProductMapper to properly map nested DTOs
+  * Update CategoryMapper with recursive children mapping
+
+- Enhance SecurityConfig with comprehensive endpoint configuration
+  * Add all public GET endpoints for products, categories, and product attributes
+  * Configure public access for product images (GET only)
+  * Maintain authentication requirements for all POST/PUT/DELETE operations
+  * Keep role-based authorization via @PreAuthorize annotations
+
+- Add isKeyAttribute field to CategoryAttribute
+  * Add key_attribute column via Flyway migration V8
+  * Add getter/setter methods for isKeyAttribute
+  * Update ProductAttributeValueMapper to use isKeyAttribute
+
+- Database migrations
+  * Update V5__seed_data.sql with proper ON CONFLICT constraints
+  * Add V6__add_mock_users.sql migration
+  * Add V7__insert_sample_products.sql migration with ON CONFLICT handling
+  * Add V8__add_key_attribute_to_category_attributes.sql migration
+
+- Model improvements
+  * Remove skuTemplate field from Category (column doesn't exist)
+  * Add JsonIgnore to Product in ProductAttributeValue to prevent circular references
+  * Update SkuGenerator to use isKeyAttribute method
+
+- Configuration updates
+  * Add Flyway Maven plugin configuration in pom.xml
+  * Update application properties examples
+
+- Code cleanup
+  * Remove unused imports and fix mapper configurations
+  * Simplify ProductDTO by removing deletedAt and isActive fields
+
+This fixes the issue where product API responses contained deeply nested JSON
+with circular references, and ensures proper security configuration for all endpoints.
+

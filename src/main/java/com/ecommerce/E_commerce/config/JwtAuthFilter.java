@@ -81,17 +81,27 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             chain.doFilter(request, response);
         } catch (io.jsonwebtoken.ExpiredJwtException e) {
             writeUnauthorized(response, "Token expired");
+            return;
         } catch (io.jsonwebtoken.JwtException | IllegalArgumentException e) {
             writeUnauthorized(response, "Invalid token");
+            return;
         } catch (Exception e) {
             writeUnauthorized(response, "Invalid token");
             logger.error("JWT validation error", e);
+            return;
         }
     }
 
     private void writeUnauthorized(HttpServletResponse response, String message) throws IOException {
+        if (response.isCommitted()) {
+            return;
+        }
+
+        response.resetBuffer();
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
         response.getWriter().write("{\"error\": \"" + message + "\"}");
+        response.flushBuffer();
     }
 }

@@ -81,7 +81,7 @@ class ProductAttributeValueServiceImplTest {
         testCategoryAttribute.setId(1L);
         testCategoryAttribute.setName("Screen Size");
         testCategoryAttribute.setType(CategoryAttributeType.TEXT);
-        testCategoryAttribute.setKeyAttribute(true);
+        testCategoryAttribute.setIsKeyAttribute(true);
         testCategoryAttribute.setCategory(testCategory);
 
         testProductAttributeValue = new ProductAttributeValue();
@@ -107,17 +107,10 @@ class ProductAttributeValueServiceImplTest {
 
         testProductAttributeValueDTO = new ProductAttributeValueDTO(
                 1L, // id
-                1L, // productId
-                "Test Laptop", // productName
-                1L, // categoryAttributeId
                 "Screen Size", // categoryAttributeName
                 "TEXT", // categoryAttributeType
                 true, // isKeyAttribute
-                "15.6 inches", // value
-                Instant.now(), // createdAt
-                Instant.now(), // updatedAt
-                null, // deletedAt
-                true // isActive
+                "15.6 inches" // value
         );
     }
 

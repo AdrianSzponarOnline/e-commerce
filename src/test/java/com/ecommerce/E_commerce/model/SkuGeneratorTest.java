@@ -358,7 +358,7 @@ class SkuGeneratorTest {
         attribute.setId(1L);
         attribute.setName(name);
         attribute.setCategory(category);
-        attribute.setKeyAttribute(true);
+        attribute.setIsKeyAttribute(true);
         return attribute;
     }
 
@@ -367,7 +367,7 @@ class SkuGeneratorTest {
         attribute.setId(2L);
         attribute.setName(name);
         attribute.setCategory(category);
-        attribute.setKeyAttribute(false);
+        attribute.setIsKeyAttribute(false);
         return attribute;
     }
 

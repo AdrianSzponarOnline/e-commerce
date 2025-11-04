@@ -40,8 +40,17 @@ public class CategoryAttribute {
     private CategoryAttributeType type;
 
     @NotNull
-    @Column(name = "keyAttribute")
-    boolean isKeyAttribute = false;
+    @ColumnDefault("false")
+    @Column(name = "key_attribute", nullable = false)
+    private Boolean isKeyAttribute = false;
+
+    public @NotNull Boolean getIsKeyAttribute() {
+        return isKeyAttribute;
+    }
+
+    public void setIsKeyAttribute(@NotNull Boolean isKeyAttribute) {
+        this.isKeyAttribute = isKeyAttribute;
+    }
 
     @NotNull
     @ColumnDefault("now()")

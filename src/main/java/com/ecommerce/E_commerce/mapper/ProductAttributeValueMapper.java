@@ -11,12 +11,8 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface ProductAttributeValueMapper {
 
-    @Mapping(target = "productId", source = "product.id")
-    @Mapping(target = "productName", source = "product.name")
-    @Mapping(target = "categoryAttributeId", source = "categoryAttribute.id")
     @Mapping(target = "categoryAttributeName", source = "categoryAttribute.name")
     @Mapping(target = "categoryAttributeType", source = "categoryAttribute.type")
-    @Mapping(target = "isKeyAttribute", source = "categoryAttribute.keyAttribute")
     ProductAttributeValueDTO toProductAttributeValueDTO(ProductAttributeValue productAttributeValue);
 
     @Mapping(target = "id", ignore = true)

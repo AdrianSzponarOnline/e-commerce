@@ -10,10 +10,13 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring",
+        uses = {CategoryMapper.class, ProductAttributeValueMapper.class},
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface ProductMapper {
     
-    
+    @Mapping(target = "category", source = "category")
+    @Mapping(target = "attributeValues", source = "attributeValues")
     ProductDTO toProductDTO(Product product);
     
     

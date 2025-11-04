@@ -28,16 +28,10 @@ import java.util.stream.Collectors;
 @Transactional
 public class ProductServiceImpl implements ProductService {
 
-    @Autowired
+
     private ProductRepository productRepository;
-    
-    @Autowired
     private CategoryRepository categoryRepository;
-    
-    @Autowired
     private ProductMapper productMapper;
-    
-    @Autowired
     private ProductAttributeValueService productAttributeValueService;
 
     @Autowired

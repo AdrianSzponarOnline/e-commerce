@@ -1,7 +1,7 @@
 package com.ecommerce.E_commerce.dto.product;
 
-import com.ecommerce.E_commerce.model.Category;
-import com.ecommerce.E_commerce.model.ProductAttributeValue;
+import com.ecommerce.E_commerce.dto.category.CategoryDTO;
+import com.ecommerce.E_commerce.dto.productattributevalue.ProductAttributeValueDTO;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -20,11 +20,9 @@ public record ProductDTO(
         String estimatedDeliveryTime,
         String thumbnailUrl,
         String seoSlug,
-        Category category,
-        List<ProductAttributeValue> attributeValues,
+        CategoryDTO category,
+        List<ProductAttributeValueDTO> attributeValues,
         Instant createdAt,
-        Instant updatedAt,
-        Instant deletedAt,
-        Boolean isActive
+        Instant updatedAt
 ) {
 }
