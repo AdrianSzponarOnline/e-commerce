@@ -134,6 +134,10 @@ public class SecurityConfig {
                         ).permitAll();
                     }
                     // All other endpoints require authentication
+                    // Detailed access control is handled by @PreAuthorize in controllers/services:
+                    // - Orders API (/api/orders/**) - USER can access own orders, OWNER can access all
+                    // - Payments API (/api/payments/**) - USER can access own payments, OWNER can access all
+                    // - Addresses API (/api/addresses/**) - USER can access own addresses, OWNER can access all
                     authorize
                             .requestMatchers("/api/**").authenticated()
                             .anyRequest().authenticated();

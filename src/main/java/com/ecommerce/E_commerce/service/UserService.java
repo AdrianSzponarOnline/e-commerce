@@ -16,7 +16,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Set;
 
 @Service
@@ -46,23 +45,15 @@ public class UserService implements UserDetailsService {
         Role role = roleRepository.findByRole(ERole.ROLE_USER).orElseThrow(() -> new RoleNotFountException("ROLE_USER not found"));
         User user = new User();
         user.setEmail(request.email());
+        user.setFirstName(request.firstName());
+        user.setLastName(request.lastName());
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setRoles(Set.of(role));
         User savedUser = userRepository.save(user);
         return mapToDto(savedUser);
     }
 
-    private Set<Role> resolveRoles() {
-        return Set.of(
-                roleRepository.findByRole(ERole.ROLE_USER)
-                        .orElseThrow(() -> new RoleNotFountException("ROLE_USER not found"))
-        );
-    }
     private UserDto mapToDto(User user) {
-        List<String> roles = user.getRoles().stream()
-                .map(role -> role.getRole().name())
-                .toList();
-
         return new UserDto(user.getEmail());
     }
 

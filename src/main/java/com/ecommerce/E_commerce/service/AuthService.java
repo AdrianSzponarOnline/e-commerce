@@ -2,6 +2,7 @@ package com.ecommerce.E_commerce.service;
 
 import com.ecommerce.E_commerce.dto.auth.AuthRequestDTO;
 import com.ecommerce.E_commerce.dto.auth.AuthResponseDTO;
+import com.ecommerce.E_commerce.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,13 +46,14 @@ public class AuthService {
             );
 
             if (authentication.getPrincipal() instanceof UserDetails userDetails) {
+                User loggedUser = (User) userDetails;
                 String token = jwtService.generateToken(userDetails);
                 List<String> roles = userDetails.getAuthorities().stream()
                         .map(GrantedAuthority::getAuthority)
                         .toList();
 
                 logger.info("Successful authentication for user: {}", authRequest.email());
-                return new AuthResponseDTO(token, userDetails.getUsername(), roles);
+                return new AuthResponseDTO(token, loggedUser.getFirstName(), loggedUser.getLastName(), userDetails.getUsername(), roles);
             } else {
                 logger.error("Authentication principal is not UserDetails for user: {}", authRequest.email());
                 throw new IllegalStateException("Authentication principal is not UserDetails");

@@ -12,15 +12,18 @@ Kompleksowy system e-commerce zbudowany w Spring Boot z obsługą produktów, ka
 - **System atrybutów** - Dynamiczne atrybuty produktów (rozmiar, kolor, etc.)
 - **Generowanie SKU** - Automatyczne SKU na podstawie atrybutów
 - **Wyszukiwanie i filtrowanie** - Zaawansowane zapytania z paginacją
-- **Bezpieczeństwo** - Role-based access control (RBAC)
+- **Bezpieczeństwo** - Role-based access control (RBAC) z walidacją właściciela zasobów
 - **Testy** - 130+ testów jednostkowych i integracyjnych
 - **Obrazy produktów** - upload, lista, usuwanie, miniatura, serwowanie z `/uploads/**`
 - **Migracje bazy danych** - Flyway migrations
 - **MapStruct** - Automatyczne mapowanie DTO ↔ Entity
+- **System zamówień** - Pełny system zamówień z pozycjami (Order, OrderItem)
+- **System płatności** - Obsługa płatności z różnymi metodami i statusami
+- **System adresów** - Zarządzanie adresami użytkowników z zabezpieczeniami
+- **System magazynu** - Zarządzanie stanem magazynowym z pesymistyczną blokadą
+- **Domain-Driven Design** - Logika biznesowa enkapsulowana w encjach
 
 ### W trakcie rozwoju
-- System zamówień
-- System płatności
 - Newsletter
 
 ##  Architektura
@@ -55,27 +58,43 @@ com.ecommerce.E_commerce/
 - **CategoryAttribute** - Atrybuty kategorii
 - **Product** - Produkty
 - **ProductAttributeValue** - Wartości atrybutów produktów
-- **Order** - Zamówienia (w przygotowaniu)
-- **OrderItem** - Pozycje zamówień (w przygotowaniu)
+- **Order** - Zamówienia z statusami (NEW, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED, REFUNDED)
+- **OrderItem** - Pozycje zamówień
+- **Payment** - Płatności z metodami (CREDIT_CARD, DEBIT_CARD, PAYPAL, BANK_TRANSFER, CASH_ON_DELIVERY, BLIK, APPLE_PAY, GOOGLE_PAY)
+- **PaymentStatus** - Statusy płatności (PENDING, PROCESSING, COMPLETED, FAILED, CANCELLED, REFUNDED)
+- **Address** - Adresy użytkowników
+- **Inventory** - Stan magazynowy produktów z rezerwacjami
 
 ### Relacje
 - User ↔ Role (Many-to-Many)
+- User ↔ Address (One-to-Many)
+- User ↔ Order (One-to-Many)
 - Category ↔ CategoryAttribute (One-to-Many)
 - Category ↔ Product (One-to-Many)
 - Product ↔ ProductAttributeValue (One-to-Many)
+- Product ↔ Inventory (One-to-One)
 - CategoryAttribute ↔ ProductAttributeValue (One-to-Many)
+- Order ↔ OrderItem (One-to-Many)
+- Order ↔ Payment (One-to-Many)
+- Order ↔ Address (Many-to-One)
 
 ##  Bezpieczeństwo
 
 ### Role i uprawnienia
-- **USER** - Podstawowe operacje (odczyt)
+- **USER** - Podstawowe operacje:
+  - Tworzenie i zarządzanie własnymi zamówieniami
+  - Tworzenie płatności dla własnych zamówień
+  - Zarządzanie własnymi adresami
+  - Anulowanie własnych zamówień (tylko status NEW/CONFIRMED)
+  - Przeglądanie własnych zamówień i płatności
 - **ADMIN** - Zarządzanie użytkownikami
-- **OWNER** - Pełne uprawnienia (CRUD wszystkich zasobów)
+- **OWNER** - Pełne uprawnienia (CRUD wszystkich zasobów, zmiana statusów zamówień i płatności)
 
 ### Zabezpieczone endpointy
-- Wszystkie operacje CUD wymagają roli `ROLE_OWNER`
-- Endpointy odczytu są publiczne
-- JWT token wymagany dla operacji wymagających autoryzacji
+- **Operacje administracyjne** - Wymagają roli `ROLE_OWNER` (zmiana statusów, zarządzanie produktami, kategoriami)
+- **Operacje użytkownika** - USER może operować tylko na swoich zasobach (zamówienia, płatności, adresy)
+- **Walidacja właściciela** - Automatyczna walidacja czy USER jest właścicielem zasobu
+- **JWT token** - Wymagany dla wszystkich operacji wymagających autoryzacji
 
 ##  Uruchamianie
 
@@ -120,7 +139,10 @@ mvn spring-boot:run -Dspring.profiles.active=test
 - **Category Attributes API:** `/api/categories/{categoryId}/attributes` - Atrybuty kategorii
 - **Products API:** `/api/products` - Zarządzanie produktami
 - **Product Attribute Values API:** `/api/product-attribute-values` - Wartości atrybutów
- - **Product Images API:** `/api/products/{productId}/images` - Zarządzanie obrazami produktów
+- **Product Images API:** `/api/products/{productId}/images` - Zarządzanie obrazami produktów
+- **Orders API:** `/api/orders` - Zarządzanie zamówieniami
+- **Payments API:** `/api/payments` - Zarządzanie płatnościami
+- **Addresses API:** `/api/addresses` - Zarządzanie adresami użytkowników
 
 ### Dokumentacja
 - [Kompletna dokumentacja API](API_DOCUMENTATION.md)
@@ -257,14 +279,25 @@ export JWT_EXPIRATION=86400000
 
 ##  Changelog
 
+### v1.1.0 (2024-01-XX)
+- System zamówień (Order, OrderItem) z pełnym flow
+- System płatności z różnymi metodami i statusami
+- System adresów użytkowników z zabezpieczeniami
+- System magazynu z pesymistyczną blokadą (zapobieganie race conditions)
+- Anulowanie zamówień przez użytkowników (tylko status NEW/CONFIRMED)
+- Domain-Driven Design - logika biznesowa w encjach
+- Automatyczne zarządzanie stanem magazynowym przy zamówieniach
+- Poprawki bezpieczeństwa - walidacja właściciela zasobów
+- Enum dla statusów zamówień i płatności (zamiast magic strings)
+
 ### v1.0.0 (2024-01-01)
-- ✅ Implementacja systemu autoryzacji JWT
-- ✅ Zarządzanie kategoriami i atrybutami kategorii
-- ✅ Kompleksowy system produktów z dynamicznymi atrybutami
-- ✅ Automatyczne generowanie SKU
-- ✅ Zaawansowane wyszukiwanie i filtrowanie
-- ✅ 130+ testów jednostkowych i integracyjnych
-- ✅ Kompletna dokumentacja API
+-  Implementacja systemu autoryzacji JWT
+-  Zarządzanie kategoriami i atrybutami kategorii
+-  Kompleksowy system produktów z dynamicznymi atrybutami
+-  Automatyczne generowanie SKU
+-  Zaawansowane wyszukiwanie i filtrowanie
+-  130+ testów jednostkowych i integracyjnych
+-  Kompletna dokumentacja API
 
 
 
@@ -274,4 +307,31 @@ export JWT_EXPIRATION=86400000
 
 
 
-*Dokumentacja wygenerowana automatycznie - ostatnia aktualizacja: 2024-01-01*
+## Flow zamówienia
+
+### 1. Tworzenie zamówienia
+- USER tworzy zamówienie z pozycjami
+- Automatyczna rezerwacja magazynu (pesymistyczna blokada)
+- Status: `NEW`
+
+### 2. Płatność
+- USER tworzy płatność dla zamówienia
+- Walidacja: kwota musi odpowiadać `totalAmount` zamówienia
+- Status płatności: `PENDING`
+
+### 3. Finalizacja płatności
+- Gdy płatność zmienia status na `COMPLETED`:
+  - Automatyczna zmiana statusu zamówienia na `CONFIRMED`
+  - Finalizacja rezerwacji magazynu (stock sprzedany)
+
+### 4. Anulowanie
+- USER może anulować zamówienie (tylko status NEW/CONFIRMED)
+- OWNER może anulować w dowolnym momencie
+- Automatyczne zwolnienie rezerwacji magazynu
+
+### 5. Statusy zamówienia
+- `NEW` → `CONFIRMED` → `PROCESSING` → `SHIPPED` → `DELIVERED`
+- `CANCELLED` - anulowane (zwolnienie magazynu)
+- `REFUNDED` - zwrócone
+
+*Dokumentacja wygenerowana automatycznie - ostatnia aktualizacja: 2024-01-XX*

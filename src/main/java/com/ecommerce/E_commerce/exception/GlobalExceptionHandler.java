@@ -46,7 +46,13 @@ public class GlobalExceptionHandler {
     }
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Object> handleAccessDeniedException(AccessDeniedException e) {
-        return buildErrorResponse(HttpStatus.FORBIDDEN, "Access Denied", "You don't have permission to access this resource");
+        String message = e.getMessage() != null ? e.getMessage() : "You don't have permission to access this resource";
+        return buildErrorResponse(HttpStatus.FORBIDDEN, "Access Denied", message);
+    }
+    
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Object> handleIllegalArgumentException(IllegalArgumentException e) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Bad Request", e.getMessage());
     }
 
     @ExceptionHandler({BadCredentialsException.class, AuthenticationException.class})

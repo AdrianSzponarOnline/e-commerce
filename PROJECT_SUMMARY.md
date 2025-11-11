@@ -1,17 +1,15 @@
 # Podsumowanie Projektu E-commerce
 
-## 📊 Statystyki projektu
+##  Statystyki projektu
 
 ### Pliki źródłowe
-- **Java files:** 83 pliki
+- **Java files:** 100+ plików
 - **Test files:** 10 plików
 - **SQL migrations:** 4 pliki
 - **Configuration files:** 3 pliki
-- **Documentation files:** 4 pliki
+- **Documentation files:** 6 plików
 
-### Łącznie: 104 pliki
-
-## 📁 Struktura plików
+### Łącznie: 120+ plików Struktura plików
 
 ### Dokumentacja (4 pliki)
 - `README.md` - Główna dokumentacja projektu
@@ -31,16 +29,20 @@
 - `V3__insert_craft_categories.sql` - Wstawienie kategorii rzemieślniczych
 - `V4__add_sku_unique_constraint.sql` - Unikalne ograniczenie dla SKU
 
-### Pliki Java - Główna aplikacja (73 pliki)
+### Pliki Java - Główna aplikacja (100+ plików)
 
-#### Controllers (5 plików)
+#### Controllers (9 plików)
 - `AuthController.java` - Autoryzacja i uwierzytelnianie
 - `CategoryController.java` - Zarządzanie kategoriami
 - `CategoryAttributeController.java` - Atrybuty kategorii
 - `ProductController.java` - Zarządzanie produktami
 - `ProductAttributeValueController.java` - Wartości atrybutów produktów
+- `ProductImageController.java` - Zarządzanie obrazami produktów
+- `OrderController.java` - Zarządzanie zamówieniami
+- `PaymentController.java` - Zarządzanie płatnościami
+- `AddressController.java` - Zarządzanie adresami użytkowników
 
-#### Services (11 plików)
+#### Services (19 plików)
 - `AuthService.java` - Logika autoryzacji
 - `UserService.java` - Zarządzanie użytkownikami
 - `JWTService.java` - Obsługa tokenów JWT
@@ -52,16 +54,32 @@
 - `ProductServiceImpl.java` - Implementacja produktów
 - `ProductAttributeValueService.java` - Interfejs wartości atrybutów
 - `ProductAttributeValueServiceImpl.java` - Implementacja wartości atrybutów
+- `ProductImageService.java` - Interfejs obrazów produktów
+- `ProductImageServiceImpl.java` - Implementacja obrazów produktów
+- `OrderService.java` - Interfejs zamówień
+- `OrderServiceImpl.java` - Implementacja zamówień
+- `PaymentService.java` - Interfejs płatności
+- `PaymentServiceImpl.java` - Implementacja płatności
+- `AddressService.java` - Interfejs adresów
+- `AddressServiceImpl.java` - Implementacja adresów
+- `InventoryService.java` - Interfejs magazynu
+- `InventoryServiceImpl.java` - Implementacja magazynu
 
-#### Repositories (5 plików)
+#### Repositories (10 plików)
 - `UserRepository.java` - Repozytorium użytkowników
 - `RoleRepository.java` - Repozytorium ról
 - `CategoryRepository.java` - Repozytorium kategorii
 - `CategoryAttributeRepository.java` - Repozytorium atrybutów kategorii
 - `ProductRepository.java` - Repozytorium produktów
 - `ProductAttributeValueRepository.java` - Repozytorium wartości atrybutów
+- `ProductImageRepository.java` - Repozytorium obrazów produktów
+- `OrderRepository.java` - Repozytorium zamówień
+- `OrderItemRepository.java` - Repozytorium pozycji zamówień
+- `PaymentRepository.java` - Repozytorium płatności
+- `AddressRepository.java` - Repozytorium adresów
+- `InventoryRepository.java` - Repozytorium magazynu
 
-#### Models/Entities (17 plików)
+#### Models/Entities (22 pliki)
 - `User.java` - Encja użytkownika
 - `Role.java` - Encja roli
 - `UserRole.java` - Encja roli użytkownika
@@ -75,13 +93,17 @@
 - `SkuGenerator.java` - Generator SKU
 - `Address.java` - Encja adresu
 - `NewsletterSubscription.java` - Encja subskrypcji newslettera
-- `Order.java` - Encja zamówienia
+- `Order.java` - Encja zamówienia (z logiką biznesową DDD)
 - `OrderItem.java` - Encja pozycji zamówienia
+- `OrderStatus.java` - Enum statusów zamówień
 - `Page.java` - Encja strony
 - `Payment.java` - Encja płatności
+- `PaymentStatus.java` - Enum statusów płatności
+- `PaymentMethod.java` - Enum metod płatności
 - `ProductImage.java` - Encja obrazu produktu
+- `Inventory.java` - Encja magazynu
 
-#### DTOs (12 plików)
+#### DTOs (21 plików)
 - `auth/AuthRequestDTO.java` - DTO żądania autoryzacji
 - `auth/AuthResponseDTO.java` - DTO odpowiedzi autoryzacji
 - `auth/RegisterRequestDTO.java` - DTO rejestracji
@@ -99,12 +121,28 @@
 - `productattributevalue/ProductAttributeValueCreateDTO.java` - DTO tworzenia wartości atrybutu
 - `productattributevalue/ProductAttributeValueDTO.java` - DTO wartości atrybutu
 - `productattributevalue/ProductAttributeValueUpdateDTO.java` - DTO aktualizacji wartości atrybutu
+- `order/OrderCreateDTO.java` - DTO tworzenia zamówienia
+- `order/OrderDTO.java` - DTO zamówienia
+- `order/OrderUpdateDTO.java` - DTO aktualizacji zamówienia
+- `orderitem/OrderItemCreateDTO.java` - DTO tworzenia pozycji zamówienia
+- `orderitem/OrderItemDTO.java` - DTO pozycji zamówienia
+- `orderitem/OrderItemUpdateDTO.java` - DTO aktualizacji pozycji zamówienia
+- `payment/PaymentCreateDTO.java` - DTO tworzenia płatności
+- `payment/PaymentDTO.java` - DTO płatności
+- `payment/PaymentUpdateDTO.java` - DTO aktualizacji płatności
+- `address/AddressCreateDTO.java` - DTO tworzenia adresu
+- `address/AddressDTO.java` - DTO adresu
+- `address/AddressUpdateDTO.java` - DTO aktualizacji adresu
 
-#### Mappers (4 pliki)
+#### Mappers (8 plików)
 - `CategoryMapper.java` - Mapowanie kategorii
 - `CategoryAttributeMapper.java` - Mapowanie atrybutów kategorii
 - `ProductMapper.java` - Mapowanie produktów
 - `ProductAttributeValueMapper.java` - Mapowanie wartości atrybutów
+- `OrderMapper.java` - Mapowanie zamówień
+- `OrderItemMapper.java` - Mapowanie pozycji zamówień
+- `PaymentMapper.java` - Mapowanie płatności
+- `AddressMapper.java` - Mapowanie adresów
 
 #### Configuration (4 pliki)
 - `AppConfig.java` - Główna konfiguracja
@@ -148,7 +186,7 @@
 #### Integration Tests (1 plik)
 - `ECommerceApplicationTests.java` - Testy integracyjne aplikacji
 
-## 🧪 Pokrycie testami
+##  Pokrycie testami
 
 ### Statystyki testów
 - **Łączna liczba testów:** 130
@@ -170,7 +208,7 @@
 
 ## 🚀 Funkcjonalności
 
-### ✅ Zaimplementowane
+###  Zaimplementowane
 1. **System autoryzacji JWT** - Logowanie, rejestracja, role użytkowników
 2. **Zarządzanie kategoriami** - Hierarchiczne kategorie z atrybutami
 3. **System produktów** - Pełne CRUD z dynamicznymi atrybutami
@@ -220,7 +258,7 @@
 - **Mockito** - Mockowanie w testach
 - **Maven** - Zarządzanie zależnościami
 
-## 🔐 Bezpieczeństwo
+##  Bezpieczeństwo
 
 ### Role użytkowników
 - **USER** - Podstawowe operacje (odczyt)
@@ -232,7 +270,7 @@
 - Endpointy odczytu są publiczne
 - JWT token wymagany dla operacji wymagających autoryzacji
 
-## 📈 Wydajność
+## Wydajność
 
 ### Optymalizacje
 - **Lazy Loading** - Opóźnione ładowanie relacji
@@ -246,7 +284,7 @@
 - **Logging** - Szczegółowe logi
 - **Metrics** - Metryki wydajności
 
-## 🎯 Następne kroki
+## Następne kroki
 
 ### Priorytet 1
 1. Implementacja systemu zamówień
@@ -265,4 +303,3 @@
 
 ---
 
-*Podsumowanie wygenerowane automatycznie - ostatnia aktualizacja: 2024-01-01*

@@ -8,6 +8,26 @@ import jakarta.validation.constraints.Size;
 public record RegisterRequestDTO(
         @NotBlank @Email
         String email,
+
+        @NotBlank
+        @Size(
+                max = 100,
+                message = "First name must be at least one character long and not longer than 100 characters.")
+        @Pattern(
+                regexp = "^[\\p{L} '.-]+$",
+                message = "First name can only contain letters, spaces, apostrophes, periods, and hyphens."
+        )
+        String firstName,
+
+        @NotBlank
+        @Size(max = 100)
+        @Pattern(
+
+                regexp = "^[\\p{L} '.-]+$",
+                message = "Last name can only contain letters, spaces, apostrophes, periods, and hyphens."
+        )
+        String lastName,
+
         @NotBlank
         @Size(min = 6 ,message = "Password must be at least 6 characters long")
         @Pattern(

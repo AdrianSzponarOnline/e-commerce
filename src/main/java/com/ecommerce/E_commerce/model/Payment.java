@@ -18,6 +18,7 @@ import java.time.Instant;
 @Table(name = "payments")
 public class Payment {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @ColumnDefault("nextval('payments_id_seq'::regclass)")
     @Column(name = "id", nullable = false)
     private Long id;
@@ -32,20 +33,29 @@ public class Payment {
     @Column(name = "amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
-    @Size(max = 30)
     @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(name = "method", nullable = false, length = 30)
-    private String method;
+    private PaymentMethod method;
 
-    @Size(max = 20)
     @NotNull
+    @Enumerated(EnumType.STRING)
+    @ColumnDefault("'PENDING'")
     @Column(name = "status", nullable = false, length = 20)
-    private String status;
+    private PaymentStatus status;
 
     @NotNull
     @ColumnDefault("now()")
     @Column(name = "transaction_date", nullable = false)
     private Instant transactionDate;
+
+    @Size(max = 255)
+    @Column(name = "transaction_id")
+    private String transactionId;
+
+    @Size(max = 500)
+    @Column(name = "notes", length = 500)
+    private String notes;
 
     @NotNull
     @ColumnDefault("now()")
@@ -65,4 +75,23 @@ public class Payment {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = false;
 
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
+        if (this.transactionDate == null) {
+            this.transactionDate = Instant.now();
+        }
+        if (this.status == null) {
+            this.status = PaymentStatus.PENDING;
+        }
+        if (this.isActive == null) {
+            this.isActive = true;
+        }
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = Instant.now();
+    }
 }

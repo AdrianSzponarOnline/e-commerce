@@ -29,10 +29,10 @@ import java.util.stream.Collectors;
 public class ProductServiceImpl implements ProductService {
 
 
-    private ProductRepository productRepository;
-    private CategoryRepository categoryRepository;
-    private ProductMapper productMapper;
-    private ProductAttributeValueService productAttributeValueService;
+    private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+    private final ProductMapper productMapper;
+    private final ProductAttributeValueService productAttributeValueService;
 
     @Autowired
     public ProductServiceImpl(ProductRepository productRepository,

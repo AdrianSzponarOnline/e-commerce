@@ -3,7 +3,6 @@ package com.ecommerce.E_commerce.mapper;
 import com.ecommerce.E_commerce.dto.product.ProductCreateDTO;
 import com.ecommerce.E_commerce.dto.product.ProductDTO;
 import com.ecommerce.E_commerce.dto.product.ProductUpdateDTO;
-import com.ecommerce.E_commerce.dto.productattributevalue.ProductAttributeValueDTO;
 import com.ecommerce.E_commerce.model.Product;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

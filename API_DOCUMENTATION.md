@@ -9,7 +9,10 @@ Kompletna dokumentacja API dla systemu e-commerce z obsługą produktów, katego
 - **Category Attributes API:** `/api/categories/{categoryId}/attributes`
 - **Products API:** `/api/products`
 - **Product Attribute Values API:** `/api/product-attribute-values`
- - **Product Images API:** `/api/products/{productId}/images`
+- **Product Images API:** `/api/products/{productId}/images`
+- **Orders API:** `/api/orders`
+- **Payments API:** `/api/payments`
+- **Addresses API:** `/api/addresses`
 
 ## Autoryzacja
 - **Publiczne endpointy** - dostępne dla wszystkich użytkowników
@@ -744,4 +747,232 @@ spring.flyway.locations=classpath:db/migration
 
 ---
 
-*Dokumentacja wygenerowana automatycznie - ostatnia aktualizacja: 2024-01-01*
+## 13. Orders API (`/api/orders`)
+
+### 13.1 Tworzenie zamówienia
+**Endpoint:** `POST /api/orders`  
+**Autoryzacja:** USER lub OWNER (tylko własne zamówienia)
+
+**Request Body:**
+```json
+{
+  "addressId": 1,
+  "status": "NEW",
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 2
+    }
+  ]
+}
+```
+
+**Response:** `201 Created`
+```json
+{
+  "id": 1,
+  "userId": 1,
+  "address": {...},
+  "status": "NEW",
+  "totalAmount": 199.98,
+  "items": [...],
+  "createdAt": "2024-01-01T10:00:00Z"
+}
+```
+
+**Uwagi:**
+- Automatyczna rezerwacja magazynu (pesymistyczna blokada)
+- Automatyczne obliczenie `totalAmount` na podstawie pozycji
+- Cena pozycji pobierana z produktu (zabezpieczenie przed manipulacją)
+
+### 13.2 Anulowanie zamówienia
+**Endpoint:** `PATCH /api/orders/{id}/cancel`  
+**Autoryzacja:** USER (tylko własne, status NEW/CONFIRMED) lub OWNER (dowolne)
+
+**Response:** `200 OK`
+```json
+{
+  "id": 1,
+  "status": "CANCELLED",
+  ...
+}
+```
+
+**Błędy:**
+- `400 Bad Request` - Zamówienie już anulowane
+- `403 Forbidden` - USER próbuje anulować SHIPPED/DELIVERED
+
+### 13.3 Pobieranie zamówienia
+**Endpoint:** `GET /api/orders/{id}`  
+**Autoryzacja:** USER (tylko własne) lub OWNER
+
+### 13.4 Lista zamówień użytkownika
+**Endpoint:** `GET /api/orders/user/{userId}`  
+**Autoryzacja:** USER (tylko własne) lub OWNER
+
+### 13.5 Aktualizacja zamówienia (tylko OWNER)
+**Endpoint:** `PUT /api/orders/{id}`  
+**Autoryzacja:** OWNER
+
+**Request Body:**
+```json
+{
+  "status": "SHIPPED",
+  "isActive": true
+}
+```
+
+**Uwagi:**
+- Automatyczne zarządzanie magazynem przy zmianie statusu
+- `CANCELLED` → zwolnienie rezerwacji
+- `CONFIRMED/SHIPPED/DELIVERED` → finalizacja rezerwacji
+
+---
+
+## 14. Payments API (`/api/payments`)
+
+### 14.1 Tworzenie płatności
+**Endpoint:** `POST /api/payments`  
+**Autoryzacja:** USER (tylko własne zamówienia) lub OWNER
+
+**Request Body:**
+```json
+{
+  "orderId": 1,
+  "amount": 199.98,
+  "method": "CREDIT_CARD",
+  "transactionId": "TXN-123456",
+  "notes": "Payment notes"
+}
+```
+
+**Response:** `201 Created`
+```json
+{
+  "id": 1,
+  "orderId": 1,
+  "amount": 199.98,
+  "method": "CREDIT_CARD",
+  "status": "PENDING",
+  "transactionDate": "2024-01-01T10:00:00Z"
+}
+```
+
+**Walidacja:**
+- Kwota musi odpowiadać `order.totalAmount`
+- Zamówienie musi mieć status NEW lub CONFIRMED
+- USER może płacić tylko za swoje zamówienia
+
+### 14.2 Aktualizacja statusu płatności
+**Endpoint:** `PUT /api/payments/{id}`  
+**Autoryzacja:** OWNER
+
+**Request Body:**
+```json
+{
+  "status": "COMPLETED",
+  "transactionId": "TXN-123456-UPDATED",
+  "notes": "Payment completed"
+}
+```
+
+**Uwagi:**
+- Gdy status zmienia się na `COMPLETED`:
+  - Automatyczna zmiana statusu zamówienia na `CONFIRMED`
+  - Finalizacja rezerwacji magazynu
+
+### 14.3 Pobieranie płatności
+**Endpoint:** `GET /api/payments/{id}`  
+**Autoryzacja:** USER (tylko własne) lub OWNER
+
+### 14.4 Lista płatności dla zamówienia
+**Endpoint:** `GET /api/payments/order/{orderId}`  
+**Autoryzacja:** USER (tylko własne zamówienia) lub OWNER
+
+### 14.5 Metody płatności
+- `CREDIT_CARD`
+- `DEBIT_CARD`
+- `PAYPAL`
+- `BANK_TRANSFER`
+- `CASH_ON_DELIVERY`
+- `BLIK`
+- `APPLE_PAY`
+- `GOOGLE_PAY`
+
+### 14.6 Statusy płatności
+- `PENDING` - Oczekująca
+- `PROCESSING` - W trakcie przetwarzania
+- `COMPLETED` - Zakończona
+- `FAILED` - Nieudana
+- `CANCELLED` - Anulowana
+- `REFUNDED` - Zwrócona
+
+---
+
+## 15. Addresses API (`/api/addresses`)
+
+### 15.1 Tworzenie adresu
+**Endpoint:** `POST /api/addresses`  
+**Autoryzacja:** USER lub OWNER
+
+**Request Body:**
+```json
+{
+  "line1": "ul. Przykładowa 123",
+  "line2": "Mieszkanie 45",
+  "city": "Warszawa",
+  "region": "Mazowieckie",
+  "postalCode": "00-001",
+  "country": "Polska",
+  "isActive": true
+}
+```
+
+**Uwagi:**
+- USER może tworzyć adresy tylko dla siebie
+- `userId` jest automatycznie ustawiane z tokena JWT
+
+### 15.2 Aktualizacja adresu
+**Endpoint:** `PUT /api/addresses/{id}`  
+**Autoryzacja:** USER (tylko własne) lub OWNER
+
+**Request Body:**
+```json
+{
+  "line1": "ul. Nowa 456",
+  "isActive": false
+}
+```
+
+### 15.3 Usuwanie adresu
+**Endpoint:** `DELETE /api/addresses/{id}`  
+**Autoryzacja:** USER (tylko własne) lub OWNER
+
+**Uwagi:**
+- Soft delete (ustawienie `deletedAt` i `isActive = false`)
+
+### 15.4 Pobieranie adresu
+**Endpoint:** `GET /api/addresses/{id}`  
+**Autoryzacja:** USER (tylko własne) lub OWNER
+
+### 15.5 Lista adresów użytkownika
+**Endpoint:** `GET /api/addresses/user/{userId}`  
+**Autoryzacja:** USER (tylko własne) lub OWNER
+
+### 15.6 Lista aktywnych adresów
+**Endpoint:** `GET /api/addresses/user/{userId}/active`  
+**Autoryzacja:** USER (tylko własne) lub OWNER
+
+### 15.7 Wszystkie adresy (tylko OWNER)
+**Endpoint:** `GET /api/addresses`  
+**Autoryzacja:** OWNER
+
+**Query Parameters:**
+- `page` - numer strony (default: 0)
+- `size` - rozmiar strony (default: 10)
+- `sortBy` - pole sortowania (default: id)
+- `sortDir` - kierunek sortowania (asc/desc, default: asc)
+
+---
+
+*Dokumentacja wygenerowana automatycznie 

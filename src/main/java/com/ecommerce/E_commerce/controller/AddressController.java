@@ -46,47 +46,38 @@ public class AddressController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('OWNER') or hasRole('USER')")
+    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and @addressService.isAddressOwner(#id, authentication.name))")
     public ResponseEntity<AddressDTO> update(
             @PathVariable Long id,
-            @Valid @RequestBody AddressUpdateDTO dto,
-            @AuthenticationPrincipal User user) {
+            @Valid @RequestBody AddressUpdateDTO dto) {
         AddressDTO address = addressService.update(id, dto);
         return ResponseEntity.ok(address);
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('OWNER') or hasRole('USER')")
-    public ResponseEntity<Void> delete(
-            @PathVariable Long id,
-            @AuthenticationPrincipal User user) {
+    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and @addressService.isAddressOwner(#id, authentication.name))")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         addressService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('OWNER') or hasRole('USER')")
-    public ResponseEntity<AddressDTO> getById(
-            @PathVariable Long id,
-            @AuthenticationPrincipal User user) {
+    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and @addressService.isAddressOwner(#id, authentication.name))")
+    public ResponseEntity<AddressDTO> getById(@PathVariable Long id) {
         AddressDTO address = addressService.getById(id);
         return ResponseEntity.ok(address);
     }
 
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasRole('OWNER') or hasRole('USER')")
-    public ResponseEntity<List<AddressDTO>> getByUserId(
-            @PathVariable Long userId,
-            @AuthenticationPrincipal User user) {
+    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and #userId == authentication.principal.id)")
+    public ResponseEntity<List<AddressDTO>> getByUserId(@PathVariable Long userId) {
         List<AddressDTO> addresses = addressService.getByUserId(userId);
         return ResponseEntity.ok(addresses);
     }
 
     @GetMapping("/user/{userId}/active")
-    @PreAuthorize("hasRole('OWNER') or hasRole('USER')")
-    public ResponseEntity<List<AddressDTO>> getActiveByUserId(
-            @PathVariable Long userId,
-            @AuthenticationPrincipal User user) {
+    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and #userId == authentication.principal.id)")
+    public ResponseEntity<List<AddressDTO>> getActiveByUserId(@PathVariable Long userId) {
         List<AddressDTO> addresses = addressService.getActiveByUserId(userId);
         return ResponseEntity.ok(addresses);
     }

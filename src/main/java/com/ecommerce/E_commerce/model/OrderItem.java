@@ -17,6 +17,7 @@ import java.time.Instant;
 @Table(name = "order_items")
 public class OrderItem {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @ColumnDefault("nextval('order_items_id_seq'::regclass)")
     @Column(name = "id", nullable = false)
     private Long id;
@@ -26,6 +27,12 @@ public class OrderItem {
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
+
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.RESTRICT)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
 
     @NotNull
     @Column(name = "quantity", nullable = false)
@@ -53,4 +60,17 @@ public class OrderItem {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = false;
 
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
+        if (this.isActive == null) {
+            this.isActive = true;
+        }
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = Instant.now();
+    }
 }
