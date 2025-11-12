@@ -2,6 +2,7 @@ package com.ecommerce.E_commerce.service;
 
 import com.ecommerce.E_commerce.dto.product.ProductCreateDTO;
 import com.ecommerce.E_commerce.dto.product.ProductDTO;
+import com.ecommerce.E_commerce.dto.product.ProductSummaryDTO;
 import com.ecommerce.E_commerce.dto.product.ProductUpdateDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,23 +28,23 @@ public interface ProductService {
     ProductDTO getBySku(String sku);
     
     // Paginated Product Lists
-    Page<ProductDTO> findAll(Pageable pageable);
-    Page<ProductDTO> findByCategory(Long categoryId, Pageable pageable);
-    Page<ProductDTO> findByCategorySlug(String categorySlug, Pageable pageable);
-    Page<ProductDTO> findByPriceRange(BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
-    Page<ProductDTO> findByFeatured(Boolean isFeatured, Pageable pageable);
+    Page<ProductSummaryDTO> findAll(Pageable pageable);
+    Page<ProductSummaryDTO> findByCategory(Long categoryId, Pageable pageable);
+    Page<ProductSummaryDTO> findByCategorySlug(String categorySlug, Pageable pageable);
+    Page<ProductSummaryDTO> findByPriceRange(BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
+    Page<ProductSummaryDTO> findByFeatured(Boolean isFeatured, Pageable pageable);
     // Only owner can access inactive products
     @PreAuthorize("hasRole('OWNER') or #isActive == true")
-    Page<ProductDTO> findByActive(Boolean isActive, Pageable pageable);
+    Page<ProductSummaryDTO> findByActive(Boolean isActive, Pageable pageable);
     
     // Search and Filter
-    Page<ProductDTO> searchByName(String name, Pageable pageable);
-    Page<ProductDTO> searchByDescription(String description, Pageable pageable);
-    Page<ProductDTO> findByCategoryAndPriceRange(Long categoryId, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
+    Page<ProductSummaryDTO> searchByName(String name, Pageable pageable);
+    Page<ProductSummaryDTO> searchByDescription(String description, Pageable pageable);
+    Page<ProductSummaryDTO> findByCategoryAndPriceRange(Long categoryId, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
     
     // Advanced Filtering
-    Page<ProductDTO> findByCategoryAndFeatured(Long categoryId, Boolean isFeatured, Pageable pageable);
-    Page<ProductDTO> findByPriceRangeAndFeatured(BigDecimal minPrice, BigDecimal maxPrice, Boolean isFeatured, Pageable pageable);
+    Page<ProductSummaryDTO> findByCategoryAndFeatured(Long categoryId, Boolean isFeatured, Pageable pageable);
+    Page<ProductSummaryDTO> findByPriceRangeAndFeatured(BigDecimal minPrice, BigDecimal maxPrice, Boolean isFeatured, Pageable pageable);
     
     // Statistics
     long countByCategory(Long categoryId);
@@ -51,17 +52,17 @@ public interface ProductService {
     long countByActive(Boolean isActive);
     
     // Overloads that encapsulate Sort/Pageable creation
-    Page<ProductDTO> findAll(int page, int size, String sortBy, String sortDir);
-    Page<ProductDTO> findByCategory(Long categoryId, int page, int size, String sortBy, String sortDir);
-    Page<ProductDTO> findByCategorySlug(String categorySlug, int page, int size, String sortBy, String sortDir);
-    Page<ProductDTO> findByPriceRange(BigDecimal minPrice, BigDecimal maxPrice, int page, int size, String sortBy, String sortDir);
-    Page<ProductDTO> findByFeatured(Boolean isFeatured, int page, int size, String sortBy, String sortDir);
+    Page<ProductSummaryDTO> findAll(int page, int size, String sortBy, String sortDir);
+    Page<ProductSummaryDTO> findByCategory(Long categoryId, int page, int size, String sortBy, String sortDir);
+    Page<ProductSummaryDTO> findByCategorySlug(String categorySlug, int page, int size, String sortBy, String sortDir);
+    Page<ProductSummaryDTO> findByPriceRange(BigDecimal minPrice, BigDecimal maxPrice, int page, int size, String sortBy, String sortDir);
+    Page<ProductSummaryDTO> findByFeatured(Boolean isFeatured, int page, int size, String sortBy, String sortDir);
     @PreAuthorize("hasRole('OWNER') or #isActive == true")
-    Page<ProductDTO> findByActive(Boolean isActive, int page, int size, String sortBy, String sortDir);
-    Page<ProductDTO> searchByName(String name, int page, int size, String sortBy, String sortDir);
-    Page<ProductDTO> searchByDescription(String description, int page, int size, String sortBy, String sortDir);
-    Page<ProductDTO> findByCategoryAndPriceRange(Long categoryId, BigDecimal minPrice, BigDecimal maxPrice, int page, int size, String sortBy, String sortDir);
-    Page<ProductDTO> findByCategoryAndFeatured(Long categoryId, Boolean isFeatured, int page, int size, String sortBy, String sortDir);
-    Page<ProductDTO> findByPriceRangeAndFeatured(BigDecimal minPrice, BigDecimal maxPrice, Boolean isFeatured, int page, int size, String sortBy, String sortDir);
+    Page<ProductSummaryDTO> findByActive(Boolean isActive, int page, int size, String sortBy, String sortDir);
+    Page<ProductSummaryDTO> searchByName(String name, int page, int size, String sortBy, String sortDir);
+    Page<ProductSummaryDTO> searchByDescription(String description, int page, int size, String sortBy, String sortDir);
+    Page<ProductSummaryDTO> findByCategoryAndPriceRange(Long categoryId, BigDecimal minPrice, BigDecimal maxPrice, int page, int size, String sortBy, String sortDir);
+    Page<ProductSummaryDTO> findByCategoryAndFeatured(Long categoryId, Boolean isFeatured, int page, int size, String sortBy, String sortDir);
+    Page<ProductSummaryDTO> findByPriceRangeAndFeatured(BigDecimal minPrice, BigDecimal maxPrice, Boolean isFeatured, int page, int size, String sortBy, String sortDir);
     
 }

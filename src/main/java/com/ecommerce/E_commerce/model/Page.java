@@ -32,5 +32,4 @@ public class Page {
 
     @Column(name = "content", length = Integer.MAX_VALUE)
     private String content;
-
 }

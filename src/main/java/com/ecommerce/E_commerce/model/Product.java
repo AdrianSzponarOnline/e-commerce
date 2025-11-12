@@ -18,6 +18,24 @@ import java.util.List;
 @Table(name = "products", uniqueConstraints = {
         @UniqueConstraint(columnNames = "sku")
 })
+@NamedEntityGraph(
+        name = "Product.withDetails",
+        attributeNodes = {
+                @NamedAttributeNode("category"),
+                @NamedAttributeNode(
+                        value = "attributeValues",
+                        subgraph = "graph.ProductAttributeValue.withCategoryAttribute"
+                )
+        },
+        subgraphs = {
+                @NamedSubgraph(
+                        name = "graph.ProductAttributeValue.withCategoryAttribute",
+                        attributeNodes = {
+                                @NamedAttributeNode("categoryAttribute")
+                        }
+                )
+        }
+)
 public class Product {
     @Id
     @ColumnDefault("nextval('products_id_seq'::regclass)")

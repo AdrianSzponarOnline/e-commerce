@@ -27,6 +27,43 @@ API produktów zapewnia pełną funkcjonalność CRUD oraz zaawansowane wyszukiw
 - ✅ Operacje bulk dla atrybutów produktów
 - ✅ Statystyki i analityka
 - ✅ Bezpieczeństwo na poziomie metody
+- ✅ Optymalizacja odpowiedzi - uproszczone DTO dla list produktów
+
+## Typy DTO
+
+API używa dwóch typów DTO w zależności od kontekstu:
+
+### ProductDTO
+Pełny obiekt produktu używany dla:
+- Pojedynczych produktów (`GET /api/products/{id}`, `/slug/{seoSlug}`, `/sku/{sku}`)
+- Operacji CRUD (tworzenie, aktualizacja)
+
+**Zawiera wszystkie pola produktu:**
+- Podstawowe informacje (id, name, description, shortDescription, price, sku, vatRate)
+- Metadane (isFeatured, shippingCost, estimatedDeliveryTime, thumbnailUrl, seoSlug)
+- Powiązane obiekty (category, attributeValues)
+- Timestamps (createdAt, updatedAt)
+
+### ProductSummaryDTO
+Uproszczony obiekt produktu używany dla:
+- List produktów z paginacją
+- Wyszukiwania i filtrowania
+- Wszystkich endpointów zwracających `Page<ProductSummaryDTO>`
+
+**Zawiera tylko podstawowe pola:**
+- `id` - ID produktu
+- `name` - Nazwa produktu
+- `price` - Cena
+- `shortDescription` - Krótki opis
+- `thumbnailUrl` - URL miniaturki
+- `seoSlug` - SEO slug
+- `categoryName` - Nazwa kategorii (string zamiast pełnego obiektu CategoryDTO)
+
+**Korzyści:**
+- Mniejsze rozmiary odpowiedzi
+- Szybsze przesyłanie danych
+- Lepsza wydajność dla list produktów
+- Wystarczające informacje do wyświetlenia listy/karty produktu
 
 ## Dostępne Metody
 
@@ -235,7 +272,11 @@ API produktów zapewnia pełną funkcjonalność CRUD oraz zaawansowane wyszukiw
     {
       "id": 1,
       "name": "Laptop Gaming",
-      // ... pełny obiekt ProductDTO
+      "price": 2999.99,
+      "shortDescription": "Wysokiej klasy laptop do gier",
+      "thumbnailUrl": "https://example.com/image.jpg",
+      "seoSlug": "laptop-gaming",
+      "categoryName": "Elektronika"
     }
   ],
   "pageable": {
@@ -253,6 +294,8 @@ API produktów zapewnia pełną funkcjonalność CRUD oraz zaawansowane wyszukiw
   "numberOfElements": 10
 }
 ```
+
+**Uwaga:** Listy produktów zwracają `ProductSummaryDTO` zamiast pełnego `ProductDTO` dla lepszej wydajności.
 
 **Status codes:**
 - `200 OK` - Lista produktów
@@ -297,7 +340,17 @@ API produktów zapewnia pełną funkcjonalność CRUD oraz zaawansowane wyszukiw
 **Zwracany wynik:**
 ```json
 {
-  "content": [ /* Lista produktów z kategorii */ ],
+  "content": [
+    {
+      "id": 1,
+      "name": "Laptop Gaming",
+      "price": 2999.99,
+      "shortDescription": "Wysokiej klasy laptop do gier",
+      "thumbnailUrl": "https://example.com/image.jpg",
+      "seoSlug": "laptop-gaming",
+      "categoryName": "Elektronika"
+    }
+  ],
   "pageable": { /* Informacje o paginacji */ },
   "totalElements": 25,
   "totalPages": 3
@@ -306,6 +359,8 @@ API produktów zapewnia pełną funkcjonalność CRUD oraz zaawansowane wyszukiw
 
 **Status codes:**
 - `200 OK` - Lista produktów z kategorii
+
+**Uwaga:** Zwraca `ProductSummaryDTO` - uproszczony obiekt produktu.
 
 ---
 
@@ -323,12 +378,24 @@ API produktów zapewnia pełną funkcjonalność CRUD oraz zaawansowane wyszukiw
 **Zwracany wynik:**
 ```json
 {
-  "content": [ /* Lista produktów w zakresie cen */ ],
+  "content": [
+    {
+      "id": 1,
+      "name": "Laptop Gaming",
+      "price": 2999.99,
+      "shortDescription": "Wysokiej klasy laptop do gier",
+      "thumbnailUrl": "https://example.com/image.jpg",
+      "seoSlug": "laptop-gaming",
+      "categoryName": "Elektronika"
+    }
+  ],
   "pageable": { /* Informacje o paginacji */ },
   "totalElements": 50,
   "totalPages": 5
 }
 ```
+
+**Uwaga:** Zwraca `ProductSummaryDTO` - uproszczony obiekt produktu.
 
 **Status codes:**
 - `200 OK` - Lista produktów w zakresie cen
@@ -348,12 +415,24 @@ API produktów zapewnia pełną funkcjonalność CRUD oraz zaawansowane wyszukiw
 **Zwracany wynik:**
 ```json
 {
-  "content": [ /* Lista produktów wyróżnionych */ ],
+  "content": [
+    {
+      "id": 1,
+      "name": "Laptop Gaming",
+      "price": 2999.99,
+      "shortDescription": "Wysokiej klasy laptop do gier",
+      "thumbnailUrl": "https://example.com/image.jpg",
+      "seoSlug": "laptop-gaming",
+      "categoryName": "Elektronika"
+    }
+  ],
   "pageable": { /* Informacje o paginacji */ },
   "totalElements": 15,
   "totalPages": 2
 }
 ```
+
+**Uwaga:** Zwraca `ProductSummaryDTO` - uproszczony obiekt produktu.
 
 **Status codes:**
 - `200 OK` - Lista produktów wyróżnionych
@@ -376,12 +455,24 @@ API produktów zapewnia pełną funkcjonalność CRUD oraz zaawansowane wyszukiw
 **Zwracany wynik:**
 ```json
 {
-  "content": [ /* Lista produktów aktywnych/nieaktywnych */ ],
+  "content": [
+    {
+      "id": 1,
+      "name": "Laptop Gaming",
+      "price": 2999.99,
+      "shortDescription": "Wysokiej klasy laptop do gier",
+      "thumbnailUrl": "https://example.com/image.jpg",
+      "seoSlug": "laptop-gaming",
+      "categoryName": "Elektronika"
+    }
+  ],
   "pageable": { /* Informacje o paginacji */ },
   "totalElements": 80,
   "totalPages": 8
 }
 ```
+
+**Uwaga:** Zwraca `ProductSummaryDTO` - uproszczony obiekt produktu.
 
 **Status codes:**
 - `200 OK` - Lista produktów aktywnych/nieaktywnych
@@ -405,12 +496,24 @@ API produktów zapewnia pełną funkcjonalność CRUD oraz zaawansowane wyszukiw
 **Zwracany wynik:**
 ```json
 {
-  "content": [ /* Lista produktów zawierających nazwę */ ],
+  "content": [
+    {
+      "id": 1,
+      "name": "Laptop Gaming",
+      "price": 2999.99,
+      "shortDescription": "Wysokiej klasy laptop do gier",
+      "thumbnailUrl": "https://example.com/image.jpg",
+      "seoSlug": "laptop-gaming",
+      "categoryName": "Elektronika"
+    }
+  ],
   "pageable": { /* Informacje o paginacji */ },
   "totalElements": 5,
   "totalPages": 1
 }
 ```
+
+**Uwaga:** Zwraca `ProductSummaryDTO` - uproszczony obiekt produktu.
 
 **Status codes:**
 - `200 OK` - Lista znalezionych produktów
@@ -430,12 +533,24 @@ API produktów zapewnia pełną funkcjonalność CRUD oraz zaawansowane wyszukiw
 **Zwracany wynik:**
 ```json
 {
-  "content": [ /* Lista produktów zawierających opis */ ],
+  "content": [
+    {
+      "id": 1,
+      "name": "Laptop Gaming",
+      "price": 2999.99,
+      "shortDescription": "Wysokiej klasy laptop do gier",
+      "thumbnailUrl": "https://example.com/image.jpg",
+      "seoSlug": "laptop-gaming",
+      "categoryName": "Elektronika"
+    }
+  ],
   "pageable": { /* Informacje o paginacji */ },
   "totalElements": 8,
   "totalPages": 1
 }
 ```
+
+**Uwaga:** Zwraca `ProductSummaryDTO` - uproszczony obiekt produktu.
 
 **Status codes:**
 - `200 OK` - Lista znalezionych produktów
@@ -457,12 +572,24 @@ API produktów zapewnia pełną funkcjonalność CRUD oraz zaawansowane wyszukiw
 **Zwracany wynik:**
 ```json
 {
-  "content": [ /* Lista produktów z kategorii w zakresie cen */ ],
+  "content": [
+    {
+      "id": 1,
+      "name": "Laptop Gaming",
+      "price": 2999.99,
+      "shortDescription": "Wysokiej klasy laptop do gier",
+      "thumbnailUrl": "https://example.com/image.jpg",
+      "seoSlug": "laptop-gaming",
+      "categoryName": "Elektronika"
+    }
+  ],
   "pageable": { /* Informacje o paginacji */ },
   "totalElements": 12,
   "totalPages": 2
 }
 ```
+
+**Uwaga:** Zwraca `ProductSummaryDTO` - uproszczony obiekt produktu.
 
 **Status codes:**
 - `200 OK` - Lista produktów z kategorii w zakresie cen
@@ -485,12 +612,24 @@ API produktów zapewnia pełną funkcjonalność CRUD oraz zaawansowane wyszukiw
 **Zwracany wynik:**
 ```json
 {
-  "content": [ /* Lista produktów wyróżnionych z kategorii */ ],
+  "content": [
+    {
+      "id": 1,
+      "name": "Laptop Gaming",
+      "price": 2999.99,
+      "shortDescription": "Wysokiej klasy laptop do gier",
+      "thumbnailUrl": "https://example.com/image.jpg",
+      "seoSlug": "laptop-gaming",
+      "categoryName": "Elektronika"
+    }
+  ],
   "pageable": { /* Informacje o paginacji */ },
   "totalElements": 3,
   "totalPages": 1
 }
 ```
+
+**Uwaga:** Zwraca `ProductSummaryDTO` - uproszczony obiekt produktu.
 
 **Status codes:**
 - `200 OK` - Lista produktów wyróżnionych z kategorii
@@ -512,12 +651,24 @@ API produktów zapewnia pełną funkcjonalność CRUD oraz zaawansowane wyszukiw
 **Zwracany wynik:**
 ```json
 {
-  "content": [ /* Lista produktów wyróżnionych w zakresie cen */ ],
+  "content": [
+    {
+      "id": 1,
+      "name": "Laptop Gaming",
+      "price": 2999.99,
+      "shortDescription": "Wysokiej klasy laptop do gier",
+      "thumbnailUrl": "https://example.com/image.jpg",
+      "seoSlug": "laptop-gaming",
+      "categoryName": "Elektronika"
+    }
+  ],
   "pageable": { /* Informacje o paginacji */ },
   "totalElements": 7,
   "totalPages": 1
 }
 ```
+
+**Uwaga:** Zwraca `ProductSummaryDTO` - uproszczony obiekt produktu.
 
 **Status codes:**
 - `200 OK` - Lista produktów wyróżnionych w zakresie cen

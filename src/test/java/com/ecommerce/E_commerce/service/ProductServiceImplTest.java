@@ -3,6 +3,7 @@ package com.ecommerce.E_commerce.service;
 import com.ecommerce.E_commerce.dto.category.CategoryDTO;
 import com.ecommerce.E_commerce.dto.product.ProductCreateDTO;
 import com.ecommerce.E_commerce.dto.product.ProductDTO;
+import com.ecommerce.E_commerce.dto.product.ProductSummaryDTO;
 import com.ecommerce.E_commerce.dto.product.ProductUpdateDTO;
 import com.ecommerce.E_commerce.exception.ResourceNotFoundException;
 import com.ecommerce.E_commerce.mapper.ProductMapper;
@@ -52,6 +53,7 @@ class ProductServiceImplTest {
     private ProductCreateDTO testCreateDTO;
     private ProductUpdateDTO testUpdateDTO;
     private ProductDTO testProductDTO;
+    private ProductSummaryDTO testProductSummaryDTO;
 
     @BeforeEach
     void setUp() {
@@ -147,6 +149,16 @@ class ProductServiceImplTest {
                 new ArrayList<>(),
                 Instant.now(),
                 Instant.now()
+        );
+        
+        testProductSummaryDTO = new ProductSummaryDTO(
+                1L,
+                "Test Laptop",
+                new BigDecimal("999.99"),
+                "Test laptop",
+                "https://example.com/laptop.jpg",
+                "test-laptop",
+                "Electronics"
         );
     }
 
@@ -361,17 +373,17 @@ class ProductServiceImplTest {
         Page<Product> productPage = new PageImpl<>(Arrays.asList(testProduct));
 
         when(productRepository.findAll(pageable)).thenReturn(productPage);
-        when(productMapper.toProductDTO(testProduct)).thenReturn(testProductDTO);
+        when(productMapper.toProductSummaryDTO(testProduct)).thenReturn(testProductSummaryDTO);
 
         // When
-        Page<ProductDTO> result = productService.findAll(pageable);
+        Page<ProductSummaryDTO> result = productService.findAll(pageable);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        assertEquals(testProductDTO, result.getContent().get(0));
+        assertEquals(testProductSummaryDTO, result.getContent().get(0));
         verify(productRepository).findAll(pageable);
-        verify(productMapper).toProductDTO(testProduct);
+        verify(productMapper).toProductSummaryDTO(testProduct);
     }
 
     @Test
@@ -381,17 +393,17 @@ class ProductServiceImplTest {
         Page<Product> productPage = new PageImpl<>(Arrays.asList(testProduct));
 
         when(productRepository.findByCategoryId(1L, pageable)).thenReturn(productPage);
-        when(productMapper.toProductDTO(testProduct)).thenReturn(testProductDTO);
+        when(productMapper.toProductSummaryDTO(testProduct)).thenReturn(testProductSummaryDTO);
 
         // When
-        Page<ProductDTO> result = productService.findByCategory(1L, pageable);
+        Page<ProductSummaryDTO> result = productService.findByCategory(1L, pageable);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        assertEquals(testProductDTO, result.getContent().get(0));
+        assertEquals(testProductSummaryDTO, result.getContent().get(0));
         verify(productRepository).findByCategoryId(1L, pageable);
-        verify(productMapper).toProductDTO(testProduct);
+        verify(productMapper).toProductSummaryDTO(testProduct);
     }
 
     @Test
@@ -401,17 +413,17 @@ class ProductServiceImplTest {
         Page<Product> productPage = new PageImpl<>(Arrays.asList(testProduct));
 
         when(productRepository.findByCategorySeoSlug("electronics", pageable)).thenReturn(productPage);
-        when(productMapper.toProductDTO(testProduct)).thenReturn(testProductDTO);
+        when(productMapper.toProductSummaryDTO(testProduct)).thenReturn(testProductSummaryDTO);
 
         // When
-        Page<ProductDTO> result = productService.findByCategorySlug("electronics", pageable);
+        Page<ProductSummaryDTO> result = productService.findByCategorySlug("electronics", pageable);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        assertEquals(testProductDTO, result.getContent().get(0));
+        assertEquals(testProductSummaryDTO, result.getContent().get(0));
         verify(productRepository).findByCategorySeoSlug("electronics", pageable);
-        verify(productMapper).toProductDTO(testProduct);
+        verify(productMapper).toProductSummaryDTO(testProduct);
     }
 
     @Test
@@ -423,17 +435,17 @@ class ProductServiceImplTest {
         Page<Product> productPage = new PageImpl<>(Arrays.asList(testProduct));
 
         when(productRepository.findByPriceBetween(minPrice, maxPrice, pageable)).thenReturn(productPage);
-        when(productMapper.toProductDTO(testProduct)).thenReturn(testProductDTO);
+        when(productMapper.toProductSummaryDTO(testProduct)).thenReturn(testProductSummaryDTO);
 
         // When
-        Page<ProductDTO> result = productService.findByPriceRange(minPrice, maxPrice, pageable);
+        Page<ProductSummaryDTO> result = productService.findByPriceRange(minPrice, maxPrice, pageable);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        assertEquals(testProductDTO, result.getContent().get(0));
+        assertEquals(testProductSummaryDTO, result.getContent().get(0));
         verify(productRepository).findByPriceBetween(minPrice, maxPrice, pageable);
-        verify(productMapper).toProductDTO(testProduct);
+        verify(productMapper).toProductSummaryDTO(testProduct);
     }
 
     @Test
@@ -443,17 +455,17 @@ class ProductServiceImplTest {
         Page<Product> productPage = new PageImpl<>(Arrays.asList(testProduct));
 
         when(productRepository.findByIsFeatured(true, pageable)).thenReturn(productPage);
-        when(productMapper.toProductDTO(testProduct)).thenReturn(testProductDTO);
+        when(productMapper.toProductSummaryDTO(testProduct)).thenReturn(testProductSummaryDTO);
 
         // When
-        Page<ProductDTO> result = productService.findByFeatured(true, pageable);
+        Page<ProductSummaryDTO> result = productService.findByFeatured(true, pageable);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        assertEquals(testProductDTO, result.getContent().get(0));
+        assertEquals(testProductSummaryDTO, result.getContent().get(0));
         verify(productRepository).findByIsFeatured(true, pageable);
-        verify(productMapper).toProductDTO(testProduct);
+        verify(productMapper).toProductSummaryDTO(testProduct);
     }
 
     @Test
@@ -463,17 +475,17 @@ class ProductServiceImplTest {
         Page<Product> productPage = new PageImpl<>(Arrays.asList(testProduct));
 
         when(productRepository.findByIsActive(true, pageable)).thenReturn(productPage);
-        when(productMapper.toProductDTO(testProduct)).thenReturn(testProductDTO);
+        when(productMapper.toProductSummaryDTO(testProduct)).thenReturn(testProductSummaryDTO);
 
         // When
-        Page<ProductDTO> result = productService.findByActive(true, pageable);
+        Page<ProductSummaryDTO> result = productService.findByActive(true, pageable);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        assertEquals(testProductDTO, result.getContent().get(0));
+        assertEquals(testProductSummaryDTO, result.getContent().get(0));
         verify(productRepository).findByIsActive(true, pageable);
-        verify(productMapper).toProductDTO(testProduct);
+        verify(productMapper).toProductSummaryDTO(testProduct);
     }
 
     // Search and Filter Tests
@@ -486,17 +498,17 @@ class ProductServiceImplTest {
         Page<Product> productPage = new PageImpl<>(Arrays.asList(testProduct));
 
         when(productRepository.findByNameContainingIgnoreCase(searchTerm, pageable)).thenReturn(productPage);
-        when(productMapper.toProductDTO(testProduct)).thenReturn(testProductDTO);
+        when(productMapper.toProductSummaryDTO(testProduct)).thenReturn(testProductSummaryDTO);
 
         // When
-        Page<ProductDTO> result = productService.searchByName(searchTerm, pageable);
+        Page<ProductSummaryDTO> result = productService.searchByName(searchTerm, pageable);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        assertEquals(testProductDTO, result.getContent().get(0));
+        assertEquals(testProductSummaryDTO, result.getContent().get(0));
         verify(productRepository).findByNameContainingIgnoreCase(searchTerm, pageable);
-        verify(productMapper).toProductDTO(testProduct);
+        verify(productMapper).toProductSummaryDTO(testProduct);
     }
 
     @Test
@@ -507,17 +519,17 @@ class ProductServiceImplTest {
         Page<Product> productPage = new PageImpl<>(Arrays.asList(testProduct));
 
         when(productRepository.findByDescriptionContainingIgnoreCase(searchTerm, pageable)).thenReturn(productPage);
-        when(productMapper.toProductDTO(testProduct)).thenReturn(testProductDTO);
+        when(productMapper.toProductSummaryDTO(testProduct)).thenReturn(testProductSummaryDTO);
 
         // When
-        Page<ProductDTO> result = productService.searchByDescription(searchTerm, pageable);
+        Page<ProductSummaryDTO> result = productService.searchByDescription(searchTerm, pageable);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        assertEquals(testProductDTO, result.getContent().get(0));
+        assertEquals(testProductSummaryDTO, result.getContent().get(0));
         verify(productRepository).findByDescriptionContainingIgnoreCase(searchTerm, pageable);
-        verify(productMapper).toProductDTO(testProduct);
+        verify(productMapper).toProductSummaryDTO(testProduct);
     }
 
     @Test
@@ -530,17 +542,17 @@ class ProductServiceImplTest {
         Page<Product> productPage = new PageImpl<>(Arrays.asList(testProduct));
 
         when(productRepository.findByCategoryIdAndPriceBetween(categoryId, minPrice, maxPrice, pageable)).thenReturn(productPage);
-        when(productMapper.toProductDTO(testProduct)).thenReturn(testProductDTO);
+        when(productMapper.toProductSummaryDTO(testProduct)).thenReturn(testProductSummaryDTO);
 
         // When
-        Page<ProductDTO> result = productService.findByCategoryAndPriceRange(categoryId, minPrice, maxPrice, pageable);
+        Page<ProductSummaryDTO> result = productService.findByCategoryAndPriceRange(categoryId, minPrice, maxPrice, pageable);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        assertEquals(testProductDTO, result.getContent().get(0));
+        assertEquals(testProductSummaryDTO, result.getContent().get(0));
         verify(productRepository).findByCategoryIdAndPriceBetween(categoryId, minPrice, maxPrice, pageable);
-        verify(productMapper).toProductDTO(testProduct);
+        verify(productMapper).toProductSummaryDTO(testProduct);
     }
 
     // Advanced Filtering Tests
@@ -553,17 +565,17 @@ class ProductServiceImplTest {
         Page<Product> productPage = new PageImpl<>(Arrays.asList(testProduct));
 
         when(productRepository.findByCategoryIdAndIsFeatured(categoryId, true, pageable)).thenReturn(productPage);
-        when(productMapper.toProductDTO(testProduct)).thenReturn(testProductDTO);
+        when(productMapper.toProductSummaryDTO(testProduct)).thenReturn(testProductSummaryDTO);
 
         // When
-        Page<ProductDTO> result = productService.findByCategoryAndFeatured(categoryId, true, pageable);
+        Page<ProductSummaryDTO> result = productService.findByCategoryAndFeatured(categoryId, true, pageable);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        assertEquals(testProductDTO, result.getContent().get(0));
+        assertEquals(testProductSummaryDTO, result.getContent().get(0));
         verify(productRepository).findByCategoryIdAndIsFeatured(categoryId, true, pageable);
-        verify(productMapper).toProductDTO(testProduct);
+        verify(productMapper).toProductSummaryDTO(testProduct);
     }
 
     @Test
@@ -575,17 +587,17 @@ class ProductServiceImplTest {
         Page<Product> productPage = new PageImpl<>(Arrays.asList(testProduct));
 
         when(productRepository.findByPriceBetweenAndIsFeatured(minPrice, maxPrice, true, pageable)).thenReturn(productPage);
-        when(productMapper.toProductDTO(testProduct)).thenReturn(testProductDTO);
+        when(productMapper.toProductSummaryDTO(testProduct)).thenReturn(testProductSummaryDTO);
 
         // When
-        Page<ProductDTO> result = productService.findByPriceRangeAndFeatured(minPrice, maxPrice, true, pageable);
+        Page<ProductSummaryDTO> result = productService.findByPriceRangeAndFeatured(minPrice, maxPrice, true, pageable);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        assertEquals(testProductDTO, result.getContent().get(0));
+        assertEquals(testProductSummaryDTO, result.getContent().get(0));
         verify(productRepository).findByPriceBetweenAndIsFeatured(minPrice, maxPrice, true, pageable);
-        verify(productMapper).toProductDTO(testProduct);
+        verify(productMapper).toProductSummaryDTO(testProduct);
     }
 
     // Statistics Tests
@@ -703,7 +715,7 @@ class ProductServiceImplTest {
         when(productRepository.findAll(pageable)).thenReturn(emptyPage);
 
         // When
-        Page<ProductDTO> result = productService.findAll(pageable);
+        Page<ProductSummaryDTO> result = productService.findAll(pageable);
 
         // Then
         assertNotNull(result);

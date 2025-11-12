@@ -2,6 +2,7 @@ package com.ecommerce.E_commerce.mapper;
 
 import com.ecommerce.E_commerce.dto.product.ProductCreateDTO;
 import com.ecommerce.E_commerce.dto.product.ProductDTO;
+import com.ecommerce.E_commerce.dto.product.ProductSummaryDTO;
 import com.ecommerce.E_commerce.dto.product.ProductUpdateDTO;
 import com.ecommerce.E_commerce.model.Product;
 import org.mapstruct.Mapper;
@@ -17,7 +18,9 @@ public interface ProductMapper {
     @Mapping(target = "category", source = "category")
     @Mapping(target = "attributeValues", source = "attributeValues")
     ProductDTO toProductDTO(Product product);
-    
+
+    @Mapping(source = "category.name", target = "categoryName")
+    ProductSummaryDTO toProductSummaryDTO(Product product);
     
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "sku", ignore = true)
