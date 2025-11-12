@@ -1,7 +1,6 @@
 package com.ecommerce.E_commerce.mapper;
 
 import com.ecommerce.E_commerce.dto.category.CategoryDTO;
-import com.ecommerce.E_commerce.dto.category.ChildCategoryDTO;
 import com.ecommerce.E_commerce.model.Category;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
@@ -16,7 +15,7 @@ public class CategoryMapperTest {
     private final CategoryMapper mapper = Mappers.getMapper(CategoryMapper.class);
 
     @Test
-    void toCategoryDTO_mapsParentAndChildren() {
+    void toCategoryDTOWithTree_mapsParentAndChildren() {
         Category parent = new Category();
         parent.setId(1L);
 
@@ -41,7 +40,7 @@ public class CategoryMapperTest {
         category.setParent(parent);
         category.setChildren(Set.of(child1, child2));
 
-        CategoryDTO dto = mapper.toCategoryDTO(category);
+        CategoryDTO dto = mapper.toCategoryDTOWithTree(category);
 
         assertNotNull(dto);
         assertEquals(2L, dto.id());
@@ -51,6 +50,32 @@ public class CategoryMapperTest {
         assertEquals(2, dto.children().size());
         assertTrue(dto.children().stream().map(CategoryDTO::name).anyMatch(n -> n.equals("child-one")));
         assertTrue(dto.children().stream().map(CategoryDTO::seoSlug).anyMatch(s -> s.equals("child-two")));
+    }
+
+    @Test
+    void toCategoryDTOFlat_mapsWithoutChildren() {
+        Category parent = new Category();
+        parent.setId(1L);
+
+        Category category = new Category();
+        category.setId(2L);
+        category.setName("electronics");
+        category.setSeoSlug("electronics");
+        category.setDescription("desc");
+        category.setIsActive(true);
+        category.setCreatedAt(Instant.now());
+        category.setUpdatedAt(Instant.now());
+        category.setParent(parent);
+        category.setChildren(Set.of());
+
+        CategoryDTO dto = mapper.toCategoryDTOFlat(category);
+
+        assertNotNull(dto);
+        assertEquals(2L, dto.id());
+        assertEquals("electronics", dto.name());
+        assertEquals(1L, dto.parentId());
+        assertNotNull(dto.children());
+        assertEquals(0, dto.children().size()); 
     }
 }
 

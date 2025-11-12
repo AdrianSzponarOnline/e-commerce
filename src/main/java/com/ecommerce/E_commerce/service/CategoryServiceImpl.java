@@ -3,6 +3,7 @@ package com.ecommerce.E_commerce.service;
 import com.ecommerce.E_commerce.dto.category.CategoryCreateDTO;
 import com.ecommerce.E_commerce.dto.category.CategoryDTO;
 import com.ecommerce.E_commerce.dto.category.CategoryUpdateDTO;
+import com.ecommerce.E_commerce.exception.InvalidOperationException;
 import com.ecommerce.E_commerce.exception.ResourceNotFoundException;
 import com.ecommerce.E_commerce.exception.SeoSlugAlreadyExistsException;
 import com.ecommerce.E_commerce.mapper.CategoryMapper;
@@ -42,7 +43,7 @@ public class CategoryServiceImpl implements CategoryService {
             category.setParent(parent);
         }
         Category saved = categoryRepository.save(category);
-        return categoryMapper.toCategoryDTO(saved);
+        return categoryMapper.toCategoryDTOFlat(saved);
     }
 
     @Override
@@ -66,35 +67,39 @@ public class CategoryServiceImpl implements CategoryService {
             category.setParent(null);
         }
         Category saved = categoryRepository.save(category);
-        return categoryMapper.toCategoryDTO(saved);
+        return categoryMapper.toCategoryDTOFlat(saved);
     }
 
     @Override
     public CategoryDTO getById(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
-        return categoryMapper.toCategoryDTO(category);
+        return categoryMapper.toCategoryDTOFlat(category);
     }
 
     @Override
     public CategoryDTO getBySeoSlug(String seoSlug) {
         Category category = categoryRepository.findBySeoSlug(seoSlug)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found by seoSlug: " + seoSlug));
-        return categoryMapper.toCategoryDTO(category);
+        return categoryMapper.toCategoryDTOFlat(category);
     }
 
     @Override
     public List<CategoryDTO> listAll() {
-        List<CategoryDTO> flat = categoryRepository.findAll().stream()
-                .map(categoryMapper::toCategoryDTO)
+        List<Category> allCategories = categoryRepository.findAll();
+
+        List<CategoryDTO> flat = allCategories.stream()
+                .map(categoryMapper::toCategoryDTOFlat)
                 .toList();
+
         return buildTree(flat);
     }
 
     @Override
     public List<CategoryDTO> listActive() {
-        List<CategoryDTO> flat = categoryRepository.findAllByIsActiveTrue().stream()
-                .map(categoryMapper::toCategoryDTO)
+        List<Category> activeCategories = categoryRepository.findAllByIsActiveTrue();
+        List<CategoryDTO> flat = activeCategories.stream()
+                .map(categoryMapper::toCategoryDTOFlat)
                 .toList();
         return buildTree(flat);
     }
@@ -102,7 +107,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public List<CategoryDTO> listByParent(Long parentId) {
         List<CategoryDTO> flat = categoryRepository.findAllByParent_Id(parentId).stream()
-                .map(categoryMapper::toCategoryDTO)
+                .map(categoryMapper::toCategoryDTOFlat)
                 .toList();
         return buildTree(flat);
     }
@@ -121,7 +126,7 @@ public class CategoryServiceImpl implements CategoryService {
         Category cursor = potentialParent;
         while (cursor != null) {
             if (cursor.getId() != null && cursor.getId().equals(category.getId())) {
-                throw new com.ecommerce.E_commerce.exception.InvalidOperationException("Setting this parent would create a circular dependency");
+                throw new InvalidOperationException("Setting this parent would create a circular dependency");
             }
             cursor = cursor.getParent();
         }

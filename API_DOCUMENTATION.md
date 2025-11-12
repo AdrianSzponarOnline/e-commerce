@@ -80,6 +80,10 @@ Kompletna dokumentacja API dla systemu e-commerce z obsługą produktów, katego
 
 ## 2. Categories API (`/api/categories`)
 
+API kategorii obsługuje hierarchiczną strukturę kategorii z relacjami rodzic-dziecko. Kategorie są zwracane w formie drzewa, gdzie każda kategoria może mieć podkategorie.
+
+**Uwaga:** Pojedyncze kategorie (GET by ID/Slug) zwracają kategorię bez drzewa dzieci (pusta lista `children`). Listy kategorii (GET all/active/byParent) zwracają pełną strukturę drzewa z zagnieżdżonymi podkategoriami.
+
 ### 2.1 Tworzenie kategorii
 **Endpoint:** `POST /api/categories`  
 **Autoryzacja:** `ROLE_OWNER`
@@ -90,7 +94,7 @@ Kompletna dokumentacja API dla systemu e-commerce z obsługą produktów, katego
   "name": "Electronics",
   "description": "Electronic devices and accessories",
   "seoSlug": "electronics",
-  "parentId": 1,
+  "parentId": null,
   "isActive": true
 }
 ```
@@ -110,6 +114,13 @@ Kompletna dokumentacja API dla systemu e-commerce z obsługą produktów, katego
 }
 ```
 
+**Status codes:**
+- `201 Created` - Kategoria została utworzona
+- `400 Bad Request` - Błędne dane wejściowe (np. duplikat seoSlug)
+- `401 Unauthorized` - Brak autoryzacji
+- `403 Forbidden` - Brak uprawnień (wymagana rola OWNER)
+- `404 Not Found` - Kategoria nadrzędna nie istnieje (jeśli podano parentId)
+
 ### 2.2 Aktualizacja kategorii
 **Endpoint:** `PUT /api/categories/{id}`  
 **Autoryzacja:** `ROLE_OWNER`
@@ -120,29 +131,209 @@ Kompletna dokumentacja API dla systemu e-commerce z obsługą produktów, katego
   "name": "Updated Electronics",
   "description": "Updated description",
   "seoSlug": "updated-electronics",
+  "parentId": null,
   "isActive": true
 }
 ```
+
+**Response:**
+```json
+{
+  "id": 1,
+  "name": "Updated Electronics",
+  "description": "Updated description",
+  "seoSlug": "updated-electronics",
+  "parentId": null,
+  "isActive": true,
+  "createdAt": "2024-01-01T10:00:00Z",
+  "updatedAt": "2024-01-01T11:00:00Z",
+  "children": []
+}
+```
+
+**Status codes:**
+- `200 OK` - Kategoria została zaktualizowana
+- `400 Bad Request` - Błędne dane wejściowe lub próba utworzenia cyklicznej zależności
+- `401 Unauthorized` - Brak autoryzacji
+- `403 Forbidden` - Brak uprawnień (wymagana rola OWNER)
+- `404 Not Found` - Kategoria nie istnieje
+
+**Uwaga:** System zapobiega tworzeniu cyklicznych zależności (kategoria nie może być swoim własnym rodzicem lub przodkiem).
 
 ### 2.3 Pobieranie kategorii po ID
 **Endpoint:** `GET /api/categories/{id}`  
 **Autoryzacja:** Public
 
-### 2.4 Lista wszystkich kategorii
+**Response:**
+```json
+{
+  "id": 1,
+  "name": "Electronics",
+  "description": "Electronic devices and accessories",
+  "seoSlug": "electronics",
+  "parentId": null,
+  "isActive": true,
+  "createdAt": "2024-01-01T10:00:00Z",
+  "updatedAt": "2024-01-01T10:00:00Z",
+  "children": []
+}
+```
+
+**Uwaga:** Pojedyncza kategoria zwracana jest bez drzewa dzieci (pusta lista `children`) dla optymalizacji.
+
+**Status codes:**
+- `200 OK` - Kategoria znaleziona
+- `404 Not Found` - Kategoria nie istnieje
+
+### 2.4 Lista wszystkich kategorii (drzewo)
 **Endpoint:** `GET /api/categories`  
 **Autoryzacja:** Public
 
-### 2.5 Lista publicznych kategorii
-**Endpoint:** `GET /api/categories/public`  
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "name": "Electronics",
+    "description": "Electronic devices",
+    "seoSlug": "electronics",
+    "parentId": null,
+    "isActive": true,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z",
+    "children": [
+      {
+        "id": 2,
+        "name": "Laptops",
+        "description": "Laptop computers",
+        "seoSlug": "laptops",
+        "parentId": 1,
+        "isActive": true,
+        "createdAt": "2024-01-01T11:00:00Z",
+        "updatedAt": "2024-01-01T11:00:00Z",
+        "children": []
+      }
+    ]
+  }
+]
+```
+
+**Uwaga:** Zwraca pełną strukturę drzewa kategorii z zagnieżdżonymi podkategoriami. Tylko kategorie główne (bez parentId) są na najwyższym poziomie.
+
+**Status codes:**
+- `200 OK` - Lista kategorii
+
+### 2.5 Lista aktywnych kategorii (drzewo)
+**Endpoint:** `GET /api/categories/active`  
 **Autoryzacja:** Public
 
-### 2.6 Pobieranie kategorii po slug
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "name": "Electronics",
+    "description": "Electronic devices",
+    "seoSlug": "electronics",
+    "parentId": null,
+    "isActive": true,
+    "createdAt": "2024-01-01T10:00:00Z",
+    "updatedAt": "2024-01-01T10:00:00Z",
+    "children": [
+      {
+        "id": 2,
+        "name": "Laptops",
+        "seoSlug": "laptops",
+        "parentId": 1,
+        "isActive": true,
+        "createdAt": "2024-01-01T11:00:00Z",
+        "updatedAt": "2024-01-01T11:00:00Z",
+        "children": []
+      }
+    ]
+  }
+]
+```
+
+**Uwaga:** Zwraca tylko aktywne kategorie (`isActive: true`) w formie drzewa. Nieaktywne kategorie są pomijane.
+
+**Status codes:**
+- `200 OK` - Lista aktywnych kategorii
+
+### 2.6 Kategorie według rodzica
+**Endpoint:** `GET /api/categories/parent/{parentId}`  
+**Autoryzacja:** Public
+
+**Parametry:**
+- `parentId` (path parameter) - ID kategorii nadrzędnej
+
+**Response:**
+```json
+[
+  {
+    "id": 2,
+    "name": "Laptops",
+    "description": "Laptop computers",
+    "seoSlug": "laptops",
+    "parentId": 1,
+    "isActive": true,
+    "createdAt": "2024-01-01T11:00:00Z",
+    "updatedAt": "2024-01-01T11:00:00Z",
+    "children": []
+  }
+]
+```
+
+**Uwaga:** Zwraca bezpośrednie podkategorie danej kategorii w formie drzewa (mogą mieć własne podkategorie).
+
+**Status codes:**
+- `200 OK` - Lista podkategorii
+
+### 2.7 Pobieranie kategorii po slug
 **Endpoint:** `GET /api/categories/slug/{slug}`  
 **Autoryzacja:** Public
 
-### 2.7 Usuwanie kategorii
+**Parametry:**
+- `slug` (path parameter) - SEO slug kategorii
+
+**Response:**
+```json
+{
+  "id": 1,
+  "name": "Electronics",
+  "description": "Electronic devices and accessories",
+  "seoSlug": "electronics",
+  "parentId": null,
+  "isActive": true,
+  "createdAt": "2024-01-01T10:00:00Z",
+  "updatedAt": "2024-01-01T10:00:00Z",
+  "children": []
+}
+```
+
+**Uwaga:** Pojedyncza kategoria zwracana jest bez drzewa dzieci (pusta lista `children`) dla optymalizacji.
+
+**Status codes:**
+- `200 OK` - Kategoria znaleziona
+- `404 Not Found` - Kategoria nie istnieje
+
+### 2.8 Usuwanie kategorii (soft delete)
 **Endpoint:** `DELETE /api/categories/{id}`  
 **Autoryzacja:** `ROLE_OWNER`
+
+**Parametry:**
+- `id` (path parameter) - ID kategorii
+
+**Response:**
+- `204 No Content` - Kategoria została usunięta
+
+**Uwaga:** Usuwanie jest typu "soft delete" - kategoria jest oznaczana jako nieaktywna (`isActive: false`) i otrzymuje datę usunięcia (`deletedAt`), ale nie jest fizycznie usuwana z bazy danych.
+
+**Status codes:**
+- `204 No Content` - Kategoria została usunięta
+- `401 Unauthorized` - Brak autoryzacji
+- `403 Forbidden` - Brak uprawnień (wymagana rola OWNER)
+- `404 Not Found` - Kategoria nie istnieje
 
 ---
 

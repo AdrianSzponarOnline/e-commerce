@@ -60,8 +60,8 @@ public class CategoryControllerTreeTest {
     }
 
     @Test
-    void removedPublicEndpoints_return404() throws Exception {
-        mockMvc.perform(get("/api/categories/public")).andExpect(status().isNotFound());
+    void removedPublicEndpoints_return400() throws Exception {
+        mockMvc.perform(get("/api/categories/public")).andExpect(status().isBadRequest());
         mockMvc.perform(get("/api/categories/public/active")).andExpect(status().isNotFound());
     }
 }

@@ -15,7 +15,7 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface ProductMapper {
     
-    @Mapping(target = "category", source = "category")
+    @Mapping(target = "category", source = "category", qualifiedByName = "categoryFlat")
     @Mapping(target = "attributeValues", source = "attributeValues")
     ProductDTO toProductDTO(Product product);
 

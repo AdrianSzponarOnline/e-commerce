@@ -8,15 +8,24 @@ import com.ecommerce.E_commerce.model.Category;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.Named;
 
+import java.util.ArrayList; // Upewnij się, że ten import jest
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public interface CategoryMapper {
+
+    @Named("categoryFlat")
     @Mapping(target = "parentId", source = "parent.id")
-    @Mapping(target = "children", source = "children")
-    CategoryDTO toCategoryDTO(Category category);
+    @Mapping(target = "children", expression = "java(new java.util.ArrayList<CategoryDTO>())")
+    CategoryDTO toCategoryDTOFlat(Category category);
+
+    @Named("categoryWithTree")
+    @Mapping(target = "parentId", source = "parent.id")
+    @Mapping(target = "children", source = "children", qualifiedByName = "categoryWithTree")
+    CategoryDTO toCategoryDTOWithTree(Category category);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "parent", ignore = true)
@@ -41,13 +50,4 @@ public interface CategoryMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
     void updateFromDTO(CategoryUpdateDTO dto, @MappingTarget Category category);
-
-    default Set<ChildCategoryDTO> mapChildren(Set<Category> children) {
-        if (children == null) {
-            return null;
-        }
-        return children.stream()
-                .map(category -> new ChildCategoryDTO(category.getId(), category.getName(), category.getSeoSlug()))
-                .collect(Collectors.toSet());
-    }
 }
