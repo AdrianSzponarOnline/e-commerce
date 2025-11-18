@@ -64,17 +64,17 @@ public class ProductAttributeValueController {
         return ResponseEntity.ok(productAttributeValues);
     }
 
-    @GetMapping("/category-attribute/{categoryAttributeId}")
-    public ResponseEntity<List<ProductAttributeValueDTO>> getProductAttributeValuesByCategoryAttribute(@PathVariable Long categoryAttributeId) {
-        List<ProductAttributeValueDTO> productAttributeValues = productAttributeValueService.getByCategoryAttributeId(categoryAttributeId);
+    @GetMapping("/attribute/{attributeId}")
+    public ResponseEntity<List<ProductAttributeValueDTO>> getProductAttributeValuesByAttribute(@PathVariable Long attributeId) {
+        List<ProductAttributeValueDTO> productAttributeValues = productAttributeValueService.getByAttributeId(attributeId);
         return ResponseEntity.ok(productAttributeValues);
     }
 
-    @GetMapping("/product/{productId}/category-attribute/{categoryAttributeId}")
-    public ResponseEntity<ProductAttributeValueDTO> getProductAttributeValueByProductAndCategoryAttribute(
+    @GetMapping("/product/{productId}/attribute/{attributeId}")
+    public ResponseEntity<ProductAttributeValueDTO> getProductAttributeValueByProductAndAttribute(
             @PathVariable Long productId, 
-            @PathVariable Long categoryAttributeId) {
-        ProductAttributeValueDTO productAttributeValue = productAttributeValueService.getByProductAndCategoryAttribute(productId, categoryAttributeId);
+            @PathVariable Long attributeId) {
+        ProductAttributeValueDTO productAttributeValue = productAttributeValueService.getByProductAndAttribute(productId, attributeId);
         return ResponseEntity.ok(productAttributeValue);
     }
 
@@ -110,9 +110,9 @@ public class ProductAttributeValueController {
         return ResponseEntity.ok(productAttributeValues);
     }
 
-    @GetMapping("/category-attribute/{categoryAttributeId}/paginated")
-    public ResponseEntity<Page<ProductAttributeValueDTO>> getProductAttributeValuesByCategoryAttributePaginated(
-            @PathVariable Long categoryAttributeId,
+    @GetMapping("/attribute/{attributeId}/paginated")
+    public ResponseEntity<Page<ProductAttributeValueDTO>> getProductAttributeValuesByAttributePaginated(
+            @PathVariable Long attributeId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
@@ -122,7 +122,7 @@ public class ProductAttributeValueController {
             Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
         
-        Page<ProductAttributeValueDTO> productAttributeValues = productAttributeValueService.findByCategoryAttributeId(categoryAttributeId, pageable);
+        Page<ProductAttributeValueDTO> productAttributeValues = productAttributeValueService.findByAttributeId(attributeId, pageable);
         return ResponseEntity.ok(productAttributeValues);
     }
 
@@ -195,7 +195,7 @@ public class ProductAttributeValueController {
     @GetMapping("/search/advanced")
     public ResponseEntity<Page<ProductAttributeValueDTO>> searchProductAttributeValuesAdvanced(
             @RequestParam(required = false) Long productId,
-            @RequestParam(required = false) Long categoryAttributeId,
+            @RequestParam(required = false) Long attributeId,
             @RequestParam(required = false) String value,
             @RequestParam(required = false) Boolean isActive,
             @RequestParam(defaultValue = "0") int page,
@@ -208,7 +208,7 @@ public class ProductAttributeValueController {
         Pageable pageable = PageRequest.of(page, size, sort);
         
         Page<ProductAttributeValueDTO> productAttributeValues = productAttributeValueService.findByMultipleCriteria(
-                productId, categoryAttributeId, value, isActive, pageable);
+                productId, attributeId, value, isActive, pageable);
         return ResponseEntity.ok(productAttributeValues);
     }
 
@@ -243,9 +243,9 @@ public class ProductAttributeValueController {
         return ResponseEntity.ok(count);
     }
 
-    @GetMapping("/stats/category-attribute/{categoryAttributeId}")
-    public ResponseEntity<Long> getProductAttributeValueCountByCategoryAttribute(@PathVariable Long categoryAttributeId) {
-        long count = productAttributeValueService.countByCategoryAttributeId(categoryAttributeId);
+    @GetMapping("/stats/attribute/{attributeId}")
+    public ResponseEntity<Long> getProductAttributeValueCountByAttribute(@PathVariable Long attributeId) {
+        long count = productAttributeValueService.countByAttributeId(attributeId);
         return ResponseEntity.ok(count);
     }
 
@@ -256,9 +256,9 @@ public class ProductAttributeValueController {
     }
 
     // Utility Methods
-    @GetMapping("/distinct-values/category-attribute/{categoryAttributeId}")
-    public ResponseEntity<List<String>> getDistinctValuesByCategoryAttribute(@PathVariable Long categoryAttributeId) {
-        List<String> values = productAttributeValueService.getDistinctValuesByCategoryAttribute(categoryAttributeId);
+    @GetMapping("/distinct-values/attribute/{attributeId}")
+    public ResponseEntity<List<String>> getDistinctValuesByAttribute(@PathVariable Long attributeId) {
+        List<String> values = productAttributeValueService.getDistinctValuesByAttribute(attributeId);
         return ResponseEntity.ok(values);
     }
 

@@ -5,8 +5,10 @@ import com.ecommerce.E_commerce.dto.categoryattribute.CategoryAttributeDTO;
 import com.ecommerce.E_commerce.dto.categoryattribute.CategoryAttributeUpdateDTO;
 import com.ecommerce.E_commerce.exception.ResourceNotFoundException;
 import com.ecommerce.E_commerce.mapper.CategoryAttributeMapper;
+import com.ecommerce.E_commerce.model.Attribute;
 import com.ecommerce.E_commerce.model.Category;
 import com.ecommerce.E_commerce.model.CategoryAttribute;
+import com.ecommerce.E_commerce.repository.AttributeRepository;
 import com.ecommerce.E_commerce.repository.CategoryAttributeRepository;
 import com.ecommerce.E_commerce.repository.CategoryRepository;
 import jakarta.transaction.Transactional;
@@ -20,24 +22,40 @@ import java.util.List;
 public class CategoryAttributeServiceImpl implements CategoryAttributeService {
     private final CategoryAttributeRepository attributeRepository;
     private final CategoryRepository categoryRepository;
+    private final AttributeRepository attributeRepositoryService;
     private final CategoryAttributeMapper mapper;
 
     @Autowired
     public CategoryAttributeServiceImpl(CategoryAttributeRepository attributeRepository,
                                         CategoryRepository categoryRepository,
+                                        AttributeRepository attributeRepositoryService,
                                         CategoryAttributeMapper mapper) {
         this.attributeRepository = attributeRepository;
         this.categoryRepository = categoryRepository;
+        this.attributeRepositoryService = attributeRepositoryService;
         this.mapper = mapper;
     }
 
     @Override
     @Transactional
     public CategoryAttributeDTO create(CategoryAttributeCreateDTO dto) {
-        CategoryAttribute entity = mapper.fromCreateDTO(dto);
         Category category = categoryRepository.findById(dto.categoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + dto.categoryId()));
+        
+        Attribute attribute = attributeRepositoryService.findById(dto.attributeId())
+                .orElseThrow(() -> new ResourceNotFoundException("Attribute not found: " + dto.attributeId()));
+        
+        // Check if this combination already exists
+        if (attributeRepository.findByCategoryIdAndAttributeId(dto.categoryId(), dto.attributeId()).isPresent()) {
+            throw new IllegalArgumentException("Category attribute already exists for this category and attribute");
+        }
+        
+        CategoryAttribute entity = new CategoryAttribute();
         entity.setCategory(category);
+        entity.setAttribute(attribute);
+        entity.setKeyAttribute(dto.isKeyAttribute());
+        entity.setActive(dto.isActive());
+        
         CategoryAttribute saved = attributeRepository.save(entity);
         return mapper.toDTO(saved);
     }
@@ -47,7 +65,14 @@ public class CategoryAttributeServiceImpl implements CategoryAttributeService {
     public CategoryAttributeDTO update(Long id, CategoryAttributeUpdateDTO dto) {
         CategoryAttribute entity = attributeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category attribute not found: " + id));
-        mapper.updateFromDTO(dto, entity);
+        
+        if (dto.isKeyAttribute() != null) {
+            entity.setKeyAttribute(dto.isKeyAttribute());
+        }
+        if (dto.isActive() != null) {
+            entity.setActive(dto.isActive());
+        }
+        
         CategoryAttribute saved = attributeRepository.save(entity);
         return mapper.toDTO(saved);
     }
@@ -70,7 +95,7 @@ public class CategoryAttributeServiceImpl implements CategoryAttributeService {
     public void softDelete(Long id) {
         CategoryAttribute entity = attributeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category attribute not found: " + id));
-        entity.setIsActive(false);
+        entity.setActive(false);
         entity.setDeletedAt(Instant.now());
         attributeRepository.save(entity);
     }

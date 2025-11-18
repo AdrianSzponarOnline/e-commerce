@@ -10,26 +10,31 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 
 @Entity
-@Table(name = "product_attribute_values",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"product_id", "attribute_id"})) // ZMIANA
-@SQLDelete(sql = "UPDATE product_attribute_values SET deleted_at = NOW(), is_active = false WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL AND is_active = true")
+@Table(name = "attributes",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"name", "type"}))
+@SQLDelete(sql = "UPDATE attributes SET deleted_at = NOW(), is_active = false WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
 @NoArgsConstructor
-public class ProductAttributeValue {
+public class Attribute {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, length = 100)
+    private String name;
 
-    @Column(columnDefinition = "TEXT")
-    private String value;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 50)
+    private CategoryAttributeType type;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -44,22 +49,27 @@ public class ProductAttributeValue {
     @Column(nullable = false)
     private boolean isActive = true;
 
+    @OneToMany(
+            mappedBy = "attribute",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private Set<CategoryAttribute> categories = new HashSet<>();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
+    @OneToMany(
+            mappedBy = "attribute",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private Set<ProductAttributeValue> productValues = new HashSet<>();
 
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "attribute_id", nullable = false)
-    private Attribute attribute;
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ProductAttributeValue that = (ProductAttributeValue) o;
-        return Objects.equals(id, that.id);
+        Attribute attribute = (Attribute) o;
+        return Objects.equals(id, attribute.id);
     }
 
     @Override

@@ -65,4 +65,10 @@ public interface ProductService {
     Page<ProductSummaryDTO> findByCategoryAndFeatured(Long categoryId, Boolean isFeatured, int page, int size, String sortBy, String sortDir);
     Page<ProductSummaryDTO> findByPriceRangeAndFeatured(BigDecimal minPrice, BigDecimal maxPrice, Boolean isFeatured, int page, int size, String sortBy, String sortDir);
     
+    // Filter by attributes
+    Page<ProductSummaryDTO> filterByAttribute(Long categoryId, String attributeName, String attributeValue, Pageable pageable);
+    Page<ProductSummaryDTO> filterByAttribute(Long categoryId, String attributeName, String attributeValue, int page, int size, String sortBy, String sortDir);
+    Page<ProductSummaryDTO> filterByAttributeId(Long categoryId, Long attributeId, String attributeValue, Pageable pageable);
+    Page<ProductSummaryDTO> filterByAttributeId(Long categoryId, Long attributeId, String attributeValue, int page, int size, String sortBy, String sortDir);
+    
 }

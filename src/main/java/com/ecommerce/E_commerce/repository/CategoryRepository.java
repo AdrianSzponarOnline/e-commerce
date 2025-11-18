@@ -21,10 +21,11 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
 
     @Query(value =
             "WITH RECURSIVE CategorySubtree AS ( " +
-                    "    SELECT * FROM categories WHERE id = :rootId " +
+                    "    SELECT * FROM categories WHERE id = :rootId AND deleted_at IS NULL " +
                     "    UNION ALL " +
                     "    SELECT c.* FROM categories c " +
                     "    INNER JOIN CategorySubtree cs ON c.parent_id = cs.id " +
+                    "    WHERE c.deleted_at IS NULL " +
                     ") " +
                     "SELECT * FROM CategorySubtree",
             nativeQuery = true

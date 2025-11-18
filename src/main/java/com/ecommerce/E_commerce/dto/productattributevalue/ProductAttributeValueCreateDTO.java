@@ -7,8 +7,8 @@ public record ProductAttributeValueCreateDTO(
         @NotNull(message = "Product ID is required")
         Long productId,
         
-        @NotNull(message = "Category attribute ID is required")
-        Long categoryAttributeId,
+        @NotNull(message = "Attribute ID is required")
+        Long attributeId,
         
         @Size(max = 1000, message = "Value must not exceed 1000 characters")
         String value

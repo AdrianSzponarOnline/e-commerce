@@ -73,6 +73,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleSeoSlugAlreadyExistsException(SeoSlugAlreadyExistsException e) {
         return buildErrorResponse(HttpStatus.CONFLICT, "Slug Already Exists", e.getMessage());
     }
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<Object> handleDuplicateResourceException(DuplicateResourceException e) {
+        return buildErrorResponse(HttpStatus.CONFLICT, "Duplicate Resource", e.getMessage());
+    }
 
 
     private ResponseEntity<Object> buildErrorResponse(HttpStatus status, String error, String message) {

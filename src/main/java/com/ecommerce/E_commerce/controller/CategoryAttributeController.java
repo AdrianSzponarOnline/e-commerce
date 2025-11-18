@@ -27,7 +27,7 @@ public class CategoryAttributeController {
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<CategoryAttributeDTO> create(@PathVariable("categoryId") Long categoryId,
                                                        @Valid @RequestBody CategoryAttributeCreateDTO body) {
-        CategoryAttributeCreateDTO dto = new CategoryAttributeCreateDTO(categoryId, body.name(), body.type(), body.isActive());
+        CategoryAttributeCreateDTO dto = new CategoryAttributeCreateDTO(categoryId, body.attributeId(), body.isKeyAttribute(), body.isActive());
         CategoryAttributeDTO created = service.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }

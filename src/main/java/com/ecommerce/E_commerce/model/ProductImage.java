@@ -7,6 +7,8 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.Instant;
 
@@ -14,6 +16,8 @@ import java.time.Instant;
 @Setter
 @Entity
 @Table(name = "product_images")
+@SQLDelete(sql = "UPDATE product_images SET deleted_at = NOW(), is_active = false WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class ProductImage {
     @Id
     @ColumnDefault("nextval('product_images_id_seq'::regclass)")

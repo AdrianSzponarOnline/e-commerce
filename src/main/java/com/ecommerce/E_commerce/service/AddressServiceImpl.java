@@ -19,8 +19,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -39,36 +39,68 @@ public class AddressServiceImpl implements AddressService {
         this.addressMapper = addressMapper;
     }
 
-    @Override
-    public AddressDTO create(AddressCreateDTO dto) {
-        // Security check: User can only create address for themselves (unless OWNER)
+    /**
+     * Helper method to check if current user is OWNER
+     * @return true if user has ROLE_OWNER, false otherwise
+     */
+    private boolean isOwner() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            return false;
+        }
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(auth -> auth.equals("ROLE_OWNER"));
+    }
+
+    /**
+     * Helper method to get current authenticated user
+     * @return Optional containing User if found, empty otherwise
+     */
+    private Optional<User> getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            return Optional.empty();
+        }
+        String userEmail = authentication.getName();
+        return userRepository.findByEmail(userEmail);
+    }
+
+    /**
+     * Helper method to check if user has access to resource
+     * @param resourceUserId ID of the user who owns the resource
+     * @param errorMessage Error message to throw if access denied
+     * @throws AccessDeniedException if user doesn't have access
+     */
+    private void checkAccess(Long resourceUserId, String errorMessage) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {
             throw new AccessDeniedException("User not authenticated");
         }
-        
-        boolean isOwner = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(auth -> auth.equals("ROLE_OWNER"));
-        
-        if (!isOwner) {
-            String userEmail = authentication.getName();
-            User currentUser = userRepository.findByEmail(userEmail)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + userEmail));
+
+        if (!isOwner()) {
+            User currentUser = getCurrentUser()
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
             
-            if (!currentUser.getId().equals(dto.userId())) {
-                throw new AccessDeniedException("You can only create addresses for yourself");
+            if (!currentUser.getId().equals(resourceUserId)) {
+                throw new AccessDeniedException(errorMessage);
             }
         }
+    }
+
+    @Override
+    public AddressDTO create(AddressCreateDTO dto) {
+        // Security check: User can only create address for themselves (unless OWNER)
+        checkAccess(dto.userId(), "You can only create addresses for yourself");
         
+        // Get user - for non-OWNER we already have it in checkAccess, but for clarity we fetch it here
         User user = userRepository.findById(dto.userId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + dto.userId()));
 
         Address address = addressMapper.toAddress(dto);
         address.setUser(user);
-        address.setCreatedAt(Instant.now());
-        address.setUpdatedAt(Instant.now());
         address.setIsActive(dto.isActive() != null ? dto.isActive() : true);
+        // createdAt and updatedAt are automatically set by JPA Auditing
 
         Address savedAddress = addressRepository.save(address);
         return addressMapper.toAddressDTO(savedAddress);
@@ -80,24 +112,13 @@ public class AddressServiceImpl implements AddressService {
                 .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + id));
         
         // Security check: User can only update their own addresses (unless OWNER)
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) {
-            throw new AccessDeniedException("User not authenticated");
+        if (address.getUser() == null) {
+            throw new ResourceNotFoundException("Address has no associated user");
         }
-        
-        boolean isOwner = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(auth -> auth.equals("ROLE_OWNER"));
-        
-        if (!isOwner) {
-            String userEmail = authentication.getName();
-            if (address.getUser() == null || !address.getUser().getEmail().equals(userEmail)) {
-                throw new AccessDeniedException("You can only update your own addresses");
-            }
-        }
+        checkAccess(address.getUser().getId(), "You can only update your own addresses");
 
         addressMapper.updateAddressFromDTO(dto, address);
-        address.setUpdatedAt(Instant.now());
+        // updatedAt is automatically set by JPA Auditing
 
         if (dto.isActive() != null) {
             address.setIsActive(dto.isActive());
@@ -112,28 +133,13 @@ public class AddressServiceImpl implements AddressService {
         Address address = addressRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + id));
         
-        // Security check: User can only delete their own addresses (unless OWNER)
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) {
-            throw new AccessDeniedException("User not authenticated");
+        if (address.getUser() == null) {
+            throw new ResourceNotFoundException("Address has no associated user");
         }
-        
-        boolean isOwner = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(auth -> auth.equals("ROLE_OWNER"));
-        
-        if (!isOwner) {
-            String userEmail = authentication.getName();
-            if (address.getUser() == null || !address.getUser().getEmail().equals(userEmail)) {
-                throw new AccessDeniedException("You can only delete your own addresses");
-            }
-        }
+        checkAccess(address.getUser().getId(), "You can only delete your own addresses");
 
-        address.setDeletedAt(Instant.now());
-        address.setIsActive(false);
-        address.setUpdatedAt(Instant.now());
-
-        addressRepository.save(address);
+        // @SQLDelete annotation handles deletedAt and isActive automatically
+        addressRepository.delete(address);
     }
 
     @Override
@@ -142,22 +148,10 @@ public class AddressServiceImpl implements AddressService {
         Address address = addressRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + id));
         
-        // Security check: User can only view their own addresses (unless OWNER)
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) {
-            throw new AccessDeniedException("User not authenticated");
+        if (address.getUser() == null) {
+            throw new ResourceNotFoundException("Address has no associated user");
         }
-        
-        boolean isOwner = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(auth -> auth.equals("ROLE_OWNER"));
-        
-        if (!isOwner) {
-            String userEmail = authentication.getName();
-            if (address.getUser() == null || !address.getUser().getEmail().equals(userEmail)) {
-                throw new AccessDeniedException("You can only view your own addresses");
-            }
-        }
+        checkAccess(address.getUser().getId(), "You can only view your own addresses");
         
         return addressMapper.toAddressDTO(address);
     }
@@ -165,25 +159,7 @@ public class AddressServiceImpl implements AddressService {
     @Override
     @Transactional(readOnly = true)
     public List<AddressDTO> getByUserId(Long userId) {
-        // Security check: User can only view their own addresses (unless OWNER)
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) {
-            throw new AccessDeniedException("User not authenticated");
-        }
-        
-        boolean isOwner = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(auth -> auth.equals("ROLE_OWNER"));
-        
-        if (!isOwner) {
-            String userEmail = authentication.getName();
-            User currentUser = userRepository.findByEmail(userEmail)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + userEmail));
-            
-            if (!currentUser.getId().equals(userId)) {
-                throw new AccessDeniedException("You can only view your own addresses");
-            }
-        }
+        checkAccess(userId, "You can only view your own addresses");
         
         List<Address> addresses = addressRepository.findByUserId(userId);
         return addresses.stream()
@@ -194,25 +170,7 @@ public class AddressServiceImpl implements AddressService {
     @Override
     @Transactional(readOnly = true)
     public List<AddressDTO> getActiveByUserId(Long userId) {
-        // Security check: User can only view their own addresses (unless OWNER)
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) {
-            throw new AccessDeniedException("User not authenticated");
-        }
-        
-        boolean isOwner = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(auth -> auth.equals("ROLE_OWNER"));
-        
-        if (!isOwner) {
-            String userEmail = authentication.getName();
-            User currentUser = userRepository.findByEmail(userEmail)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + userEmail));
-            
-            if (!currentUser.getId().equals(userId)) {
-                throw new AccessDeniedException("You can only view your own addresses");
-            }
-        }
+        checkAccess(userId, "You can only view your own addresses");
         
         List<Address> addresses = addressRepository.findByUserIdAndIsActive(userId, true);
         return addresses.stream()
@@ -223,6 +181,16 @@ public class AddressServiceImpl implements AddressService {
     @Override
     @Transactional(readOnly = true)
     public Page<AddressDTO> findAll(Pageable pageable) {
+    
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            throw new AccessDeniedException("User not authenticated");
+        }
+        
+        if (!isOwner()) {
+            throw new AccessDeniedException("Only OWNER can view all addresses");
+        }
+        
         return addressRepository.findAll(pageable)
                 .map(addressMapper::toAddressDTO);
     }

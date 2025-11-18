@@ -8,6 +8,11 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
 
@@ -15,6 +20,9 @@ import java.time.Instant;
 @Setter
 @Entity
 @Table(name = "addresses")
+@EntityListeners(AuditingEntityListener.class)
+@SQLDelete(sql = "UPDATE addresses SET deleted_at = NOW(), is_active = false WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class Address {
     @Id
     @ColumnDefault("nextval('addresses_id_seq'::regclass)")
@@ -55,13 +63,11 @@ public class Address {
     @Column(name = "country", nullable = false, length = 100)
     private String country;
 
-    @NotNull
-    @ColumnDefault("now()")
-    @Column(name = "created_at", nullable = false)
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    @NotNull
-    @ColumnDefault("now()")
+    @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 

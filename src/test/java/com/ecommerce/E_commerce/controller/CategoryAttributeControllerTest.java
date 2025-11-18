@@ -47,20 +47,20 @@ public class CategoryAttributeControllerTest {
     @Test
     @WithMockUser
     void list_returnsAttributes() throws Exception {
-        var dto1 = new CategoryAttributeDTO(1L, 10L, "color", CategoryAttributeType.TEXT, true, Instant.now(), Instant.now());
-        var dto2 = new CategoryAttributeDTO(2L, 10L, "size", CategoryAttributeType.SELECT, true, Instant.now(), Instant.now());
+        var dto1 = new CategoryAttributeDTO(1L, 10L, 100L, "color", CategoryAttributeType.TEXT, false, true, Instant.now(), Instant.now());
+        var dto2 = new CategoryAttributeDTO(2L, 10L, 101L, "size", CategoryAttributeType.SELECT, true, true, Instant.now(), Instant.now());
         when(service.listByCategory(10L)).thenReturn(List.of(dto1, dto2));
         mockMvc.perform(get("/api/categories/10/attributes"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1L))
-                .andExpect(jsonPath("$[1].name").value("size"));
+                .andExpect(jsonPath("$[1].attributeName").value("size"));
     }
 
     @Test
     @WithMockUser(roles = {"OWNER"})
     void create_requiresOwnerAndReturnsCreated() throws Exception {
-        var body = new CategoryAttributeCreateDTO(10L, "color", CategoryAttributeType.TEXT, true);
-        var response = new CategoryAttributeDTO(5L, 10L, "color", CategoryAttributeType.TEXT, true, Instant.now(), Instant.now());
+        var body = new CategoryAttributeCreateDTO(10L, 100L, false, true);
+        var response = new CategoryAttributeDTO(5L, 10L, 100L, "color", CategoryAttributeType.TEXT, false, true, Instant.now(), Instant.now());
         when(service.create(any())).thenReturn(response);
         mockMvc.perform(post("/api/categories/10/attributes")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -73,14 +73,14 @@ public class CategoryAttributeControllerTest {
     @Test
     @WithMockUser(roles = {"OWNER"})
     void update_requiresOwner() throws Exception {
-        var body = new CategoryAttributeUpdateDTO("size", CategoryAttributeType.SELECT, false);
-        var response = new CategoryAttributeDTO(6L, 10L, "size", CategoryAttributeType.SELECT, false, Instant.now(), Instant.now());
+        var body = new CategoryAttributeUpdateDTO(true, false);
+        var response = new CategoryAttributeDTO(6L, 10L, 101L, "size", CategoryAttributeType.SELECT, true, false, Instant.now(), Instant.now());
         when(service.update(eq(6L), any())).thenReturn(response);
         mockMvc.perform(put("/api/categories/10/attributes/6")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("size"))
+                .andExpect(jsonPath("$.attributeName").value("size"))
                 .andExpect(jsonPath("$.isActive").value(false));
     }
 }

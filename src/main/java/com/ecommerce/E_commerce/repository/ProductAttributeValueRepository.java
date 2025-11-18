@@ -19,64 +19,69 @@ public interface ProductAttributeValueRepository extends JpaRepository<ProductAt
     Page<ProductAttributeValue> findByProductId(Long productId, Pageable pageable);
     List<ProductAttributeValue> findByProductIdAndIsActive(Long productId, Boolean isActive);
     
-    // Find by category attribute
-    List<ProductAttributeValue> findByCategoryAttributeId(Long categoryAttributeId);
-    Page<ProductAttributeValue> findByCategoryAttributeId(Long categoryAttributeId, Pageable pageable);
-    List<ProductAttributeValue> findByCategoryAttributeIdAndIsActive(Long categoryAttributeId, Boolean isActive);
+    // Find by attribute
+    List<ProductAttributeValue> findByAttributeId(Long attributeId);
+    Page<ProductAttributeValue> findByAttributeId(Long attributeId, Pageable pageable);
+    List<ProductAttributeValue> findByAttributeIdAndIsActive(Long attributeId, Boolean isActive);
     
     // Find by value
     List<ProductAttributeValue> findByValueContainingIgnoreCase(String value);
     Page<ProductAttributeValue> findByValueContainingIgnoreCase(String value, Pageable pageable);
     
-    // Find by product and category attribute
-    Optional<ProductAttributeValue> findByProductIdAndCategoryAttributeId(Long productId, Long categoryAttributeId);
-    List<ProductAttributeValue> findByProductIdAndCategoryAttributeIdAndIsActive(Long productId, Long categoryAttributeId, Boolean isActive);
+    // Find by product and attribute
+    Optional<ProductAttributeValue> findByProductIdAndAttributeId(Long productId, Long attributeId);
+    List<ProductAttributeValue> findByProductIdAndAttributeIdAndIsActive(Long productId, Long attributeId, Boolean isActive);
     
-    // Find by key attributes
-    List<ProductAttributeValue> findByProductIdAndCategoryAttributeIsKeyAttribute(Long productId, Boolean isKeyAttribute);
-    List<ProductAttributeValue> findByProductIdAndCategoryAttributeIsKeyAttributeAndIsActive(Long productId, Boolean isKeyAttribute, Boolean isActive);
+    // Find by key attributes (through CategoryAttribute)
+    @Query("SELECT pav FROM ProductAttributeValue pav JOIN CategoryAttribute ca ON ca.attribute.id = pav.attribute.id WHERE pav.product.id = :productId AND ca.isKeyAttribute = :isKeyAttribute")
+    List<ProductAttributeValue> findByProductIdAndKeyAttribute(Long productId, Boolean isKeyAttribute);
+    @Query("SELECT pav FROM ProductAttributeValue pav JOIN CategoryAttribute ca ON ca.attribute.id = pav.attribute.id WHERE pav.product.id = :productId AND ca.isKeyAttribute = :isKeyAttribute AND pav.isActive = :isActive")
+    List<ProductAttributeValue> findByProductIdAndKeyAttributeAndIsActive(Long productId, Boolean isKeyAttribute, Boolean isActive);
     
     // Find by category
     List<ProductAttributeValue> findByProductCategoryId(Long categoryId);
     Page<ProductAttributeValue> findByProductCategoryId(Long categoryId, Pageable pageable);
     List<ProductAttributeValue> findByProductCategoryIdAndIsActive(Long categoryId, Boolean isActive);
     
-    // Find by category attribute type
-    List<ProductAttributeValue> findByCategoryAttributeType(String type);
-    Page<ProductAttributeValue> findByCategoryAttributeType(String type, Pageable pageable);
-    List<ProductAttributeValue> findByCategoryAttributeTypeAndIsActive(String type, Boolean isActive);
+    // Find by attribute type
+    @Query("SELECT pav FROM ProductAttributeValue pav WHERE pav.attribute.type = :type")
+    List<ProductAttributeValue> findByAttributeType(@Param("type") String type);
+    @Query("SELECT pav FROM ProductAttributeValue pav WHERE pav.attribute.type = :type")
+    Page<ProductAttributeValue> findByAttributeType(@Param("type") String type, Pageable pageable);
+    @Query("SELECT pav FROM ProductAttributeValue pav WHERE pav.attribute.type = :type AND pav.isActive = :isActive")
+    List<ProductAttributeValue> findByAttributeTypeAndIsActive(@Param("type") String type, @Param("isActive") Boolean isActive);
     
     // Count methods
     long countByProductId(Long productId);
     long countByProductIdAndIsActive(Long productId, Boolean isActive);
-    long countByCategoryAttributeId(Long categoryAttributeId);
-    long countByCategoryAttributeIdAndIsActive(Long categoryAttributeId, Boolean isActive);
+    long countByAttributeId(Long attributeId);
+    long countByAttributeIdAndIsActive(Long attributeId, Boolean isActive);
     long countByProductCategoryId(Long categoryId);
     long countByProductCategoryIdAndIsActive(Long categoryId, Boolean isActive);
     
     // Advanced queries
     @Query("SELECT pav FROM ProductAttributeValue pav WHERE " +
            "(:productId IS NULL OR pav.product.id = :productId) AND " +
-           "(:categoryAttributeId IS NULL OR pav.categoryAttribute.id = :categoryAttributeId) AND " +
+           "(:attributeId IS NULL OR pav.attribute.id = :attributeId) AND " +
            "(:value IS NULL OR LOWER(pav.value) LIKE LOWER(CONCAT('%', :value, '%'))) AND " +
            "(:isActive IS NULL OR pav.isActive = :isActive)")
     Page<ProductAttributeValue> findByMultipleCriteria(
             @Param("productId") Long productId,
-            @Param("categoryAttributeId") Long categoryAttributeId,
+            @Param("attributeId") Long attributeId,
             @Param("value") String value,
             @Param("isActive") Boolean isActive,
             Pageable pageable
     );
     
-    @Query("SELECT pav FROM ProductAttributeValue pav WHERE " +
+    @Query("SELECT pav FROM ProductAttributeValue pav JOIN CategoryAttribute ca ON ca.attribute.id = pav.attribute.id WHERE " +
            "pav.product.id = :productId AND " +
-           "pav.categoryAttribute.isKeyAttribute = true AND " +
+           "ca.isKeyAttribute = true AND " +
            "pav.isActive = true")
     List<ProductAttributeValue> findKeyAttributesByProduct(@Param("productId") Long productId);
     
     @Query("SELECT pav FROM ProductAttributeValue pav WHERE " +
            "pav.product.category.id = :categoryId AND " +
-           "pav.categoryAttribute.name = :attributeName AND " +
+           "pav.attribute.name = :attributeName AND " +
            "pav.isActive = true")
     List<ProductAttributeValue> findByCategoryAndAttributeName(
             @Param("categoryId") Long categoryId,
@@ -84,13 +89,13 @@ public interface ProductAttributeValueRepository extends JpaRepository<ProductAt
     );
     
     @Query("SELECT DISTINCT pav.value FROM ProductAttributeValue pav WHERE " +
-           "pav.categoryAttribute.id = :categoryAttributeId AND " +
+           "pav.attribute.id = :attributeId AND " +
            "pav.isActive = true")
-    List<String> findDistinctValuesByCategoryAttribute(@Param("categoryAttributeId") Long categoryAttributeId);
+    List<String> findDistinctValuesByAttribute(@Param("attributeId") Long attributeId);
     
     @Query("SELECT pav FROM ProductAttributeValue pav WHERE " +
            "pav.product.id = :productId AND " +
-           "pav.categoryAttribute.type = :attributeType AND " +
+           "pav.attribute.type = :attributeType AND " +
            "pav.isActive = true")
     List<ProductAttributeValue> findByProductAndAttributeType(
             @Param("productId") Long productId,

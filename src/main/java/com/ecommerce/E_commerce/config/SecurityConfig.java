@@ -59,27 +59,10 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(authorize -> {
                     authorize
-                            .requestMatchers("/error").permitAll()
-                            // Auth endpoints - public
                             .requestMatchers(
-                                    "/api/auth/login",
-                                    "/api/auth/register"
-                            ).permitAll()
-                            // Categories - public GET endpoints
-                            .requestMatchers(
-                                    "/api/categories/public",
-                                    "/api/categories/public/**",
-                                    "/api/categories/public/active",
+                                    HttpMethod.GET,
                                     "/api/categories",
-                                    "/api/categories/{id}",
-                                    "/api/categories/active",
-                                    "/api/categories/parent/{parentId}",
-                                    "/api/categories/slug/{slug}",
-                                    "/api/categories/*/attributes",
-                                    "/api/categories/*/attributes/**"
-                            ).permitAll()
-                            // Products - public GET endpoints
-                            .requestMatchers(
+                                    "/api/categories/**",
                                     "/api/products",
                                     "/api/products/*",
                                     "/api/products/slug/*",
@@ -96,33 +79,31 @@ public class SecurityConfig {
                                     "/api/products/price-range/featured",
                                     "/api/products/stats/category/*/count",
                                     "/api/products/stats/featured/count",
-                                    "/api/products/stats/active/count"
-                            ).permitAll()
-                            // Product Images - public GET endpoints
-                            .requestMatchers(
-                                    HttpMethod.GET,
-                                    "/api/products/*/images"
-                            ).permitAll()
-                            // Product Attribute Values - public GET endpoints
-                            .requestMatchers(
+                                    "/api/products/stats/active/count",
+                                    "/api/products/*/images",
                                     "/api/product-attribute-values",
                                     "/api/product-attribute-values/{id}",
                                     "/api/product-attribute-values/product/{productId}",
-                                    "/api/product-attribute-values/category-attribute/{categoryAttributeId}",
-                                    "/api/product-attribute-values/product/{productId}/category-attribute/{categoryAttributeId}",
+                                    "/api/product-attribute-values/attribute/{attributeId}",
+                                    "/api/product-attribute-values/product/{productId}/attribute/{attributeId}",
                                     "/api/product-attribute-values/product/{productId}/paginated",
-                                    "/api/product-attribute-values/category-attribute/{categoryAttributeId}/paginated",
+                                    "/api/product-attribute-values/attribute/{attributeId}/paginated",
                                     "/api/product-attribute-values/category/{categoryId}",
                                     "/api/product-attribute-values/search/value",
                                     "/api/product-attribute-values/attribute-type/{attributeType}",
                                     "/api/product-attribute-values/product/{productId}/key-attributes",
                                     "/api/product-attribute-values/search/advanced",
                                     "/api/product-attribute-values/stats/product/{productId}",
-                                    "/api/product-attribute-values/stats/category-attribute/{categoryAttributeId}",
+                                    "/api/product-attribute-values/stats/attribute/{attributeId}",
                                     "/api/product-attribute-values/stats/category/{categoryId}",
-                                    "/api/product-attribute-values/distinct-values/category-attribute/{categoryAttributeId}",
+                                    "/api/product-attribute-values/distinct-values/attribute/{attributeId}",
                                     "/api/product-attribute-values/product/{productId}/key-attributes/list",
                                     "/api/product-attribute-values/product/{productId}/attribute-type/{attributeType}"
+                            ).permitAll()
+                            .requestMatchers(
+                                    "/error",
+                                    "/api/auth/login",
+                                    "/api/auth/register"
                             ).permitAll();
                     if (isDevOrTest) {
                         authorize.requestMatchers(
@@ -133,17 +114,11 @@ public class SecurityConfig {
                                 "/webjars/**"
                         ).permitAll();
                     }
-                    // All other endpoints require authentication
-                    // Detailed access control is handled by @PreAuthorize in controllers/services:
-                    // - Orders API (/api/orders/**) - USER can access own orders, OWNER can access all
-                    // - Payments API (/api/payments/**) - USER can access own payments, OWNER can access all
-                    // - Addresses API (/api/addresses/**) - USER can access own addresses, OWNER can access all
                     authorize
                             .requestMatchers("/api/**").authenticated()
                             .anyRequest().authenticated();
                 })
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 

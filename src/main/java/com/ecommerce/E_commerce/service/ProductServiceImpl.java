@@ -10,6 +10,7 @@ import com.ecommerce.E_commerce.mapper.ProductMapper;
 import com.ecommerce.E_commerce.model.Category;
 import com.ecommerce.E_commerce.model.Product;
 import com.ecommerce.E_commerce.model.SkuGenerator;
+import com.ecommerce.E_commerce.repository.AttributeRepository;
 import com.ecommerce.E_commerce.repository.CategoryRepository;
 import com.ecommerce.E_commerce.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,16 +33,19 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final AttributeRepository attributeRepository;
     private final ProductMapper productMapper;
     private final ProductAttributeValueService productAttributeValueService;
 
     @Autowired
     public ProductServiceImpl(ProductRepository productRepository,
                               CategoryRepository categoryRepository,
+                              AttributeRepository attributeRepository,
                               ProductMapper productMapper,
                               ProductAttributeValueService productAttributeValueService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
+        this.attributeRepository = attributeRepository;
         this.productMapper = productMapper;
         this.productAttributeValueService = productAttributeValueService;
     }
@@ -62,12 +66,11 @@ public class ProductServiceImpl implements ProductService {
         
         Product savedProduct = productRepository.save(product);
         
-        // Handle attribute values if provided
         if (dto.attributeValues() != null && !dto.attributeValues().isEmpty()) {
             List<ProductAttributeValueCreateDTO> attributeValueDTOs = dto.attributeValues().stream()
                     .map(attr -> new ProductAttributeValueCreateDTO(
                             savedProduct.getId(),
-                            attr.categoryAttributeId(),
+                            attr.attributeId(),
                             attr.value()
                     ))
                     .collect(Collectors.toList());
@@ -83,14 +86,11 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
         
-        // Store original values to check if SKU needs regeneration
         String originalName = product.getName();
         Long originalCategoryId = product.getCategory().getId();
         
-        // Update product using mapper
         productMapper.updateProductFromDTO(dto, product);
         
-        // Handle category update separately
         if (dto.categoryId() != null) {
             Category category = categoryRepository.findById(dto.categoryId())
                     .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + dto.categoryId()));
@@ -99,14 +99,12 @@ public class ProductServiceImpl implements ProductService {
         
         product.setUpdatedAt(Instant.now());
         
-        // Regenerate SKU if category or name changed
         if (!originalName.equals(product.getName()) || !originalCategoryId.equals(product.getCategory().getId())) {
             product.setSku(SkuGenerator.generate(product));
         }
         
         Product savedProduct = productRepository.save(product);
         
-        // Handle attribute values if provided
         if (dto.attributeValues() != null && !dto.attributeValues().isEmpty()) {
             productAttributeValueService.updateByProduct(savedProduct.getId(), dto.attributeValues());
         }
@@ -318,6 +316,32 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public Page<ProductSummaryDTO> findByPriceRangeAndFeatured(BigDecimal minPrice, BigDecimal maxPrice, Boolean isFeatured, int page, int size, String sortBy, String sortDir) {
         return findByPriceRangeAndFeatured(minPrice, maxPrice, isFeatured, buildPageable(page, size, sortBy, sortDir));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductSummaryDTO> filterByAttribute(Long categoryId, String attributeName, String attributeValue, Pageable pageable) {
+        return productRepository.findByAttribute(categoryId, attributeName, attributeValue, pageable)
+                .map(productMapper::toProductSummaryDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductSummaryDTO> filterByAttribute(Long categoryId, String attributeName, String attributeValue, int page, int size, String sortBy, String sortDir) {
+        return filterByAttribute(categoryId, attributeName, attributeValue, buildPageable(page, size, sortBy, sortDir));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductSummaryDTO> filterByAttributeId(Long categoryId, Long attributeId, String attributeValue, Pageable pageable) {
+        return productRepository.findByAttributeIdAndValue(categoryId, attributeId, attributeValue, pageable)
+                .map(productMapper::toProductSummaryDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductSummaryDTO> filterByAttributeId(Long categoryId, Long attributeId, String attributeValue, int page, int size, String sortBy, String sortDir) {
+        return filterByAttributeId(categoryId, attributeId, attributeValue, buildPageable(page, size, sortBy, sortDir));
     }
 
 }

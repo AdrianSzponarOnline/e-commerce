@@ -9,6 +9,7 @@ import com.ecommerce.E_commerce.exception.ResourceNotFoundException;
 import com.ecommerce.E_commerce.mapper.ProductMapper;
 import com.ecommerce.E_commerce.model.Category;
 import com.ecommerce.E_commerce.model.Product;
+import com.ecommerce.E_commerce.repository.AttributeRepository;
 import com.ecommerce.E_commerce.repository.CategoryRepository;
 import com.ecommerce.E_commerce.repository.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +47,9 @@ class ProductServiceImplTest {
     @Mock
     private ProductAttributeValueService productAttributeValueService;
 
+    @Mock
+    private AttributeRepository attributeRepository;
+
     private ProductServiceImpl productService;
 
     private Product testProduct;
@@ -60,6 +64,7 @@ class ProductServiceImplTest {
         productService = new ProductServiceImpl(
                 productRepository,
                 categoryRepository,
+                attributeRepository,
                 productMapper,
                 productAttributeValueService
         );

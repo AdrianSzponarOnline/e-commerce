@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -18,20 +20,22 @@ import java.util.List;
 @Table(name = "products", uniqueConstraints = {
         @UniqueConstraint(columnNames = "sku")
 })
+@SQLDelete(sql = "UPDATE products SET deleted_at = NOW(), is_active = false WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 @NamedEntityGraph(
         name = "Product.withDetails",
         attributeNodes = {
                 @NamedAttributeNode("category"),
                 @NamedAttributeNode(
                         value = "attributeValues",
-                        subgraph = "graph.ProductAttributeValue.withCategoryAttribute"
+                        subgraph = "graph.ProductAttributeValue.withAttribute"
                 )
         },
         subgraphs = {
                 @NamedSubgraph(
-                        name = "graph.ProductAttributeValue.withCategoryAttribute",
+                        name = "graph.ProductAttributeValue.withAttribute",
                         attributeNodes = {
-                                @NamedAttributeNode("categoryAttribute")
+                                @NamedAttributeNode("attribute")
                         }
                 )
         }

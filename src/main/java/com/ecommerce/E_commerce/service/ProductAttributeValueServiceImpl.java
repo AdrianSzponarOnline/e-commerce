@@ -3,12 +3,14 @@ package com.ecommerce.E_commerce.service;
 import com.ecommerce.E_commerce.dto.productattributevalue.ProductAttributeValueCreateDTO;
 import com.ecommerce.E_commerce.dto.productattributevalue.ProductAttributeValueDTO;
 import com.ecommerce.E_commerce.dto.productattributevalue.ProductAttributeValueUpdateDTO;
+import com.ecommerce.E_commerce.exception.InvalidOperationException;
 import com.ecommerce.E_commerce.exception.ResourceNotFoundException;
 import com.ecommerce.E_commerce.mapper.ProductAttributeValueMapper;
-import com.ecommerce.E_commerce.model.CategoryAttribute;
+import com.ecommerce.E_commerce.model.Attribute;
+import com.ecommerce.E_commerce.model.CategoryAttributeType;
 import com.ecommerce.E_commerce.model.Product;
 import com.ecommerce.E_commerce.model.ProductAttributeValue;
-import com.ecommerce.E_commerce.repository.CategoryAttributeRepository;
+import com.ecommerce.E_commerce.repository.AttributeRepository;
 import com.ecommerce.E_commerce.repository.ProductAttributeValueRepository;
 import com.ecommerce.E_commerce.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +29,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
 
     private final ProductRepository productRepository;
     private final ProductAttributeValueRepository productAttributeValueRepository;
-    private final CategoryAttributeRepository categoryAttributeRepository;
+    private final AttributeRepository attributeRepository;
     private final ProductAttributeValueMapper productAttributeValueMapper;
 
     @Override
@@ -35,17 +37,19 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
         Product product = productRepository.findById(dto.productId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + dto.productId()));
         
-        CategoryAttribute categoryAttribute = categoryAttributeRepository.findById(dto.categoryAttributeId())
-                .orElseThrow(() -> new ResourceNotFoundException("Category attribute not found with id: " + dto.categoryAttributeId()));
+        Attribute attribute = attributeRepository.findById(dto.attributeId())
+                .orElseThrow(() -> new ResourceNotFoundException("Attribute not found with id: " + dto.attributeId()));
         
-        // Check if this combination already exists
-        if (productAttributeValueRepository.findByProductIdAndCategoryAttributeId(dto.productId(), dto.categoryAttributeId()).isPresent()) {
-            throw new IllegalArgumentException("Product attribute value already exists for this product and category attribute");
+        if (productAttributeValueRepository.findByProductIdAndAttributeId(dto.productId(), dto.attributeId()).isPresent()) {
+            throw new IllegalArgumentException("Product attribute value already exists for this product and attribute");
         }
+        
+      
+        validateAttributeValue(dto.value(), attribute.getType(), attribute.getName());
         
         ProductAttributeValue productAttributeValue = productAttributeValueMapper.toProductAttributeValue(dto);
         productAttributeValue.setProduct(product);
-        productAttributeValue.setCategoryAttribute(categoryAttribute);
+        productAttributeValue.setAttribute(attribute);
         
         ProductAttributeValue savedProductAttributeValue = productAttributeValueRepository.save(productAttributeValue);
         return productAttributeValueMapper.toProductAttributeValueDTO(savedProductAttributeValue);
@@ -56,10 +60,16 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
         ProductAttributeValue productAttributeValue = productAttributeValueRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product attribute value not found with id: " + id));
         
+        // Validate value against attribute type if value is being updated
+        if (dto.value() != null) {
+            Attribute attribute = productAttributeValue.getAttribute();
+            validateAttributeValue(dto.value(), attribute.getType(), attribute.getName());
+        }
+        
         productAttributeValueMapper.updateProductAttributeValueFromDTO(dto, productAttributeValue);
         
         if (dto.isActive() != null) {
-            productAttributeValue.setIsActive(dto.isActive());
+            productAttributeValue.setActive(dto.isActive().booleanValue());
         }
         
         ProductAttributeValue savedProductAttributeValue = productAttributeValueRepository.save(productAttributeValue);
@@ -72,7 +82,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
                 .orElseThrow(() -> new ResourceNotFoundException("Product attribute value not found with id: " + id));
         
         productAttributeValue.setDeletedAt(Instant.now());
-        productAttributeValue.setIsActive(false);
+        productAttributeValue.setActive(false);
         
         productAttributeValueRepository.save(productAttributeValue);
     }
@@ -96,8 +106,8 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProductAttributeValueDTO> getByCategoryAttributeId(Long categoryAttributeId) {
-        List<ProductAttributeValue> productAttributeValues = productAttributeValueRepository.findByCategoryAttributeIdAndIsActive(categoryAttributeId, true);
+    public List<ProductAttributeValueDTO> getByAttributeId(Long attributeId) {
+        List<ProductAttributeValue> productAttributeValues = productAttributeValueRepository.findByAttributeIdAndIsActive(attributeId, true);
         return productAttributeValues.stream()
                 .map(productAttributeValueMapper::toProductAttributeValueDTO)
                 .collect(Collectors.toList());
@@ -105,9 +115,9 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
 
     @Override
     @Transactional(readOnly = true)
-    public ProductAttributeValueDTO getByProductAndCategoryAttribute(Long productId, Long categoryAttributeId) {
-        ProductAttributeValue productAttributeValue = productAttributeValueRepository.findByProductIdAndCategoryAttributeId(productId, categoryAttributeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Product attribute value not found for product id: " + productId + " and category attribute id: " + categoryAttributeId));
+    public ProductAttributeValueDTO getByProductAndAttribute(Long productId, Long attributeId) {
+        ProductAttributeValue productAttributeValue = productAttributeValueRepository.findByProductIdAndAttributeId(productId, attributeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product attribute value not found for product id: " + productId + " and attribute id: " + attributeId));
         return productAttributeValueMapper.toProductAttributeValueDTO(productAttributeValue);
     }
 
@@ -127,8 +137,8 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProductAttributeValueDTO> findByCategoryAttributeId(Long categoryAttributeId, Pageable pageable) {
-        Page<ProductAttributeValue> productAttributeValues = productAttributeValueRepository.findByCategoryAttributeId(categoryAttributeId, pageable);
+    public Page<ProductAttributeValueDTO> findByAttributeId(Long attributeId, Pageable pageable) {
+        Page<ProductAttributeValue> productAttributeValues = productAttributeValueRepository.findByAttributeId(attributeId, pageable);
         return productAttributeValues.map(productAttributeValueMapper::toProductAttributeValueDTO);
     }
 
@@ -155,14 +165,14 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
     @Override
     @Transactional(readOnly = true)
     public Page<ProductAttributeValueDTO> findByAttributeType(String attributeType, Pageable pageable) {
-        Page<ProductAttributeValue> productAttributeValues = productAttributeValueRepository.findByCategoryAttributeType(attributeType, pageable);
+        Page<ProductAttributeValue> productAttributeValues = productAttributeValueRepository.findByAttributeType(attributeType, pageable);
         return productAttributeValues.map(productAttributeValueMapper::toProductAttributeValueDTO);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ProductAttributeValueDTO> findByKeyAttributes(Long productId, Pageable pageable) {
-        List<ProductAttributeValue> productAttributeValues = productAttributeValueRepository.findByProductIdAndCategoryAttributeIsKeyAttributeAndIsActive(productId, true, true);
+        List<ProductAttributeValue> productAttributeValues = productAttributeValueRepository.findByProductIdAndKeyAttributeAndIsActive(productId, true, true);
         // Convert to page manually since we have a list
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), productAttributeValues.size());
@@ -176,8 +186,8 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProductAttributeValueDTO> findByMultipleCriteria(Long productId, Long categoryAttributeId, String value, Boolean isActive, Pageable pageable) {
-        Page<ProductAttributeValue> productAttributeValues = productAttributeValueRepository.findByMultipleCriteria(productId, categoryAttributeId, value, isActive, pageable);
+    public Page<ProductAttributeValueDTO> findByMultipleCriteria(Long productId, Long attributeId, String value, Boolean isActive, Pageable pageable) {
+        Page<ProductAttributeValue> productAttributeValues = productAttributeValueRepository.findByMultipleCriteria(productId, attributeId, value, isActive, pageable);
         return productAttributeValues.map(productAttributeValueMapper::toProductAttributeValueDTO);
     }
 
@@ -190,7 +200,6 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
 
     @Override
     public List<ProductAttributeValueDTO> updateByProduct(Long productId, List<ProductAttributeValueUpdateDTO> dtos) {
-        // This is a simplified implementation - in practice, you might want to match by category attribute
         List<ProductAttributeValue> existingValues = productAttributeValueRepository.findByProductIdAndIsActive(productId, true);
         
         if (dtos.size() != existingValues.size()) {
@@ -198,8 +207,16 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
         }
         
         for (int i = 0; i < existingValues.size(); i++) {
-            productAttributeValueMapper.updateProductAttributeValueFromDTO(dtos.get(i), existingValues.get(i));
-            productAttributeValueRepository.save(existingValues.get(i));
+            ProductAttributeValue existingValue = existingValues.get(i);
+            ProductAttributeValueUpdateDTO dto = dtos.get(i);
+            
+            if (dto.value() != null) {
+                Attribute attribute = existingValue.getAttribute();
+                validateAttributeValue(dto.value(), attribute.getType(), attribute.getName());
+            }
+            
+            productAttributeValueMapper.updateProductAttributeValueFromDTO(dto, existingValue);
+            productAttributeValueRepository.save(existingValue);
         }
         
         return existingValues.stream()
@@ -214,7 +231,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
         
         for (ProductAttributeValue pav : productAttributeValues) {
             pav.setDeletedAt(now);
-            pav.setIsActive(false);
+            pav.setActive(false);
         }
         
         productAttributeValueRepository.saveAll(productAttributeValues);
@@ -228,8 +245,8 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
 
     @Override
     @Transactional(readOnly = true)
-    public long countByCategoryAttributeId(Long categoryAttributeId) {
-        return productAttributeValueRepository.countByCategoryAttributeIdAndIsActive(categoryAttributeId, true);
+    public long countByAttributeId(Long attributeId) {
+        return productAttributeValueRepository.countByAttributeIdAndIsActive(attributeId, true);
     }
 
     @Override
@@ -240,8 +257,8 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
 
     @Override
     @Transactional(readOnly = true)
-    public List<String> getDistinctValuesByCategoryAttribute(Long categoryAttributeId) {
-        return productAttributeValueRepository.findDistinctValuesByCategoryAttribute(categoryAttributeId);
+    public List<String> getDistinctValuesByAttribute(Long attributeId) {
+        return productAttributeValueRepository.findDistinctValuesByAttribute(attributeId);
     }
 
     @Override
@@ -265,12 +282,63 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
     @Autowired
     public ProductAttributeValueServiceImpl(ProductRepository productRepository,
                                             ProductAttributeValueRepository productAttributeValueRepository,
-                                            CategoryAttributeRepository categoryAttributeRepository,
+                                            AttributeRepository attributeRepository,
                                             ProductAttributeValueMapper productAttributeValueMapper) {
         this.productRepository = productRepository;
         this.productAttributeValueRepository = productAttributeValueRepository;
-        this.categoryAttributeRepository = categoryAttributeRepository;
+        this.attributeRepository = attributeRepository;
         this.productAttributeValueMapper = productAttributeValueMapper;
+    }
+
+    /**
+     * Validates that the provided value matches the expected attribute type.
+     * 
+     * @param value the value to validate
+     * @param attributeType the expected type of the attribute
+     * @param attributeName the name of the attribute (for error messages)
+     * @throws InvalidOperationException if the value doesn't match the attribute type
+     */
+    private void validateAttributeValue(String value, CategoryAttributeType attributeType, String attributeName) {
+        if (value == null || value.trim().isEmpty()) {
+            return;
+        }
+
+        switch (attributeType) {
+            case NUMBER:
+                validateNumberValue(value, attributeName);
+                break;
+            case BOOLEAN:
+                validateBooleanValue(value, attributeName);
+                break;
+            case TEXT:
+            case SELECT:
+                break;
+            default:
+                throw new InvalidOperationException("Unknown attribute type: " + attributeType);
+        }
+    }
+
+    private void validateNumberValue(String value, String attributeName) {
+        try {
+            Double.parseDouble(value.trim());
+        } catch (NumberFormatException e) {
+            throw new InvalidOperationException(
+                String.format("Invalid value for attribute '%s' (type: NUMBER). Expected a number, but got: '%s'", 
+                    attributeName, value)
+            );
+        }
+    }
+
+    private void validateBooleanValue(String value, String attributeName) {
+        String trimmedValue = value.trim().toLowerCase();
+        if (!trimmedValue.equals("true") && !trimmedValue.equals("false") && 
+            !trimmedValue.equals("1") && !trimmedValue.equals("0") &&
+            !trimmedValue.equals("yes") && !trimmedValue.equals("no")) {
+            throw new InvalidOperationException(
+                String.format("Invalid value for attribute '%s' (type: BOOLEAN). Expected 'true' or 'false', but got: '%s'", 
+                    attributeName, value)
+            );
+        }
     }
 
 }

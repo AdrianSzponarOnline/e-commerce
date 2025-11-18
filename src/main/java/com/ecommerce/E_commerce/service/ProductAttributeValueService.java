@@ -24,13 +24,13 @@ public interface ProductAttributeValueService {
     // Single ProductAttributeValue Retrieval
     ProductAttributeValueDTO getById(Long id);
     List<ProductAttributeValueDTO> getByProductId(Long productId);
-    List<ProductAttributeValueDTO> getByCategoryAttributeId(Long categoryAttributeId);
-    ProductAttributeValueDTO getByProductAndCategoryAttribute(Long productId, Long categoryAttributeId);
+    List<ProductAttributeValueDTO> getByAttributeId(Long attributeId);
+    ProductAttributeValueDTO getByProductAndAttribute(Long productId, Long attributeId);
     
     // Paginated Lists
     Page<ProductAttributeValueDTO> findAll(Pageable pageable);
     Page<ProductAttributeValueDTO> findByProductId(Long productId, Pageable pageable);
-    Page<ProductAttributeValueDTO> findByCategoryAttributeId(Long categoryAttributeId, Pageable pageable);
+    Page<ProductAttributeValueDTO> findByAttributeId(Long attributeId, Pageable pageable);
     Page<ProductAttributeValueDTO> findByCategoryId(Long categoryId, Pageable pageable);
     Page<ProductAttributeValueDTO> findByValue(String value, Pageable pageable);
     
@@ -42,7 +42,7 @@ public interface ProductAttributeValueService {
     // Advanced Filtering
     Page<ProductAttributeValueDTO> findByMultipleCriteria(
             Long productId, 
-            Long categoryAttributeId, 
+            Long attributeId, 
             String value, 
             Boolean isActive, 
             Pageable pageable
@@ -60,11 +60,10 @@ public interface ProductAttributeValueService {
     
 
     long countByProductId(Long productId);
-    long countByCategoryAttributeId(Long categoryAttributeId);
+    long countByAttributeId(Long attributeId);
     long countByCategoryId(Long categoryId);
     
-
-    List<String> getDistinctValuesByCategoryAttribute(Long categoryAttributeId);
+    List<String> getDistinctValuesByAttribute(Long attributeId);
     List<ProductAttributeValueDTO> getKeyAttributesByProduct(Long productId);
     List<ProductAttributeValueDTO> getByProductAndAttributeType(Long productId, String attributeType);
 }

@@ -354,28 +354,46 @@ class SkuGeneratorTest {
 
     // Helper methods
     private CategoryAttribute createKeyAttribute(String name, String value) {
-        CategoryAttribute attribute = new CategoryAttribute();
+        Attribute attribute = new Attribute();
         attribute.setId(1L);
         attribute.setName(name);
-        attribute.setCategory(category);
-        attribute.setIsKeyAttribute(true);
-        return attribute;
+        attribute.setType(CategoryAttributeType.TEXT);
+        
+        CategoryAttribute categoryAttribute = new CategoryAttribute();
+        categoryAttribute.setId(1L);
+        categoryAttribute.setCategory(category);
+        categoryAttribute.setAttribute(attribute);
+        categoryAttribute.setKeyAttribute(true);
+        
+        // Add to category's attributes set
+        category.getAttributes().add(categoryAttribute);
+        
+        return categoryAttribute;
     }
 
     private CategoryAttribute createNonKeyAttribute(String name, String value) {
-        CategoryAttribute attribute = new CategoryAttribute();
+        Attribute attribute = new Attribute();
         attribute.setId(2L);
         attribute.setName(name);
-        attribute.setCategory(category);
-        attribute.setIsKeyAttribute(false);
-        return attribute;
+        attribute.setType(CategoryAttributeType.TEXT);
+        
+        CategoryAttribute categoryAttribute = new CategoryAttribute();
+        categoryAttribute.setId(2L);
+        categoryAttribute.setCategory(category);
+        categoryAttribute.setAttribute(attribute);
+        categoryAttribute.setKeyAttribute(false);
+        
+        // Add to category's attributes set
+        category.getAttributes().add(categoryAttribute);
+        
+        return categoryAttribute;
     }
 
     private ProductAttributeValue createAttributeValue(CategoryAttribute categoryAttribute, String value) {
         ProductAttributeValue attributeValue = new ProductAttributeValue();
         attributeValue.setId(1L);
         attributeValue.setProduct(product);
-        attributeValue.setCategoryAttribute(categoryAttribute);
+        attributeValue.setAttribute(categoryAttribute.getAttribute());
         attributeValue.setValue(value);
         return attributeValue;
     }

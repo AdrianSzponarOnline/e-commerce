@@ -11,6 +11,11 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface CategoryAttributeMapper {
     @Mapping(target = "categoryId", source = "category.id")
+    @Mapping(target = "attributeId", source = "attribute.id")
+    @Mapping(target = "attributeName", source = "attribute.name")
+    @Mapping(target = "attributeType", source = "attribute.type")
+    @Mapping(target = "isKeyAttribute", source = "keyAttribute")
+    @Mapping(target = "isActive", source = "active")
     CategoryAttributeDTO toDTO(CategoryAttribute entity);
 
     @Mapping(target = "id", ignore = true)

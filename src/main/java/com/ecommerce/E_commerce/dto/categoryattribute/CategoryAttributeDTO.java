@@ -7,8 +7,10 @@ import java.time.Instant;
 public record CategoryAttributeDTO(
         Long id,
         Long categoryId,
-        String name,
-        CategoryAttributeType type,
+        Long attributeId,
+        String attributeName,
+        CategoryAttributeType attributeType,
+        Boolean isKeyAttribute,
         Boolean isActive,
         Instant createdAt,
         Instant updatedAt

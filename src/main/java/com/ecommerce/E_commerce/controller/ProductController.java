@@ -214,4 +214,31 @@ public class ProductController {
         long count = productService.countByActive(isActive);
         return ResponseEntity.ok(count);
     }
+
+    // Filter by attributes
+    @GetMapping("/filter/attribute")
+    public ResponseEntity<Page<ProductSummaryDTO>> filterProductsByAttribute(
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam String attributeName,
+            @RequestParam String attributeValue,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+        Page<ProductSummaryDTO> products = productService.filterByAttribute(categoryId, attributeName, attributeValue, page, size, sortBy, sortDir);
+        return ResponseEntity.ok(products);
+    }
+
+    @GetMapping("/filter/attribute/{attributeId}")
+    public ResponseEntity<Page<ProductSummaryDTO>> filterProductsByAttributeId(
+            @PathVariable Long attributeId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam String attributeValue,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+        Page<ProductSummaryDTO> products = productService.filterByAttributeId(categoryId, attributeId, attributeValue, page, size, sortBy, sortDir);
+        return ResponseEntity.ok(products);
+    }
 }
