@@ -35,9 +35,6 @@ SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
---
--- Name: addresses; Type: TABLE; Schema: public; Owner: postgres
---
 
 CREATE TABLE public.addresses (
     id bigint DEFAULT nextval('public.addresses_id_seq'::regclass) NOT NULL,
@@ -57,9 +54,6 @@ CREATE TABLE public.addresses (
 
 ALTER TABLE public.addresses OWNER TO postgres;
 
---
--- Name: categories_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
 
 CREATE SEQUENCE public.categories_id_seq
     START WITH 1
@@ -71,9 +65,6 @@ CREATE SEQUENCE public.categories_id_seq
 
 ALTER SEQUENCE public.categories_id_seq OWNER TO postgres;
 
---
--- Name: categories; Type: TABLE; Schema: public; Owner: postgres
---
 
 CREATE TABLE public.categories (
     id bigint DEFAULT nextval('public.categories_id_seq'::regclass) NOT NULL,
@@ -90,9 +81,7 @@ CREATE TABLE public.categories (
 
 ALTER TABLE public.categories OWNER TO postgres;
 
---
--- Name: category_attributes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
+
 
 CREATE SEQUENCE public.category_attributes_id_seq
     START WITH 1
@@ -104,9 +93,6 @@ CREATE SEQUENCE public.category_attributes_id_seq
 
 ALTER SEQUENCE public.category_attributes_id_seq OWNER TO postgres;
 
---
--- Name: category_attributes; Type: TABLE; Schema: public; Owner: postgres
---
 
 CREATE TABLE public.category_attributes (
     id bigint DEFAULT nextval('public.category_attributes_id_seq'::regclass) NOT NULL,
@@ -122,9 +108,7 @@ CREATE TABLE public.category_attributes (
 
 ALTER TABLE public.category_attributes OWNER TO postgres;
 
---
--- Name: newsletter_subscriptions_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
+
 
 CREATE SEQUENCE public.newsletter_subscriptions_id_seq
     START WITH 1

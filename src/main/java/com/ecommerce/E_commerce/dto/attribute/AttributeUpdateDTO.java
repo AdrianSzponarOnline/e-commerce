@@ -1,7 +1,6 @@
 package com.ecommerce.E_commerce.dto.attribute;
 
 import com.ecommerce.E_commerce.model.CategoryAttributeType;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 

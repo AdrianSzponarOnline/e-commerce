@@ -39,8 +39,10 @@ Kompletna dokumentacja API dla systemu e-commerce z obsługą produktów, katego
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "type": "Bearer",
-  "email": "user@example.com"
+  "firstName": "Jan",
+  "lastName": "Kowalski",
+  "email": "user@example.com",
+  "roles": ["ROLE_USER"]
 }
 ```
 
@@ -61,7 +63,11 @@ Kompletna dokumentacja API dla systemu e-commerce z obsługą produktów, katego
 **Response:**
 ```json
 {
-  "email": "user@example.com"
+  "id": 1,
+  "email": "user@example.com",
+  "firstName": "Jan",
+  "lastName": "Kowalski",
+  "roles": ["ROLE_USER"]
 }
 ```
 
@@ -72,7 +78,11 @@ Kompletna dokumentacja API dla systemu e-commerce z obsługą produktów, katego
 **Response:**
 ```json
 {
-  "email": "user@example.com"
+  "id": 1,
+  "email": "user@example.com",
+  "firstName": "Jan",
+  "lastName": "Kowalski",
+  "roles": ["ROLE_USER"]
 }
 ```
 
@@ -346,8 +356,8 @@ API kategorii obsługuje hierarchiczną strukturę kategorii z relacjami rodzic-
 **Request Body:**
 ```json
 {
-  "name": "Screen Size",
-  "type": "TEXT",
+  "attributeId": 1,
+  "isKeyAttribute": true,
   "isActive": true
 }
 ```
@@ -356,14 +366,16 @@ API kategorii obsługuje hierarchiczną strukturę kategorii z relacjami rodzic-
 ```json
 {
   "id": 1,
-  "name": "Screen Size",
-  "type": "TEXT",
-  "isActive": true,
   "categoryId": 1,
-  "createdAt": "2024-01-01T10:00:00Z",
-  "updatedAt": "2024-01-01T10:00:00Z"
+  "attributeId": 1,
+  "attributeName": "Screen Size",
+  "attributeType": "TEXT",
+  "isKeyAttribute": true,
+  "isActive": true
 }
 ```
+
+**Uwaga:** Atrybut musi istnieć w systemie (tabela `attributes`). `categoryId` jest automatycznie ustawiane z path parameter.
 
 ### 3.2 Aktualizacja atrybutu kategorii
 **Endpoint:** `PUT /api/categories/{categoryId}/attributes/{id}`  
@@ -405,11 +417,11 @@ API kategorii obsługuje hierarchiczną strukturę kategorii z relacjami rodzic-
   "isFeatured": true,
   "attributeValues": [
     {
-      "categoryAttributeId": 1,
+      "attributeId": 1,
       "value": "15.6 inch"
     },
     {
-      "categoryAttributeId": 2,
+      "attributeId": 2,
       "value": "Black"
     }
   ]
@@ -440,9 +452,9 @@ API kategorii obsługuje hierarchiczną strukturę kategorii z relacjami rodzic-
       "id": 1,
       "productId": 1,
       "productName": "Laptop Gaming",
-      "categoryAttributeId": 1,
-      "categoryAttributeName": "Screen Size",
-      "categoryAttributeType": "TEXT",
+      "attributeId": 1,
+      "attributeName": "Screen Size",
+      "attributeType": "TEXT",
       "isKeyAttribute": true,
       "value": "15.6 inch",
       "isActive": true
@@ -467,7 +479,7 @@ API kategorii obsługuje hierarchiczną strukturę kategorii z relacjami rodzic-
   "attributeValues": [
     {
       "id": 1,
-      "categoryAttributeId": 1,
+      "attributeId": 1,
       "value": "17 inch"
     }
   ]
@@ -535,33 +547,63 @@ API kategorii obsługuje hierarchiczną strukturę kategorii z relacjami rodzic-
 - `name` (string) - wyszukiwanie po nazwie
 - `description` (string) - wyszukiwanie po opisie
 
-### 4.14 Zaawansowane filtrowanie
-**Endpoint:** `GET /api/products/filter`  
+### 4.14 Filtrowanie produktów po atrybutach (nazwa)
+**Endpoint:** `GET /api/products/filter/attribute`  
 **Autoryzacja:** Public
 
 **Query Parameters:**
-- `categoryId` (Long) - ID kategorii
-- `isFeatured` (Boolean) - czy polecany
-- `minPrice` (BigDecimal) - minimalna cena
-- `maxPrice` (BigDecimal) - maksymalna cena
+- `categoryId` (Long, optional) - ID kategorii do filtrowania
+- `attributeName` (String, required) - Nazwa atrybutu
+- `attributeValue` (String, required) - Wartość atrybutu
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "name") - pole sortowania
+- `sortDir` (string, default: "asc") - kierunek sortowania (asc/desc)
 
-### 4.15 Statystyki produktów
-**Endpoint:** `GET /api/products/stats`  
+**Response:** `Page<ProductSummaryDTO>`
+
+### 4.15 Filtrowanie produktów po atrybutach (ID)
+**Endpoint:** `GET /api/products/filter/attribute/{attributeId}`  
 **Autoryzacja:** Public
 
-**Response:**
-```json
-{
-  "totalProducts": 150,
-  "featuredProducts": 25,
-  "activeProducts": 140,
-  "productsByCategory": {
-    "1": 50,
-    "2": 30,
-    "3": 70
-  }
-}
-```
+**Path Parameters:**
+- `attributeId` (Long) - ID atrybutu
+
+**Query Parameters:**
+- `categoryId` (Long, optional) - ID kategorii do filtrowania
+- `attributeValue` (String, required) - Wartość atrybutu
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "name") - pole sortowania
+- `sortDir` (string, default: "asc") - kierunek sortowania (asc/desc)
+
+**Response:** `Page<ProductSummaryDTO>`
+
+### 4.16 Statystyki produktów
+
+#### 4.16.1 Liczba produktów w kategorii
+**Endpoint:** `GET /api/products/stats/category/{categoryId}/count`  
+**Autoryzacja:** Public
+
+**Response:** `Long` - liczba produktów
+
+#### 4.16.2 Liczba produktów wyróżnionych
+**Endpoint:** `GET /api/products/stats/featured/count`  
+**Autoryzacja:** Public
+
+**Query Parameters:**
+- `isFeatured` (Boolean, default: true)
+
+**Response:** `Long` - liczba produktów
+
+#### 4.16.3 Liczba produktów aktywnych
+**Endpoint:** `GET /api/products/stats/active/count`  
+**Autoryzacja:** Public
+
+**Query Parameters:**
+- `isActive` (Boolean, default: true)
+
+**Response:** `Long` - liczba produktów
 
 ---
 
@@ -575,7 +617,7 @@ API kategorii obsługuje hierarchiczną strukturę kategorii z relacjami rodzic-
 ```json
 {
   "productId": 1,
-  "categoryAttributeId": 1,
+  "attributeId": 1,
   "value": "15.6 inch"
 }
 ```
@@ -584,18 +626,14 @@ API kategorii obsługuje hierarchiczną strukturę kategorii z relacjami rodzic-
 ```json
 {
   "id": 1,
-  "productId": 1,
-  "productName": "Laptop Gaming",
-  "categoryAttributeId": 1,
-  "categoryAttributeName": "Screen Size",
-  "categoryAttributeType": "TEXT",
+  "attributeName": "Screen Size",
+  "attributeType": "TEXT",
   "isKeyAttribute": true,
-  "value": "15.6 inch",
-  "createdAt": "2024-01-01T10:00:00Z",
-  "updatedAt": "2024-01-01T10:00:00Z",
-  "isActive": true
+  "value": "15.6 inch"
 }
 ```
+
+**Uwaga:** `attributeId` odnosi się do atrybutu z tabeli `attributes`, nie do `categoryAttribute`.
 
 ### 5.2 Tworzenie wielu wartości atrybutów (bulk)
 **Endpoint:** `POST /api/product-attribute-values/bulk`  
@@ -606,12 +644,12 @@ API kategorii obsługuje hierarchiczną strukturę kategorii z relacjami rodzic-
 [
   {
     "productId": 1,
-    "categoryAttributeId": 1,
+    "attributeId": 1,
     "value": "15.6 inch"
   },
   {
     "productId": 1,
-    "categoryAttributeId": 2,
+    "attributeId": 2,
     "value": "Black"
   }
 ]
@@ -624,15 +662,31 @@ API kategorii obsługuje hierarchiczną strukturę kategorii z relacjami rodzic-
 **Request Body:**
 ```json
 {
-  "id": 1,
-  "categoryAttributeId": 1,
   "value": "17 inch"
 }
 ```
 
+**Uwaga:** Można aktualizować tylko wartość atrybutu. `attributeId` nie może być zmienione.
+
 ### 5.4 Aktualizacja wartości atrybutów produktu (bulk)
-**Endpoint:** `PUT /api/product-attribute-values/product/{productId}`  
+**Endpoint:** `PUT /api/product-attribute-values/product/{productId}/bulk`  
 **Autoryzacja:** `ROLE_OWNER`
+
+**Request Body:**
+```json
+[
+  {
+    "id": 1,
+    "value": "17 inch"
+  },
+  {
+    "id": 2,
+    "value": "White"
+  }
+]
+```
+
+**Uwaga:** Lista musi zawierać wszystkie atrybuty produktu. Liczba elementów musi odpowiadać liczbie istniejących atrybutów.
 
 ### 5.5 Usuwanie wartości atrybutu
 **Endpoint:** `DELETE /api/product-attribute-values/{id}`  
@@ -646,52 +700,160 @@ API kategorii obsługuje hierarchiczną strukturę kategorii z relacjami rodzic-
 **Endpoint:** `GET /api/product-attribute-values/{id}`  
 **Autoryzacja:** Public
 
-### 5.8 Pobieranie wartości atrybutu po produkt i atrybut kategorii
-**Endpoint:** `GET /api/product-attribute-values/product/{productId}/category-attribute/{categoryAttributeId}`  
+### 5.8 Pobieranie wartości atrybutu po produkt i atrybut
+**Endpoint:** `GET /api/product-attribute-values/product/{productId}/attribute/{attributeId}`  
 **Autoryzacja:** Public
 
 ### 5.9 Lista wszystkich wartości atrybutów (z paginacją)
 **Endpoint:** `GET /api/product-attribute-values`  
 **Autoryzacja:** Public
 
+**Query Parameters:**
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "id") - pole sortowania
+- `sortDir` (string, default: "asc") - kierunek sortowania
+
+**Response:** `Page<ProductAttributeValueDTO>`
+
 ### 5.10 Wartości atrybutów według produktu
 **Endpoint:** `GET /api/product-attribute-values/product/{productId}`  
 **Autoryzacja:** Public
 
-### 5.11 Wartości atrybutów według atrybutu kategorii
-**Endpoint:** `GET /api/product-attribute-values/category-attribute/{categoryAttributeId}`  
+**Response:** `List<ProductAttributeValueDTO>`
+
+### 5.11 Wartości atrybutów według produktu (paginated)
+**Endpoint:** `GET /api/product-attribute-values/product/{productId}/paginated`  
 **Autoryzacja:** Public
 
-### 5.12 Wartości atrybutów według kategorii produktu
+**Query Parameters:**
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "id") - pole sortowania
+- `sortDir` (string, default: "asc") - kierunek sortowania
+
+**Response:** `Page<ProductAttributeValueDTO>`
+
+### 5.12 Wartości atrybutów według atrybutu
+**Endpoint:** `GET /api/product-attribute-values/attribute/{attributeId}`  
+**Autoryzacja:** Public
+
+**Response:** `List<ProductAttributeValueDTO>`
+
+### 5.13 Wartości atrybutów według atrybutu (paginated)
+**Endpoint:** `GET /api/product-attribute-values/attribute/{attributeId}/paginated`  
+**Autoryzacja:** Public
+
+**Query Parameters:**
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "id") - pole sortowania
+- `sortDir` (string, default: "asc") - kierunek sortowania
+
+**Response:** `Page<ProductAttributeValueDTO>`
+
+### 5.14 Wartości atrybutów według kategorii produktu
 **Endpoint:** `GET /api/product-attribute-values/category/{categoryId}`  
 **Autoryzacja:** Public
 
-### 5.13 Wyszukiwanie wartości atrybutów
+**Query Parameters:**
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "id") - pole sortowania
+- `sortDir` (string, default: "asc") - kierunek sortowania
+
+**Response:** `Page<ProductAttributeValueDTO>`
+
+### 5.15 Wyszukiwanie wartości atrybutów
 **Endpoint:** `GET /api/product-attribute-values/search/value`  
 **Autoryzacja:** Public
 
 **Query Parameters:**
-- `value` (string) - wyszukiwana wartość
+- `value` (string, required) - wyszukiwana wartość
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "id") - pole sortowania
+- `sortDir` (string, default: "asc") - kierunek sortowania
 
-### 5.14 Wartości atrybutów według typu
-**Endpoint:** `GET /api/product-attribute-values/attribute-type/{type}`  
+**Response:** `Page<ProductAttributeValueDTO>`
+
+### 5.16 Wartości atrybutów według typu
+**Endpoint:** `GET /api/product-attribute-values/attribute-type/{attributeType}`  
 **Autoryzacja:** Public
 
-### 5.15 Kluczowe atrybuty produktu
+**Path Parameters:**
+- `attributeType` (String) - Typ atrybutu (TEXT, NUMBER, BOOLEAN, SELECT)
+
+**Query Parameters:**
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "id") - pole sortowania
+- `sortDir` (string, default: "asc") - kierunek sortowania
+
+**Response:** `Page<ProductAttributeValueDTO>`
+
+### 5.17 Kluczowe atrybuty produktu (paginated)
 **Endpoint:** `GET /api/product-attribute-values/product/{productId}/key-attributes`  
 **Autoryzacja:** Public
 
-### 5.16 Statystyki wartości atrybutów
-**Endpoint:** `GET /api/product-attribute-values/count/product/{productId}`  
+**Query Parameters:**
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "id") - pole sortowania
+- `sortDir` (string, default: "asc") - kierunek sortowania
+
+**Response:** `Page<ProductAttributeValueDTO>`
+
+### 5.18 Kluczowe atrybuty produktu (lista)
+**Endpoint:** `GET /api/product-attribute-values/product/{productId}/key-attributes/list`  
 **Autoryzacja:** Public
 
-**Response:**
-```json
-5
-```
+**Response:** `List<ProductAttributeValueDTO>`
 
-### 5.17 Unikalne wartości atrybutu kategorii
-**Endpoint:** `GET /api/product-attribute-values/distinct-values/category-attribute/{categoryAttributeId}`  
+### 5.19 Wartości atrybutów według produktu i typu
+**Endpoint:** `GET /api/product-attribute-values/product/{productId}/attribute-type/{attributeType}`  
+**Autoryzacja:** Public
+
+**Response:** `List<ProductAttributeValueDTO>`
+
+### 5.20 Zaawansowane wyszukiwanie
+**Endpoint:** `GET /api/product-attribute-values/search/advanced`  
+**Autoryzacja:** Public
+
+**Query Parameters:**
+- `productId` (Long, optional) - ID produktu
+- `attributeId` (Long, optional) - ID atrybutu
+- `value` (String, optional) - Wartość atrybutu
+- `isActive` (Boolean, optional) - Status aktywności
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "id") - pole sortowania
+- `sortDir` (string, default: "asc") - kierunek sortowania
+
+**Response:** `Page<ProductAttributeValueDTO>`
+
+### 5.21 Statystyki wartości atrybutów
+
+#### 5.21.1 Liczba wartości atrybutów dla produktu
+**Endpoint:** `GET /api/product-attribute-values/stats/product/{productId}`  
+**Autoryzacja:** Public
+
+**Response:** `Long` - liczba wartości atrybutów
+
+#### 5.21.2 Liczba wartości atrybutów dla atrybutu
+**Endpoint:** `GET /api/product-attribute-values/stats/attribute/{attributeId}`  
+**Autoryzacja:** Public
+
+**Response:** `Long` - liczba wartości atrybutów
+
+#### 5.21.3 Liczba wartości atrybutów dla kategorii
+**Endpoint:** `GET /api/product-attribute-values/stats/category/{categoryId}`  
+**Autoryzacja:** Public
+
+**Response:** `Long` - liczba wartości atrybutów
+
+### 5.22 Unikalne wartości atrybutu
+**Endpoint:** `GET /api/product-attribute-values/distinct-values/attribute/{attributeId}`  
 **Autoryzacja:** Public
 
 **Response:**
@@ -752,7 +914,7 @@ Zdejmuje flagę `isThumbnail` z innych obrazów produktu i ustawia `thumbnail_ur
 
 ## 7. Modele danych
 
-### 6.1 CategoryAttributeType
+### 7.1 CategoryAttributeType
 ```json
 {
   "TEXT": "Tekst",
@@ -763,7 +925,7 @@ Zdejmuje flagę `isThumbnail` z innych obrazów produktu i ustawia `thumbnail_ur
 }
 ```
 
-### 6.2 ERole
+### 7.2 ERole
 ```json
 {
   "USER": "Użytkownik",
@@ -776,7 +938,7 @@ Zdejmuje flagę `isThumbnail` z innych obrazów produktu i ustawia `thumbnail_ur
 
 ## 8. Kody błędów
 
-### 7.1 HTTP Status Codes
+### 8.1 HTTP Status Codes
 - `200 OK` - Sukces
 - `201 Created` - Zasób utworzony
 - `204 No Content` - Sukces bez zawartości
@@ -787,7 +949,7 @@ Zdejmuje flagę `isThumbnail` z innych obrazów produktu i ustawia `thumbnail_ur
 - `409 Conflict` - Konflikt (np. duplikat)
 - `500 Internal Server Error` - Błąd serwera
 
-### 7.2 Przykłady błędów
+### 8.2 Przykłady błędów
 ```json
 {
   "timestamp": "2024-01-01T10:00:00Z",
@@ -808,7 +970,7 @@ Zdejmuje flagę `isThumbnail` z innych obrazów produktu i ustawia `thumbnail_ur
 
 ## 9. Przykłady użycia
 
-### 8.1 Tworzenie produktu z atrybutami
+### 9.1 Tworzenie produktu z atrybutami
 ```bash
 curl -X POST "http://localhost:8080/api/products" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
@@ -822,23 +984,23 @@ curl -X POST "http://localhost:8080/api/products" \
     "categoryId": 1,
     "attributeValues": [
       {
-        "categoryAttributeId": 1,
+        "attributeId": 1,
         "value": "6.1 inch"
       },
       {
-        "categoryAttributeId": 2,
+        "attributeId": 2,
         "value": "Space Black"
       }
     ]
   }'
 ```
 
-### 8.2 Wyszukiwanie produktów z filtrami
+### 9.2 Wyszukiwanie produktów z filtrami
 ```bash
 curl -X GET "http://localhost:8080/api/products/filter?categoryId=1&minPrice=1000&maxPrice=5000&isFeatured=true&page=0&size=10&sortBy=price&sortDir=asc"
 ```
 
-### 8.3 Pobieranie atrybutów produktu
+### 9.3 Pobieranie atrybutów produktu
 ```bash
 curl -X GET "http://localhost:8080/api/product-attribute-values/product/1"
 ```
@@ -847,7 +1009,7 @@ curl -X GET "http://localhost:8080/api/product-attribute-values/product/1"
 
 ## 10. Testy
 
-### 9.1 Pokrycie testami
+### 10.1 Pokrycie testami
 - **SkuGeneratorTest:** 8 testów
 - **ProductServiceImplTest:** 72 testy  
 - **ProductAttributeValueServiceImplTest:** 33 testy
@@ -861,7 +1023,7 @@ curl -X GET "http://localhost:8080/api/product-attribute-values/product/1"
 
 **Łącznie:** 130 testów
 
-### 9.2 Uruchamianie testów
+### 10.2 Uruchamianie testów
 ```bash
 # Wszystkie testy
 mvn test
@@ -877,13 +1039,13 @@ mvn test jacoco:report
 
 ## 11. Migracje bazy danych
 
-### 10.1 Dostępne migracje
+### 11.1 Dostępne migracje
 - `V1__baseline.sql` - Podstawowa struktura bazy danych
 - `V2__category_attribute_updates.sql` - Aktualizacje atrybutów kategorii
 - `V3__insert_craft_categories.sql` - Wstawienie kategorii rzemieślniczych
 - `V4__add_sku_unique_constraint.sql` - Unikalne ograniczenie dla SKU
 
-### 10.2 Uruchamianie migracji
+### 11.2 Uruchamianie migracji
 ```bash
 # Automatycznie przy starcie aplikacji
 mvn spring-boot:run
@@ -896,7 +1058,7 @@ mvn flyway:migrate
 
 ## 12. Konfiguracja
 
-### 11.1 Wymagane zmienne środowiskowe
+### 12.1 Wymagane zmienne środowiskowe
 ```properties
 # Database
 spring.datasource.url=jdbc:postgresql://localhost:5432/ecommerce
@@ -912,7 +1074,7 @@ spring.flyway.enabled=true
 spring.flyway.locations=classpath:db/migration
 ```
 
-### 11.2 Profile aplikacji
+### 12.2 Profile aplikacji
 - `default` - Produkcja (PostgreSQL)
 - `test` - Testy (H2 in-memory)
 - `example` - Przykładowa konfiguracja
@@ -921,26 +1083,26 @@ spring.flyway.locations=classpath:db/migration
 
 ## 13. Bezpieczeństwo
 
-### 12.1 Role i uprawnienia
+### 13.1 Role i uprawnienia
 - **USER** - Podstawowe operacje (odczyt)
 - **ADMIN** - Zarządzanie użytkownikami
 - **OWNER** - Pełne uprawnienia (CRUD wszystkich zasobów)
 
-### 12.2 Zabezpieczone endpointy
+### 13.2 Zabezpieczone endpointy
 - Wszystkie operacje CUD wymagają roli `ROLE_OWNER`
 - Endpointy odczytu są publiczne
 - JWT token wymagany dla operacji wymagających autoryzacji
 
-### 12.3 Walidacja danych
+### 13.3 Walidacja danych
 - Wszystkie DTOs mają walidację Bean Validation
 - Sprawdzanie uprawnień na poziomie metody
 - Sanityzacja danych wejściowych
 
 ---
 
-## 13. Orders API (`/api/orders`)
+## 14. Orders API (`/api/orders`)
 
-### 13.1 Tworzenie zamówienia
+### 14.1 Tworzenie zamówienia
 **Endpoint:** `POST /api/orders`  
 **Autoryzacja:** USER lub OWNER (tylko własne zamówienia)
 
@@ -976,7 +1138,7 @@ spring.flyway.locations=classpath:db/migration
 - Automatyczne obliczenie `totalAmount` na podstawie pozycji
 - Cena pozycji pobierana z produktu (zabezpieczenie przed manipulacją)
 
-### 13.2 Anulowanie zamówienia
+### 14.2 Anulowanie zamówienia
 **Endpoint:** `PATCH /api/orders/{id}/cancel`  
 **Autoryzacja:** USER (tylko własne, status NEW/CONFIRMED) lub OWNER (dowolne)
 
@@ -993,15 +1155,15 @@ spring.flyway.locations=classpath:db/migration
 - `400 Bad Request` - Zamówienie już anulowane
 - `403 Forbidden` - USER próbuje anulować SHIPPED/DELIVERED
 
-### 13.3 Pobieranie zamówienia
+### 14.3 Pobieranie zamówienia
 **Endpoint:** `GET /api/orders/{id}`  
 **Autoryzacja:** USER (tylko własne) lub OWNER
 
-### 13.4 Lista zamówień użytkownika
+### 14.4 Lista zamówień użytkownika
 **Endpoint:** `GET /api/orders/user/{userId}`  
 **Autoryzacja:** USER (tylko własne) lub OWNER
 
-### 13.5 Aktualizacja zamówienia (tylko OWNER)
+### 14.5 Aktualizacja zamówienia (tylko OWNER)
 **Endpoint:** `PUT /api/orders/{id}`  
 **Autoryzacja:** OWNER
 
@@ -1020,9 +1182,9 @@ spring.flyway.locations=classpath:db/migration
 
 ---
 
-## 14. Payments API (`/api/payments`)
+## 15. Payments API (`/api/payments`)
 
-### 14.1 Tworzenie płatności
+### 15.1 Tworzenie płatności
 **Endpoint:** `POST /api/payments`  
 **Autoryzacja:** USER (tylko własne zamówienia) lub OWNER
 
@@ -1054,7 +1216,7 @@ spring.flyway.locations=classpath:db/migration
 - Zamówienie musi mieć status NEW lub CONFIRMED
 - USER może płacić tylko za swoje zamówienia
 
-### 14.2 Aktualizacja statusu płatności
+### 15.2 Aktualizacja statusu płatności
 **Endpoint:** `PUT /api/payments/{id}`  
 **Autoryzacja:** OWNER
 
@@ -1072,15 +1234,15 @@ spring.flyway.locations=classpath:db/migration
   - Automatyczna zmiana statusu zamówienia na `CONFIRMED`
   - Finalizacja rezerwacji magazynu
 
-### 14.3 Pobieranie płatności
+### 15.3 Pobieranie płatności
 **Endpoint:** `GET /api/payments/{id}`  
 **Autoryzacja:** USER (tylko własne) lub OWNER
 
-### 14.4 Lista płatności dla zamówienia
+### 15.4 Lista płatności dla zamówienia
 **Endpoint:** `GET /api/payments/order/{orderId}`  
 **Autoryzacja:** USER (tylko własne zamówienia) lub OWNER
 
-### 14.5 Metody płatności
+### 15.5 Metody płatności
 - `CREDIT_CARD`
 - `DEBIT_CARD`
 - `PAYPAL`
@@ -1090,7 +1252,7 @@ spring.flyway.locations=classpath:db/migration
 - `APPLE_PAY`
 - `GOOGLE_PAY`
 
-### 14.6 Statusy płatności
+### 15.6 Statusy płatności
 - `PENDING` - Oczekująca
 - `PROCESSING` - W trakcie przetwarzania
 - `COMPLETED` - Zakończona
@@ -1100,9 +1262,9 @@ spring.flyway.locations=classpath:db/migration
 
 ---
 
-## 15. Addresses API (`/api/addresses`)
+## 16. Addresses API (`/api/addresses`)
 
-### 15.1 Tworzenie adresu
+### 16.1 Tworzenie adresu
 **Endpoint:** `POST /api/addresses`  
 **Autoryzacja:** USER lub OWNER
 
@@ -1123,7 +1285,7 @@ spring.flyway.locations=classpath:db/migration
 - USER może tworzyć adresy tylko dla siebie
 - `userId` jest automatycznie ustawiane z tokena JWT
 
-### 15.2 Aktualizacja adresu
+### 16.2 Aktualizacja adresu
 **Endpoint:** `PUT /api/addresses/{id}`  
 **Autoryzacja:** USER (tylko własne) lub OWNER
 
@@ -1135,26 +1297,26 @@ spring.flyway.locations=classpath:db/migration
 }
 ```
 
-### 15.3 Usuwanie adresu
+### 16.3 Usuwanie adresu
 **Endpoint:** `DELETE /api/addresses/{id}`  
 **Autoryzacja:** USER (tylko własne) lub OWNER
 
 **Uwagi:**
 - Soft delete (ustawienie `deletedAt` i `isActive = false`)
 
-### 15.4 Pobieranie adresu
+### 16.4 Pobieranie adresu
 **Endpoint:** `GET /api/addresses/{id}`  
 **Autoryzacja:** USER (tylko własne) lub OWNER
 
-### 15.5 Lista adresów użytkownika
+### 16.5 Lista adresów użytkownika
 **Endpoint:** `GET /api/addresses/user/{userId}`  
 **Autoryzacja:** USER (tylko własne) lub OWNER
 
-### 15.6 Lista aktywnych adresów
+### 16.6 Lista aktywnych adresów
 **Endpoint:** `GET /api/addresses/user/{userId}/active`  
 **Autoryzacja:** USER (tylko własne) lub OWNER
 
-### 15.7 Wszystkie adresy (tylko OWNER)
+### 16.7 Wszystkie adresy (tylko OWNER)
 **Endpoint:** `GET /api/addresses`  
 **Autoryzacja:** OWNER
 

@@ -8,6 +8,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -15,7 +17,7 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "product_attribute_values",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"product_id", "attribute_id"})) // ZMIANA
+        uniqueConstraints = @UniqueConstraint(columnNames = {"product_id", "attribute_id"}))
 @SQLDelete(sql = "UPDATE product_attribute_values SET deleted_at = NOW(), is_active = false WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL AND is_active = true")
 @Getter
@@ -29,6 +31,7 @@ public class ProductAttributeValue {
 
 
     @Column(columnDefinition = "TEXT")
+    @FullTextField(analyzer = "standard")
     private String value;
 
     @CreationTimestamp
@@ -52,6 +55,7 @@ public class ProductAttributeValue {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "attribute_id", nullable = false)
+    @IndexedEmbedded(includePaths = {"name"})
     private Attribute attribute;
 
     @Override

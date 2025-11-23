@@ -3,6 +3,7 @@ package com.ecommerce.E_commerce.mapper;
 import com.ecommerce.E_commerce.dto.categoryattribute.CategoryAttributeCreateDTO;
 import com.ecommerce.E_commerce.dto.categoryattribute.CategoryAttributeDTO;
 import com.ecommerce.E_commerce.dto.categoryattribute.CategoryAttributeUpdateDTO;
+import com.ecommerce.E_commerce.model.Attribute;
 import com.ecommerce.E_commerce.model.Category;
 import com.ecommerce.E_commerce.model.CategoryAttribute;
 import com.ecommerce.E_commerce.model.CategoryAttributeType;
@@ -20,42 +21,45 @@ public class CategoryAttributeMapperTest {
         Category category = new Category();
         category.setId(7L);
 
+        Attribute attribute = new Attribute();
+        attribute.setId(2L);
+        attribute.setName("color");
+        attribute.setType(CategoryAttributeType.TEXT);
+
         CategoryAttribute attr = new CategoryAttribute();
         attr.setId(1L);
         attr.setCategory(category);
-        attr.setName("color");
-        attr.setType(CategoryAttributeType.TEXT);
-        attr.setIsActive(true);
+        attr.setAttribute(attribute);
+        attr.setKeyAttribute(false);
+        attr.setActive(true);
 
         CategoryAttributeDTO dto = mapper.toDTO(attr);
         assertEquals(1L, dto.id());
         assertEquals(7L, dto.categoryId());
-        assertEquals("color", dto.name());
-        assertEquals(CategoryAttributeType.TEXT, dto.type());
+        assertEquals(2L, dto.attributeId());
+        assertEquals("color", dto.attributeName());
+        assertEquals(CategoryAttributeType.TEXT, dto.attributeType());
+        assertFalse(dto.isKeyAttribute());
         assertTrue(dto.isActive());
     }
 
     @Test
     void fromCreateDTO_ignoresCategory() {
-        CategoryAttributeCreateDTO dto = new CategoryAttributeCreateDTO(9L, "size", CategoryAttributeType.SELECT, true);
+        CategoryAttributeCreateDTO dto = new CategoryAttributeCreateDTO(9L, 3L, true, true);
         CategoryAttribute entity = mapper.fromCreateDTO(dto);
         assertNull(entity.getCategory());
-        assertEquals("size", entity.getName());
-        assertEquals(CategoryAttributeType.SELECT, entity.getType());
-        assertTrue(entity.getIsActive());
+        assertNull(entity.getAttribute());
     }
 
     @Test
     void updateFromDTO_updatesFields() {
-        CategoryAttributeUpdateDTO dto = new CategoryAttributeUpdateDTO("material", CategoryAttributeType.TEXT, false);
+        CategoryAttributeUpdateDTO dto = new CategoryAttributeUpdateDTO(true, false);
         CategoryAttribute entity = new CategoryAttribute();
-        entity.setName("old");
-        entity.setType(CategoryAttributeType.NUMBER);
-        entity.setIsActive(true);
+        entity.setKeyAttribute(false);
+        entity.setActive(true);
         mapper.updateFromDTO(dto, entity);
-        assertEquals("material", entity.getName());
-        assertEquals(CategoryAttributeType.TEXT, entity.getType());
-        assertFalse(entity.getIsActive());
+        assertTrue(entity.isKeyAttribute());
+        assertFalse(entity.isActive());
     }
 }
 

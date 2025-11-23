@@ -15,13 +15,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.crypto.SecretKey;
 import java.util.Base64;
-import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class JWTServiceTest {
@@ -43,9 +40,9 @@ class JWTServiceTest {
         ReflectionTestUtils.setField(jwtService, "jwtExpiration", expirationTime);
 
         userDetails = mock(UserDetails.class);
-        when(userDetails.getUsername()).thenReturn("test@example.com");
-        List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
-        when(userDetails.getAuthorities()).thenReturn(authorities);
+        lenient().when(userDetails.getUsername()).thenReturn("test@example.com");
+        java.util.Set<GrantedAuthority> authorities = java.util.Set.of(new SimpleGrantedAuthority("ROLE_USER"));
+        lenient().doReturn(authorities).when(userDetails).getAuthorities();
     }
 
     @Test
@@ -102,9 +99,7 @@ class JWTServiceTest {
         UserDetails differentUser = mock(UserDetails.class);
         when(differentUser.getUsername()).thenReturn("different@example.com");
         java.util.Set<GrantedAuthority> differentAuthorities = java.util.Set.of(new SimpleGrantedAuthority("ROLE_USER"));
-        @SuppressWarnings("unchecked")
-        java.util.Collection<? extends GrantedAuthority> differentAuthoritiesCollection = differentAuthorities;
-        when(differentUser.getAuthorities()).thenReturn(differentAuthoritiesCollection);
+        lenient().doReturn(differentAuthorities).when(differentUser).getAuthorities();
 
         // When
         boolean isValid = jwtService.isTokenValid(token, differentUser);

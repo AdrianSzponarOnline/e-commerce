@@ -44,7 +44,7 @@ public class CategoryAttribute {
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
-    @Column(name = "is_key_attribute", nullable = false)
+    @Column(name = "key_attribute", nullable = false)
     private boolean isKeyAttribute = false;
 
     @ManyToOne(fetch = FetchType.LAZY)

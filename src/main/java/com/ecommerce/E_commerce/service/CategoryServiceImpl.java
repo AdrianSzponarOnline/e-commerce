@@ -9,11 +9,10 @@ import com.ecommerce.E_commerce.exception.SeoSlugAlreadyExistsException;
 import com.ecommerce.E_commerce.mapper.CategoryMapper;
 import com.ecommerce.E_commerce.model.Category;
 import com.ecommerce.E_commerce.repository.CategoryRepository;
-import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -57,7 +56,7 @@ public class CategoryServiceImpl implements CategoryService {
         categoryMapper.updateFromDTO(dto, category);
         if (dto.parentId() != null) {
             if (id.equals(dto.parentId())) {
-                throw new com.ecommerce.E_commerce.exception.InvalidOperationException("Category cannot be its own parent");
+                throw new InvalidOperationException("Category cannot be its own parent");
             }
             Category parent = categoryRepository.findById(dto.parentId())
                     .orElseThrow(() -> new ResourceNotFoundException("Parent category not found: " + dto.parentId()));
@@ -71,6 +70,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CategoryDTO getById(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
@@ -78,6 +78,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CategoryDTO getBySeoSlug(String seoSlug) {
         Category category = categoryRepository.findBySeoSlug(seoSlug)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found by seoSlug: " + seoSlug));
@@ -85,6 +86,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CategoryDTO> listAll() {
         List<Category> allCategories = categoryRepository.findAll();
 
@@ -96,6 +98,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CategoryDTO> listActive() {
         List<Category> activeCategories = categoryRepository.findAllByIsActiveTrue();
         List<CategoryDTO> flat = activeCategories.stream()
@@ -105,6 +108,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CategoryDTO> listByParent(Long parentId) {
         List<CategoryDTO> flat = categoryRepository.findAllByParent_Id(parentId).stream()
                 .map(categoryMapper::toCategoryDTOFlat)
@@ -114,12 +118,12 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
-    public void softDelete(Long id) {
+    public void delete(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
-        category.setIsActive(false);
-        category.setDeletedAt(Instant.now());
-        categoryRepository.save(category);
+        
+        // @SQLDelete annotation handles deletedAt and isActive automatically
+        categoryRepository.delete(category);
     }
 
     private void ensureNoCycle(Category category, Category potentialParent) {

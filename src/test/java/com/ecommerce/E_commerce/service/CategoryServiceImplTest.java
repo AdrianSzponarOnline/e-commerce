@@ -12,7 +12,6 @@ import com.ecommerce.E_commerce.repository.CategoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.util.Optional;
@@ -60,16 +59,13 @@ public class CategoryServiceImplTest {
     }
 
     @Test
-    void softDelete_setsFlags() {
+    void delete_setsFlags() {
         Category c = new Category();
         c.setId(5L);
         c.setSeoSlug("x");
         when(repository.findById(5L)).thenReturn(Optional.of(c));
-        service.softDelete(5L);
-        ArgumentCaptor<Category> captor = ArgumentCaptor.forClass(Category.class);
-        verify(repository).save(captor.capture());
-        assertEquals(Boolean.FALSE, captor.getValue().getIsActive());
-        assertNotNull(captor.getValue().getDeletedAt());
+        service.delete(5L);
+        verify(repository).delete(c);
     }
 
     @Test

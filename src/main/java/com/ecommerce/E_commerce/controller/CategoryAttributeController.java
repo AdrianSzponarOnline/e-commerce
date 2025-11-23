@@ -2,6 +2,7 @@ package com.ecommerce.E_commerce.controller;
 
 import com.ecommerce.E_commerce.dto.categoryattribute.CategoryAttributeCreateDTO;
 import com.ecommerce.E_commerce.dto.categoryattribute.CategoryAttributeDTO;
+import com.ecommerce.E_commerce.dto.categoryattribute.CategoryAttributeLinkRequestDTO;
 import com.ecommerce.E_commerce.dto.categoryattribute.CategoryAttributeUpdateDTO;
 import com.ecommerce.E_commerce.service.CategoryAttributeService;
 import jakarta.validation.Valid;
@@ -26,8 +27,12 @@ public class CategoryAttributeController {
     @PostMapping
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<CategoryAttributeDTO> create(@PathVariable("categoryId") Long categoryId,
-                                                       @Valid @RequestBody CategoryAttributeCreateDTO body) {
-        CategoryAttributeCreateDTO dto = new CategoryAttributeCreateDTO(categoryId, body.attributeId(), body.isKeyAttribute(), body.isActive());
+                                                       @Valid @RequestBody CategoryAttributeLinkRequestDTO requestDTO) {
+        CategoryAttributeCreateDTO dto = new CategoryAttributeCreateDTO(
+                categoryId,
+                requestDTO.attributeId(),
+                requestDTO.isKeyAttribute()
+        );
         CategoryAttributeDTO created = service.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }

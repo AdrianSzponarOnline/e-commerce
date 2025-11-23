@@ -10,6 +10,10 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
@@ -17,6 +21,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -31,15 +36,24 @@ class ProductImageServiceImplTest {
     private ProductImageServiceImpl buildService(ProductRepository productRepository,
                                                  ProductImageRepository imageRepository) throws IOException {
         ProductImageServiceImpl service = new ProductImageServiceImpl(productRepository, imageRepository, temp.toString());
-        // tune limits via reflection (private fields)
         ReflectionTestUtils.setField(service, "maxUploadBytes", 10_000_000L);
         ReflectionTestUtils.setField(service, "allowedTypesCsv", "image/jpeg,image/png");
+        ReflectionTestUtils.setField(service, "allowedExtensionsCsv", "jpg,jpeg,png,webp");
         ReflectionTestUtils.setField(service, "maxImagesPerProduct", 10);
         return service;
     }
 
     @Test
     void upload_saves_file_and_creates_thumbnail_and_updates_product() throws IOException {
+        // Mock SecurityContext
+        SecurityContext securityContext = mock(org.springframework.security.core.context.SecurityContext.class);
+        Authentication authentication = mock(org.springframework.security.core.Authentication.class);
+        when(authentication.getName()).thenReturn("owner@example.com");
+        Set<GrantedAuthority> authorities = java.util.Set.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_OWNER"));
+        doReturn(authorities).when(authentication).getAuthorities();
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+
         ProductRepository productRepository = mock(ProductRepository.class);
         ProductImageRepository imageRepository = mock(ProductImageRepository.class);
         Product product = new Product();
@@ -82,11 +96,11 @@ class ProductImageServiceImplTest {
         ProductImageServiceImpl service = buildService(productRepository, imageRepository);
 
         MockMultipartFile wrongType = new MockMultipartFile("file", "a.gif", "image/gif", new byte[]{1});
-        assertThrows(IllegalArgumentException.class, () -> service.upload(1L, wrongType, null, false));
+        assertThrows(com.ecommerce.E_commerce.exception.InvalidOperationException.class, () -> service.upload(1L, wrongType, null, false));
 
         ReflectionTestUtils.setField(service, "maxUploadBytes", 1L);
         MockMultipartFile tooLarge = new MockMultipartFile("file", "a.jpg", "image/jpeg", new byte[]{1,2});
-        assertThrows(IllegalArgumentException.class, () -> service.upload(1L, tooLarge, null, false));
+        assertThrows(com.ecommerce.E_commerce.exception.InvalidOperationException.class, () -> service.upload(1L, tooLarge, null, false));
     }
 
     @Test

@@ -122,7 +122,7 @@ class ProductServiceImplTest {
                 1L,
                 true,
                 true,
-                null // attributeValues
+                null // attributeValues - all fields are optional
         );
 
         CategoryDTO testCategoryDTO = new CategoryDTO(
@@ -695,7 +695,18 @@ class ProductServiceImplTest {
         // Given
         ProductUpdateDTO updateWithNewName = new ProductUpdateDTO(
                 "Completely New Name", // Different name
-                null, null, null, null, null, null, null, null, null, null, null, null // attributeValues
+                null, // description
+                null, // shortDescription
+                null, // price
+                null, // vatRate
+                null, // shippingCost
+                null, // estimatedDeliveryTime
+                null, // thumbnailUrl
+                null, // seoSlug
+                null, // categoryId
+                null, // isFeatured
+                null, // isActive
+                null // attributeValues
         );
 
         when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));

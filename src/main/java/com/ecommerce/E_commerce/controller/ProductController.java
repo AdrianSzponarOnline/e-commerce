@@ -170,7 +170,6 @@ public class ProductController {
         return ResponseEntity.ok(products);
     }
 
-    // Advanced Filtering
     @GetMapping("/category/{categoryId}/featured")
     public ResponseEntity<Page<ProductSummaryDTO>> getProductsByCategoryAndFeatured(
             @PathVariable Long categoryId,
@@ -215,7 +214,6 @@ public class ProductController {
         return ResponseEntity.ok(count);
     }
 
-    // Filter by attributes
     @GetMapping("/filter/attribute")
     public ResponseEntity<Page<ProductSummaryDTO>> filterProductsByAttribute(
             @RequestParam(required = false) Long categoryId,

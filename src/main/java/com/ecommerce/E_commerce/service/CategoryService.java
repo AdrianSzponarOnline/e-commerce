@@ -21,7 +21,7 @@ public interface CategoryService {
 
     List<CategoryDTO> listByParent(Long parentId);
 
-    void softDelete(Long id);
+    void delete(Long id);
 }
 
 

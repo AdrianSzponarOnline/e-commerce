@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Nested;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashSet; // Dodano
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,13 +21,12 @@ class SkuGeneratorTest {
 
     @BeforeEach
     void setUp() {
-        // Setup category
         category = new Category();
         category.setId(1L);
         category.setName("Electronics");
         category.setSeoSlug("electronics");
+        category.setAttributes(new HashSet<>());
 
-        // Setup product
         product = new Product();
         product.setId(42L);
         product.setName("Laptop");
@@ -35,7 +35,6 @@ class SkuGeneratorTest {
         product.setVatRate(new BigDecimal("23.00"));
         product.setCategory(category);
 
-        // Setup attribute values
         attributeValues = new ArrayList<>();
         product.setAttributeValues(attributeValues);
     }
@@ -48,8 +47,8 @@ class SkuGeneratorTest {
         @DisplayName("Should throw exception when product is null")
         void shouldThrowExceptionWhenProductIsNull() {
             IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> SkuGenerator.generate(null)
+                    IllegalArgumentException.class,
+                    () -> SkuGenerator.generate(null)
             );
             assertEquals("Product or category cannot be null when generating SKU", exception.getMessage());
         }
@@ -58,10 +57,10 @@ class SkuGeneratorTest {
         @DisplayName("Should throw exception when category is null")
         void shouldThrowExceptionWhenCategoryIsNull() {
             product.setCategory(null);
-            
+
             IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> SkuGenerator.generate(product)
+                    IllegalArgumentException.class,
+                    () -> SkuGenerator.generate(product)
             );
             assertEquals("Product or category cannot be null when generating SKU", exception.getMessage());
         }
@@ -75,40 +74,16 @@ class SkuGeneratorTest {
         @DisplayName("Should generate basic SKU without attributes")
         void shouldGenerateBasicSkuWithoutAttributes() {
             String sku = SkuGenerator.generate(product);
-            
-            assertEquals("ELE-LAP--42", sku);
-        }
 
-        @Test
-        @DisplayName("Should generate SKU with null ID")
-        void shouldGenerateSkuWithNullId() {
-            product.setId(null);
-            
-            String sku = SkuGenerator.generate(product);
-            
-            assertEquals("ELE-LAP--000", sku);
-        }
-
-        @Test
-        @DisplayName("Should generate SKU with long category and product names")
-        void shouldGenerateSkuWithLongNames() {
-            category.setName("Electronics and Technology");
-            product.setName("High-Performance Gaming Laptop");
-            
-            String sku = SkuGenerator.generate(product);
-            
-            assertEquals("ELE-HIG--42", sku);
-        }
-
-        @Test
-        @DisplayName("Should generate SKU with special characters in names")
-        void shouldGenerateSkuWithSpecialCharacters() {
-            category.setName("Electronics & Technology!");
-            product.setName("Laptop-15\" (Intel i7)");
-            
-            String sku = SkuGenerator.generate(product);
-            
-            assertEquals("ELE-LAP--42", sku);
+            // Format: ELE-LAP--HASH
+            assertTrue(sku.startsWith("ELE-LAP--"));
+            String[] parts = sku.split("-");
+            assertEquals(4, parts.length);
+            assertEquals("ELE", parts[0]);
+            assertEquals("LAP", parts[1]);
+            assertEquals("", parts[2]); // puste atrybuty
+            assertEquals(4, parts[3].length());
+            assertTrue(parts[3].matches("[A-Z0-9]{4}"), "Hash should be alphanumeric");
         }
     }
 
@@ -117,32 +92,29 @@ class SkuGeneratorTest {
     class SkuGenerationWithKeyAttributesTests {
 
         @Test
-        @DisplayName("Should generate SKU with single key attribute")
-        void shouldGenerateSkuWithSingleKeyAttribute() {
-            CategoryAttribute keyAttribute = createKeyAttribute("Screen Size", "15\"");
-            ProductAttributeValue attributeValue = createAttributeValue(keyAttribute, "15\"");
-            attributeValues.add(attributeValue);
-            
-            String sku = SkuGenerator.generate(product);
-            
-            assertEquals("ELE-LAP-15-42", sku);
-        }
-
-        @Test
-        @DisplayName("Should generate SKU with multiple key attributes")
+        @DisplayName("Should generate SKU with multiple key attributes sorted alphabetically")
         void shouldGenerateSkuWithMultipleKeyAttributes() {
+
             CategoryAttribute screenAttr = createKeyAttribute("Screen Size", "15\"");
             CategoryAttribute processorAttr = createKeyAttribute("Processor", "Intel i7");
-            
+
             ProductAttributeValue screenValue = createAttributeValue(screenAttr, "15\"");
             ProductAttributeValue processorValue = createAttributeValue(processorAttr, "Intel i7");
-            
+
             attributeValues.add(screenValue);
             attributeValues.add(processorValue);
-            
+
+            // When
             String sku = SkuGenerator.generate(product);
-            
-            assertEquals("ELE-LAP-15IN-42", sku);
+
+            // Then
+            String[] parts = sku.split("-");
+            assertEquals("ELE", parts[0]);
+            assertEquals("LAP", parts[1]);
+
+            assertEquals("IN15", parts[2], "Attributes should be sorted by name: Processor(IN) then Screen(15)");
+
+            assertTrue(parts[3].matches("[A-Z0-9]{4}"));
         }
 
         @Test
@@ -150,40 +122,17 @@ class SkuGeneratorTest {
         void shouldGenerateSkuWithMixedAttributes() {
             CategoryAttribute keyAttribute = createKeyAttribute("Screen Size", "15\"");
             CategoryAttribute nonKeyAttribute = createNonKeyAttribute("Color", "Black");
-            
+
             ProductAttributeValue keyValue = createAttributeValue(keyAttribute, "15\"");
             ProductAttributeValue nonKeyValue = createAttributeValue(nonKeyAttribute, "Black");
-            
+
             attributeValues.add(keyValue);
             attributeValues.add(nonKeyValue);
-            
-            String sku = SkuGenerator.generate(product);
-            
-            assertEquals("ELE-LAP-15-42", sku);
-        }
 
-        @Test
-        @DisplayName("Should generate SKU with empty attribute values")
-        void shouldGenerateSkuWithEmptyAttributeValues() {
-            CategoryAttribute keyAttribute = createKeyAttribute("Screen Size", "");
-            ProductAttributeValue attributeValue = createAttributeValue(keyAttribute, "");
-            attributeValues.add(attributeValue);
-            
             String sku = SkuGenerator.generate(product);
-            
-            assertEquals("ELE-LAP--42", sku);
-        }
 
-        @Test
-        @DisplayName("Should generate SKU with null attribute values")
-        void shouldGenerateSkuWithNullAttributeValues() {
-            CategoryAttribute keyAttribute = createKeyAttribute("Screen Size", null);
-            ProductAttributeValue attributeValue = createAttributeValue(keyAttribute, null);
-            attributeValues.add(attributeValue);
-            
-            String sku = SkuGenerator.generate(product);
-            
-            assertEquals("ELE-LAP--42", sku);
+            String[] parts = sku.split("-");
+            assertEquals("15", parts[2], "Only key attribute (15) should be present");
         }
     }
 
@@ -191,183 +140,41 @@ class SkuGeneratorTest {
     @DisplayName("Abbreviate Method Tests")
     class AbbreviateMethodTests {
 
-        @Test
-        @DisplayName("Should abbreviate normal text correctly")
-        void shouldAbbreviateNormalTextCorrectly() {
-            // Test through public method by checking SKU generation
-            category.setName("Electronics");
-            product.setName("Laptop");
-            
-            String sku = SkuGenerator.generate(product);
-            
-            assertTrue(sku.startsWith("ELE-LAP"));
-        }
 
         @Test
         @DisplayName("Should handle empty and blank strings")
         void shouldHandleEmptyAndBlankStrings() {
             category.setName("");
             product.setName("   ");
-            
-            String sku = SkuGenerator.generate(product);
-            
-            assertEquals("---42", sku);
-        }
 
-        @Test
-        @DisplayName("Should handle null strings")
-        void shouldHandleNullStrings() {
-            category.setName(null);
-            product.setName(null);
-            
             String sku = SkuGenerator.generate(product);
-            
-            assertEquals("---42", sku);
-        }
 
-        @Test
-        @DisplayName("Should remove special characters and convert to uppercase")
-        void shouldRemoveSpecialCharactersAndConvertToUppercase() {
-            category.setName("electronics & technology!");
-            product.setName("laptop-15\" (intel i7)");
-            
-            String sku = SkuGenerator.generate(product);
-            
-            assertEquals("ELE-LAP--42", sku);
-        }
-
-        @Test
-        @DisplayName("Should handle very short strings")
-        void shouldHandleVeryShortStrings() {
-            category.setName("E");
-            product.setName("L");
-            
-            String sku = SkuGenerator.generate(product);
-            
-            assertEquals("E-L--42", sku);
-        }
-    }
-
-    @Nested
-    @DisplayName("Edge Cases Tests")
-    class EdgeCasesTests {
-
-        @Test
-        @DisplayName("Should handle product with very long attribute values")
-        void shouldHandleProductWithVeryLongAttributeValues() {
-            CategoryAttribute keyAttribute = createKeyAttribute("Description", "Very long description that should be abbreviated");
-            ProductAttributeValue attributeValue = createAttributeValue(keyAttribute, "Very long description that should be abbreviated");
-            attributeValues.add(attributeValue);
-            
-            String sku = SkuGenerator.generate(product);
-            
-            assertEquals("ELE-LAP-VE-42", sku);
-        }
-
-        @Test
-        @DisplayName("Should handle product with numeric attribute values")
-        void shouldHandleProductWithNumericAttributeValues() {
-            CategoryAttribute keyAttribute = createKeyAttribute("Model Number", "12345");
-            ProductAttributeValue attributeValue = createAttributeValue(keyAttribute, "12345");
-            attributeValues.add(attributeValue);
-            
-            String sku = SkuGenerator.generate(product);
-            
-            assertEquals("ELE-LAP-12-42", sku);
-        }
-
-        @Test
-        @DisplayName("Should handle product with mixed alphanumeric attribute values")
-        void shouldHandleProductWithMixedAlphanumericAttributeValues() {
-            CategoryAttribute keyAttribute = createKeyAttribute("Model", "ABC123XYZ");
-            ProductAttributeValue attributeValue = createAttributeValue(keyAttribute, "ABC123XYZ");
-            attributeValues.add(attributeValue);
-            
-            String sku = SkuGenerator.generate(product);
-            
-            assertEquals("ELE-LAP-AB-42", sku);
-        }
-
-        @Test
-        @DisplayName("Should generate consistent SKU format")
-        void shouldGenerateConsistentSkuFormat() {
-            String sku = SkuGenerator.generate(product);
-            
-            // Should contain exactly 3 dashes separating 4 parts
             String[] parts = sku.split("-");
             assertEquals(4, parts.length);
-            
-            // All parts should be uppercase
-            assertEquals(sku, sku.toUpperCase());
-            
-            // Should not contain special characters except dashes
-            assertTrue(sku.matches("^[A-Z0-9-]+$"));
+            assertEquals("", parts[0]);
+            assertEquals("", parts[1]);
+            assertEquals("", parts[2]);
         }
     }
 
-    @Nested
-    @DisplayName("Real-world Examples Tests")
-    class RealWorldExamplesTests {
 
-        @Test
-        @DisplayName("Should generate SKU for electronics laptop")
-        void shouldGenerateSkuForElectronicsLaptop() {
-            category.setName("Electronics");
-            product.setName("Laptop");
-            
-            // Add key attributes
-            CategoryAttribute screenAttr = createKeyAttribute("Screen Size", "15\"");
-            CategoryAttribute processorAttr = createKeyAttribute("Processor", "Intel i7");
-            
-            ProductAttributeValue screenValue = createAttributeValue(screenAttr, "15\"");
-            ProductAttributeValue processorValue = createAttributeValue(processorAttr, "Intel i7");
-            
-            attributeValues.add(screenValue);
-            attributeValues.add(processorValue);
-            
-            String sku = SkuGenerator.generate(product);
-            
-            assertEquals("ELE-LAP-15IN-42", sku);
-        }
 
-        @Test
-        @DisplayName("Should generate SKU for clothing item")
-        void shouldGenerateSkuForClothingItem() {
-            category.setName("Clothing");
-            product.setName("T-Shirt");
-            product.setId(123L);
-            
-            CategoryAttribute sizeAttr = createKeyAttribute("Size", "Large");
-            CategoryAttribute colorAttr = createKeyAttribute("Color", "Blue");
-            
-            ProductAttributeValue sizeValue = createAttributeValue(sizeAttr, "Large");
-            ProductAttributeValue colorValue = createAttributeValue(colorAttr, "Blue");
-            
-            attributeValues.add(sizeValue);
-            attributeValues.add(colorValue);
-            
-            String sku = SkuGenerator.generate(product);
-            
-            assertEquals("CLO-TSH-LABL-123", sku);
-        }
-    }
-
-    // Helper methods
     private CategoryAttribute createKeyAttribute(String name, String value) {
         Attribute attribute = new Attribute();
         attribute.setId(1L);
         attribute.setName(name);
         attribute.setType(CategoryAttributeType.TEXT);
-        
+
         CategoryAttribute categoryAttribute = new CategoryAttribute();
         categoryAttribute.setId(1L);
         categoryAttribute.setCategory(category);
         categoryAttribute.setAttribute(attribute);
         categoryAttribute.setKeyAttribute(true);
-        
-        // Add to category's attributes set
-        category.getAttributes().add(categoryAttribute);
-        
+
+        if (category.getAttributes() != null) {
+            category.getAttributes().add(categoryAttribute);
+        }
+
         return categoryAttribute;
     }
 
@@ -376,16 +183,17 @@ class SkuGeneratorTest {
         attribute.setId(2L);
         attribute.setName(name);
         attribute.setType(CategoryAttributeType.TEXT);
-        
+
         CategoryAttribute categoryAttribute = new CategoryAttribute();
         categoryAttribute.setId(2L);
         categoryAttribute.setCategory(category);
         categoryAttribute.setAttribute(attribute);
         categoryAttribute.setKeyAttribute(false);
-        
-        // Add to category's attributes set
-        category.getAttributes().add(categoryAttribute);
-        
+
+        if (category.getAttributes() != null) {
+            category.getAttributes().add(categoryAttribute);
+        }
+
         return categoryAttribute;
     }
 

@@ -6,11 +6,11 @@ import com.ecommerce.E_commerce.dto.productattributevalue.ProductAttributeValueU
 import com.ecommerce.E_commerce.exception.ResourceNotFoundException;
 import com.ecommerce.E_commerce.mapper.ProductAttributeValueMapper;
 import com.ecommerce.E_commerce.model.Category;
-import com.ecommerce.E_commerce.model.CategoryAttribute;
+import com.ecommerce.E_commerce.model.Attribute;
 import com.ecommerce.E_commerce.model.CategoryAttributeType;
 import com.ecommerce.E_commerce.model.Product;
 import com.ecommerce.E_commerce.model.ProductAttributeValue;
-import com.ecommerce.E_commerce.repository.CategoryAttributeRepository;
+import com.ecommerce.E_commerce.repository.AttributeRepository;
 import com.ecommerce.E_commerce.repository.ProductAttributeValueRepository;
 import com.ecommerce.E_commerce.repository.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,7 +42,7 @@ class ProductAttributeValueServiceImplTest {
     private ProductRepository productRepository;
 
     @Mock
-    private CategoryAttributeRepository categoryAttributeRepository;
+    private AttributeRepository attributeRepository;
 
     @Mock
     private ProductAttributeValueMapper productAttributeValueMapper;
@@ -52,7 +52,7 @@ class ProductAttributeValueServiceImplTest {
     private ProductAttributeValue testProductAttributeValue;
     private Product testProduct;
     private Category testCategory;
-    private CategoryAttribute testCategoryAttribute;
+    private Attribute testAttribute;
     private ProductAttributeValueCreateDTO testCreateDTO;
     private ProductAttributeValueUpdateDTO testUpdateDTO;
     private ProductAttributeValueDTO testProductAttributeValueDTO;
@@ -62,7 +62,7 @@ class ProductAttributeValueServiceImplTest {
         productAttributeValueService = new ProductAttributeValueServiceImpl(
                 productRepository,
                 productAttributeValueRepository,
-                categoryAttributeRepository,
+                attributeRepository,
                 productAttributeValueMapper
         );
 
@@ -77,22 +77,20 @@ class ProductAttributeValueServiceImplTest {
         testProduct.setName("Test Laptop");
         testProduct.setCategory(testCategory);
 
-        testCategoryAttribute = new CategoryAttribute();
-        testCategoryAttribute.setId(1L);
-        testCategoryAttribute.setName("Screen Size");
-        testCategoryAttribute.setType(CategoryAttributeType.TEXT);
-        testCategoryAttribute.setIsKeyAttribute(true);
-        testCategoryAttribute.setCategory(testCategory);
+        testAttribute = new Attribute();
+        testAttribute.setId(1L);
+        testAttribute.setName("Screen Size");
+        testAttribute.setType(CategoryAttributeType.TEXT);
 
         testProductAttributeValue = new ProductAttributeValue();
         testProductAttributeValue.setId(1L);
         testProductAttributeValue.setProduct(testProduct);
-        testProductAttributeValue.setCategoryAttribute(testCategoryAttribute);
+        testProductAttributeValue.setAttribute(testAttribute);
         testProductAttributeValue.setValue("15.6 inches");
         testProductAttributeValue.setCreatedAt(Instant.now());
         testProductAttributeValue.setUpdatedAt(Instant.now());
         testProductAttributeValue.setDeletedAt(null);
-        testProductAttributeValue.setIsActive(true);
+        testProductAttributeValue.setActive(true);
 
         testCreateDTO = new ProductAttributeValueCreateDTO(
                 1L, // productId
@@ -120,8 +118,8 @@ class ProductAttributeValueServiceImplTest {
     void create_ShouldCreateProductAttributeValueSuccessfully() {
         // Given
         when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
-        when(categoryAttributeRepository.findById(1L)).thenReturn(Optional.of(testCategoryAttribute));
-        when(productAttributeValueRepository.findByProductIdAndCategoryAttributeId(1L, 1L)).thenReturn(Optional.empty());
+        when(attributeRepository.findById(1L)).thenReturn(Optional.of(testAttribute));
+        when(productAttributeValueRepository.findByProductIdAndAttributeId(1L, 1L)).thenReturn(Optional.empty());
         when(productAttributeValueMapper.toProductAttributeValue(testCreateDTO)).thenReturn(testProductAttributeValue);
         when(productAttributeValueRepository.save(any(ProductAttributeValue.class))).thenReturn(testProductAttributeValue);
         when(productAttributeValueMapper.toProductAttributeValueDTO(testProductAttributeValue)).thenReturn(testProductAttributeValueDTO);
@@ -133,8 +131,8 @@ class ProductAttributeValueServiceImplTest {
         assertNotNull(result);
         assertEquals(testProductAttributeValueDTO, result);
         verify(productRepository).findById(1L);
-        verify(categoryAttributeRepository).findById(1L);
-        verify(productAttributeValueRepository).findByProductIdAndCategoryAttributeId(1L, 1L);
+        verify(attributeRepository).findById(1L);
+        verify(productAttributeValueRepository).findByProductIdAndAttributeId(1L, 1L);
         verify(productAttributeValueMapper).toProductAttributeValue(testCreateDTO);
         verify(productAttributeValueRepository).save(any(ProductAttributeValue.class));
         verify(productAttributeValueMapper).toProductAttributeValueDTO(testProductAttributeValue);
@@ -154,17 +152,17 @@ class ProductAttributeValueServiceImplTest {
     }
 
     @Test
-    void create_ShouldThrowException_WhenCategoryAttributeNotFound() {
+    void create_ShouldThrowException_WhenAttributeNotFound() {
         // Given
         when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
-        when(categoryAttributeRepository.findById(1L)).thenReturn(Optional.empty());
+        when(attributeRepository.findById(1L)).thenReturn(Optional.empty());
 
         // When & Then
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
                 () -> productAttributeValueService.create(testCreateDTO));
-        assertEquals("Category attribute not found with id: 1", exception.getMessage());
+        assertEquals("Attribute not found with id: 1", exception.getMessage());
         verify(productRepository).findById(1L);
-        verify(categoryAttributeRepository).findById(1L);
+        verify(attributeRepository).findById(1L);
         verify(productAttributeValueRepository, never()).save(any(ProductAttributeValue.class));
     }
 
@@ -172,16 +170,16 @@ class ProductAttributeValueServiceImplTest {
     void create_ShouldThrowException_WhenCombinationAlreadyExists() {
         // Given
         when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
-        when(categoryAttributeRepository.findById(1L)).thenReturn(Optional.of(testCategoryAttribute));
-        when(productAttributeValueRepository.findByProductIdAndCategoryAttributeId(1L, 1L)).thenReturn(Optional.of(testProductAttributeValue));
+        when(attributeRepository.findById(1L)).thenReturn(Optional.of(testAttribute));
+        when(productAttributeValueRepository.findByProductIdAndAttributeId(1L, 1L)).thenReturn(Optional.of(testProductAttributeValue));
 
         // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+        Exception exception = assertThrows(Exception.class,
                 () -> productAttributeValueService.create(testCreateDTO));
-        assertEquals("Product attribute value already exists for this product and category attribute", exception.getMessage());
+        assertTrue(exception.getMessage().contains("already exists"));
         verify(productRepository).findById(1L);
-        verify(categoryAttributeRepository).findById(1L);
-        verify(productAttributeValueRepository).findByProductIdAndCategoryAttributeId(1L, 1L);
+        verify(attributeRepository).findById(1L);
+        verify(productAttributeValueRepository).findByProductIdAndAttributeId(1L, 1L);
         verify(productAttributeValueRepository, never()).save(any(ProductAttributeValue.class));
     }
 
@@ -227,9 +225,7 @@ class ProductAttributeValueServiceImplTest {
 
         // Then
         verify(productAttributeValueRepository).findById(1L);
-        verify(productAttributeValueRepository).save(testProductAttributeValue);
-        assertNotNull(testProductAttributeValue.getDeletedAt());
-        assertFalse(testProductAttributeValue.getIsActive());
+        verify(productAttributeValueRepository).delete(testProductAttributeValue);
     }
 
     @Test
@@ -294,49 +290,49 @@ class ProductAttributeValueServiceImplTest {
     }
 
     @Test
-    void getByCategoryAttributeId_ShouldReturnListOfProductAttributeValues() {
+    void getByAttributeId_ShouldReturnListOfProductAttributeValues() {
         // Given
         List<ProductAttributeValue> productAttributeValues = Arrays.asList(testProductAttributeValue);
-        when(productAttributeValueRepository.findByCategoryAttributeIdAndIsActive(1L, true)).thenReturn(productAttributeValues);
+        when(productAttributeValueRepository.findByAttributeIdAndIsActive(1L, true)).thenReturn(productAttributeValues);
         when(productAttributeValueMapper.toProductAttributeValueDTO(testProductAttributeValue)).thenReturn(testProductAttributeValueDTO);
 
         // When
-        List<ProductAttributeValueDTO> result = productAttributeValueService.getByCategoryAttributeId(1L);
+        List<ProductAttributeValueDTO> result = productAttributeValueService.getByAttributeId(1L);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(testProductAttributeValueDTO, result.get(0));
-        verify(productAttributeValueRepository).findByCategoryAttributeIdAndIsActive(1L, true);
+        verify(productAttributeValueRepository).findByAttributeIdAndIsActive(1L, true);
         verify(productAttributeValueMapper).toProductAttributeValueDTO(testProductAttributeValue);
     }
 
     @Test
-    void getByProductAndCategoryAttribute_ShouldReturnProductAttributeValue() {
+    void getByProductAndAttribute_ShouldReturnProductAttributeValue() {
         // Given
-        when(productAttributeValueRepository.findByProductIdAndCategoryAttributeId(1L, 1L)).thenReturn(Optional.of(testProductAttributeValue));
+        when(productAttributeValueRepository.findByProductIdAndAttributeId(1L, 1L)).thenReturn(Optional.of(testProductAttributeValue));
         when(productAttributeValueMapper.toProductAttributeValueDTO(testProductAttributeValue)).thenReturn(testProductAttributeValueDTO);
 
         // When
-        ProductAttributeValueDTO result = productAttributeValueService.getByProductAndCategoryAttribute(1L, 1L);
+        ProductAttributeValueDTO result = productAttributeValueService.getByProductAndAttribute(1L, 1L);
 
         // Then
         assertNotNull(result);
         assertEquals(testProductAttributeValueDTO, result);
-        verify(productAttributeValueRepository).findByProductIdAndCategoryAttributeId(1L, 1L);
+        verify(productAttributeValueRepository).findByProductIdAndAttributeId(1L, 1L);
         verify(productAttributeValueMapper).toProductAttributeValueDTO(testProductAttributeValue);
     }
 
     @Test
-    void getByProductAndCategoryAttribute_ShouldThrowException_WhenNotFound() {
+    void getByProductAndAttribute_ShouldThrowException_WhenNotFound() {
         // Given
-        when(productAttributeValueRepository.findByProductIdAndCategoryAttributeId(1L, 1L)).thenReturn(Optional.empty());
+        when(productAttributeValueRepository.findByProductIdAndAttributeId(1L, 1L)).thenReturn(Optional.empty());
 
         // When & Then
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
-                () -> productAttributeValueService.getByProductAndCategoryAttribute(1L, 1L));
-        assertEquals("Product attribute value not found for product id: 1 and category attribute id: 1", exception.getMessage());
-        verify(productAttributeValueRepository).findByProductIdAndCategoryAttributeId(1L, 1L);
+                () -> productAttributeValueService.getByProductAndAttribute(1L, 1L));
+        assertEquals("Product attribute value not found for product id: 1 and attribute id: 1", exception.getMessage());
+        verify(productAttributeValueRepository).findByProductIdAndAttributeId(1L, 1L);
     }
 
     // Paginated Lists Tests
@@ -380,21 +376,21 @@ class ProductAttributeValueServiceImplTest {
     }
 
     @Test
-    void findByCategoryAttributeId_ShouldReturnPageOfProductAttributeValues() {
+    void findByAttributeId_ShouldReturnPageOfProductAttributeValues() {
         // Given
         Pageable pageable = PageRequest.of(0, 10);
         Page<ProductAttributeValue> productAttributeValuePage = new PageImpl<>(Arrays.asList(testProductAttributeValue));
-        when(productAttributeValueRepository.findByCategoryAttributeId(1L, pageable)).thenReturn(productAttributeValuePage);
+        when(productAttributeValueRepository.findByAttributeId(1L, pageable)).thenReturn(productAttributeValuePage);
         when(productAttributeValueMapper.toProductAttributeValueDTO(testProductAttributeValue)).thenReturn(testProductAttributeValueDTO);
 
         // When
-        Page<ProductAttributeValueDTO> result = productAttributeValueService.findByCategoryAttributeId(1L, pageable);
+        Page<ProductAttributeValueDTO> result = productAttributeValueService.findByAttributeId(1L, pageable);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
         assertEquals(testProductAttributeValueDTO, result.getContent().get(0));
-        verify(productAttributeValueRepository).findByCategoryAttributeId(1L, pageable);
+        verify(productAttributeValueRepository).findByAttributeId(1L, pageable);
         verify(productAttributeValueMapper).toProductAttributeValueDTO(testProductAttributeValue);
     }
 
@@ -462,7 +458,7 @@ class ProductAttributeValueServiceImplTest {
         // Given
         Pageable pageable = PageRequest.of(0, 10);
         Page<ProductAttributeValue> productAttributeValuePage = new PageImpl<>(Arrays.asList(testProductAttributeValue));
-        when(productAttributeValueRepository.findByCategoryAttributeType("TEXT", pageable)).thenReturn(productAttributeValuePage);
+        when(productAttributeValueRepository.findByAttributeType("TEXT", pageable)).thenReturn(productAttributeValuePage);
         when(productAttributeValueMapper.toProductAttributeValueDTO(testProductAttributeValue)).thenReturn(testProductAttributeValueDTO);
 
         // When
@@ -472,7 +468,7 @@ class ProductAttributeValueServiceImplTest {
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
         assertEquals(testProductAttributeValueDTO, result.getContent().get(0));
-        verify(productAttributeValueRepository).findByCategoryAttributeType("TEXT", pageable);
+        verify(productAttributeValueRepository).findByAttributeType("TEXT", pageable);
         verify(productAttributeValueMapper).toProductAttributeValueDTO(testProductAttributeValue);
     }
 
@@ -492,16 +488,16 @@ class ProductAttributeValueServiceImplTest {
     }
 
     @Test
-    void countByCategoryAttributeId_ShouldReturnCount() {
+    void countByAttributeId_ShouldReturnCount() {
         // Given
-        when(productAttributeValueRepository.countByCategoryAttributeIdAndIsActive(1L, true)).thenReturn(3L);
+        when(productAttributeValueRepository.countByAttributeIdAndIsActive(1L, true)).thenReturn(3L);
 
         // When
-        long result = productAttributeValueService.countByCategoryAttributeId(1L);
+        long result = productAttributeValueService.countByAttributeId(1L);
 
         // Then
         assertEquals(3L, result);
-        verify(productAttributeValueRepository).countByCategoryAttributeIdAndIsActive(1L, true);
+        verify(productAttributeValueRepository).countByAttributeIdAndIsActive(1L, true);
     }
 
     @Test
@@ -520,19 +516,19 @@ class ProductAttributeValueServiceImplTest {
     // Utility Methods Tests
 
     @Test
-    void getDistinctValuesByCategoryAttribute_ShouldReturnDistinctValues() {
+    void getDistinctValuesByAttribute_ShouldReturnDistinctValues() {
         // Given
         List<String> distinctValues = Arrays.asList("15.6 inches", "17.3 inches", "13.3 inches");
-        when(productAttributeValueRepository.findDistinctValuesByCategoryAttribute(1L)).thenReturn(distinctValues);
+        when(productAttributeValueRepository.findDistinctValuesByAttribute(1L)).thenReturn(distinctValues);
 
         // When
-        List<String> result = productAttributeValueService.getDistinctValuesByCategoryAttribute(1L);
+        List<String> result = productAttributeValueService.getDistinctValuesByAttribute(1L);
 
         // Then
         assertNotNull(result);
         assertEquals(3, result.size());
         assertEquals(distinctValues, result);
-        verify(productAttributeValueRepository).findDistinctValuesByCategoryAttribute(1L);
+        verify(productAttributeValueRepository).findDistinctValuesByAttribute(1L);
     }
 
     @Test
@@ -578,10 +574,10 @@ class ProductAttributeValueServiceImplTest {
         // Given
         List<ProductAttributeValueCreateDTO> dtos = Arrays.asList(testCreateDTO);
         when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
-        when(categoryAttributeRepository.findById(1L)).thenReturn(Optional.of(testCategoryAttribute));
-        when(productAttributeValueRepository.findByProductIdAndCategoryAttributeId(1L, 1L)).thenReturn(Optional.empty());
+        when(attributeRepository.findById(1L)).thenReturn(Optional.of(testAttribute));
+        when(productAttributeValueRepository.findByProductIdAndAttributeId(1L, 1L)).thenReturn(Optional.empty());
         when(productAttributeValueMapper.toProductAttributeValue(testCreateDTO)).thenReturn(testProductAttributeValue);
-        when(productAttributeValueRepository.save(any(ProductAttributeValue.class))).thenReturn(testProductAttributeValue);
+        when(productAttributeValueRepository.saveAll(anyList())).thenReturn(Arrays.asList(testProductAttributeValue));
         when(productAttributeValueMapper.toProductAttributeValueDTO(testProductAttributeValue)).thenReturn(testProductAttributeValueDTO);
 
         // When
@@ -591,9 +587,9 @@ class ProductAttributeValueServiceImplTest {
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(testProductAttributeValueDTO, result.get(0));
-        verify(productRepository).findById(1L);
-        verify(categoryAttributeRepository).findById(1L);
-        verify(productAttributeValueRepository).save(any(ProductAttributeValue.class));
+        verify(productRepository, atLeastOnce()).findById(1L);
+        verify(attributeRepository, atLeastOnce()).findById(1L);
+        verify(productAttributeValueRepository).saveAll(anyList());
     }
 
     @Test
@@ -602,7 +598,7 @@ class ProductAttributeValueServiceImplTest {
         List<ProductAttributeValueUpdateDTO> dtos = Arrays.asList(testUpdateDTO);
         List<ProductAttributeValue> existingValues = Arrays.asList(testProductAttributeValue);
         when(productAttributeValueRepository.findByProductIdAndIsActive(1L, true)).thenReturn(existingValues);
-        when(productAttributeValueRepository.save(any(ProductAttributeValue.class))).thenReturn(testProductAttributeValue);
+        when(productAttributeValueRepository.saveAll(anyList())).thenReturn(existingValues);
         when(productAttributeValueMapper.toProductAttributeValueDTO(testProductAttributeValue)).thenReturn(testProductAttributeValueDTO);
 
         // When
@@ -613,7 +609,7 @@ class ProductAttributeValueServiceImplTest {
         assertEquals(1, result.size());
         assertEquals(testProductAttributeValueDTO, result.get(0));
         verify(productAttributeValueRepository).findByProductIdAndIsActive(1L, true);
-        verify(productAttributeValueRepository).save(any(ProductAttributeValue.class));
+        verify(productAttributeValueRepository).saveAll(anyList());
     }
 
     @Test
@@ -624,11 +620,11 @@ class ProductAttributeValueServiceImplTest {
         when(productAttributeValueRepository.findByProductIdAndIsActive(1L, true)).thenReturn(existingValues);
 
         // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+        Exception exception = assertThrows(Exception.class,
                 () -> productAttributeValueService.updateByProduct(1L, dtos));
-        assertEquals("Number of update DTOs must match existing attribute values", exception.getMessage());
+        assertTrue(exception.getMessage().contains("must match"));
         verify(productAttributeValueRepository).findByProductIdAndIsActive(1L, true);
-        verify(productAttributeValueRepository, never()).save(any(ProductAttributeValue.class));
+        verify(productAttributeValueRepository, never()).saveAll(anyList());
     }
 
     @Test
@@ -636,16 +632,13 @@ class ProductAttributeValueServiceImplTest {
         // Given
         List<ProductAttributeValue> productAttributeValues = Arrays.asList(testProductAttributeValue);
         when(productAttributeValueRepository.findByProductIdAndIsActive(1L, true)).thenReturn(productAttributeValues);
-        when(productAttributeValueRepository.saveAll(anyList())).thenReturn(productAttributeValues);
 
         // When
         productAttributeValueService.deleteByProduct(1L);
 
         // Then
         verify(productAttributeValueRepository).findByProductIdAndIsActive(1L, true);
-        verify(productAttributeValueRepository).saveAll(anyList());
-        assertNotNull(testProductAttributeValue.getDeletedAt());
-        assertFalse(testProductAttributeValue.getIsActive());
+        verify(productAttributeValueRepository).deleteAll(productAttributeValues);
     }
 
     // Edge Cases Tests

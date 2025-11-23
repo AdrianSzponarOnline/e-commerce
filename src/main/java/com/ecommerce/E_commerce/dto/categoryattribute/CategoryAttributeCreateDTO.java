@@ -10,10 +10,7 @@ public record CategoryAttributeCreateDTO(
         Long attributeId,
 
         @NotNull
-        Boolean isKeyAttribute,
-
-        @NotNull
-        Boolean isActive
+        Boolean isKeyAttribute
 ) {
 }
 

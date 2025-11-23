@@ -5,6 +5,7 @@ import com.ecommerce.E_commerce.service.SearchService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration;
@@ -25,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = SearchController.class,
         excludeAutoConfiguration = {SecurityAutoConfiguration.class, SecurityFilterAutoConfiguration.class})
+@AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 class SearchControllerTest {
 
@@ -53,14 +55,16 @@ class SearchControllerTest {
                 anyString(),
                 any(BigDecimal.class),
                 any(BigDecimal.class),
-                any(Map.class),
+                any(),
                 any()
         )).thenReturn(page);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/search")
                         .param("query", "test")
                         .param("minPrice", "10")
-                        .param("maxPrice", "100"))
+                        .param("maxPrice", "100")
+                        .contentType("application/json")
+                        .content("{}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content[0].name").value("Test Product"));

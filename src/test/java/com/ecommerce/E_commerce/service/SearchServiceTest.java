@@ -33,8 +33,6 @@ class SearchServiceTest {
 
     @Test
     void searchService_ShouldBeInstantiated() {
-        // Note: This test verifies the service can be instantiated
-        // Full testing would require Hibernate Search integration test setup
         assertNotNull(searchService);
     }
 }

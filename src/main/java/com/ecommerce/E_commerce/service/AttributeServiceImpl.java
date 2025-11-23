@@ -14,10 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -51,13 +48,14 @@ public class AttributeServiceImpl implements AttributeService {
 
     @Override
     public AttributeDTO update(Long id, AttributeUpdateDTO dto) {
-        Attribute existingAttribute = findActiveAttributeByIdInternal(id);
+        Attribute existingAttribute = attributeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Attribute not found with id: " + id));
 
         if(dto.name() != null || dto.type() != null) {
             String newName = (dto.name() != null) ? dto.name() : existingAttribute.getName();
             CategoryAttributeType newType = (dto.type() != null) ? dto.type() : existingAttribute.getType();
 
-            validateUniqueness(newName, newType);
+            validateUniqueness(newName, newType, id);
         }
         attributeMapper.updateEntityFromDTO(dto, existingAttribute);
         Attribute updatedAttribute = attributeRepository.save(existingAttribute);
@@ -66,17 +64,16 @@ public class AttributeServiceImpl implements AttributeService {
     @Override
     @Transactional
     public void deleteAttribute(Long id) {
-        Attribute attributeToDelete = findActiveAttributeByIdInternal(id);
-        attributeToDelete.setActive(false);
-        attributeToDelete.setDeletedAt(Instant.now());
-        attributeRepository.save(attributeToDelete);
+        Attribute attributeToDelete = attributeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Attribute not found with id: " + id));
+        attributeRepository.delete(attributeToDelete);
     }
 
     @Override
     @Transactional
     public void restoreAttribute(Long id) {
-        Attribute attributeToRestore = attributeRepository.findByIdAndIsActiveFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Inactive attribute not found with id: " + id));
+        Attribute attributeToRestore = attributeRepository.findDeletedById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Deleted attribute not found with id: " + id));
 
         attributeToRestore.setActive(true);
         attributeToRestore.setDeletedAt(null);
@@ -86,7 +83,8 @@ public class AttributeServiceImpl implements AttributeService {
 
     @Override
     public AttributeDTO getAttributeById(Long id) {
-        Attribute attribute = findActiveAttributeByIdInternal(id);
+        Attribute attribute = attributeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Attribute not found with id: " + id));
         return attributeMapper.toDTO(attribute);
     }
 
@@ -98,7 +96,7 @@ public class AttributeServiceImpl implements AttributeService {
 
     @Override
     public Page<AttributeDTO> getInactiveAttributes(Pageable pageable) {
-        Page<Attribute> attributePage = attributeRepository.findByIsActiveFalse(pageable);
+        Page<Attribute> attributePage = attributeRepository.findAllDeleted(pageable);
         return attributePage.map(attributeMapper::toDTO);
     }
 
@@ -107,10 +105,6 @@ public class AttributeServiceImpl implements AttributeService {
                 .ifPresent(attr -> {
                     throw new DuplicateResourceException("Attribute with name '" + name + "' and type '" + type + "' already exists.");
                 });
-    }
-    private Attribute findActiveAttributeByIdInternal(Long id) {
-        return attributeRepository.findByIdAndIsActiveTrue(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Attribute not found with id: " + id));
     }
 
     private void validateUniqueness(String name, CategoryAttributeType type, Long currentId) {

@@ -1,12 +1,17 @@
 package com.ecommerce.E_commerce.service;
 
 import com.ecommerce.E_commerce.dto.productimage.ProductImageDTO;
+import com.ecommerce.E_commerce.exception.InvalidOperationException;
 import com.ecommerce.E_commerce.exception.ResourceNotFoundException;
 import com.ecommerce.E_commerce.model.Product;
 import com.ecommerce.E_commerce.model.ProductImage;
 import com.ecommerce.E_commerce.repository.ProductImageRepository;
 import com.ecommerce.E_commerce.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -16,9 +21,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -34,6 +41,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 
     @Value("${app.upload-allowed-types:image/jpeg,image/png,image/webp}")
     private String allowedTypesCsv;
+
+    @Value("${app.upload-allowed-extensions:jpg,jpeg,png,webp}")
+    private String allowedExtensionsCsv;
 
     @Value("${app.max-images-per-product:10}")
     private int maxImagesPerProduct;
@@ -57,27 +67,39 @@ public class ProductImageServiceImpl implements ProductImageService {
     @Override
     public ProductImageDTO upload(Long productId, MultipartFile file, String altText, boolean isThumbnail) {
         Product product = verifyProduct(productId);
+        
+        checkImagePermission(product);
 
         if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("Plik jest wymagany");
+            throw new InvalidOperationException("Plik jest wymagany");
         }
         if (file.getSize() > maxUploadBytes) {
-            throw new IllegalArgumentException("Plik jest za duży (limit " + maxUploadBytes + " B)");
+            throw new InvalidOperationException("Plik jest za duży (limit " + maxUploadBytes + " B)");
         }
+        
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || originalFilename.trim().isEmpty()) {
+            throw new InvalidOperationException("Nazwa pliku jest wymagana");
+        }
+        
+        String sanitizedFilename = sanitizeFilename(originalFilename);
+        String extension = getFileExtension(sanitizedFilename);
+        
+        if (!isAllowedExtension(extension)) {
+            throw new InvalidOperationException("Niedozwolone rozszerzenie pliku: " + extension);
+        }
+        
         String contentType = file.getContentType() == null ? "" : file.getContentType();
-        boolean allowed = List.of(allowedTypesCsv.split(",")).stream().map(String::trim).anyMatch(contentType::equalsIgnoreCase);
-        if (!allowed) {
-            throw new IllegalArgumentException("Niedozwolony typ pliku: " + contentType);
+        if (!isAllowedContentType(contentType)) {
+            throw new InvalidOperationException("Niedozwolony typ pliku: " + contentType);
         }
 
         long currentCount = productImageRepository.findByProductId(productId).size();
         if (currentCount >= maxImagesPerProduct) {
-            throw new IllegalArgumentException("Przekroczono limit zdjęć dla produktu (" + maxImagesPerProduct + ")");
+            throw new InvalidOperationException("Przekroczono limit zdjęć dla produktu (" + maxImagesPerProduct + ")");
         }
 
-        String original = StringUtils.cleanPath(file.getOriginalFilename() == null ? "image" : file.getOriginalFilename());
-        String extension = original.contains(".") ? original.substring(original.lastIndexOf('.')) : "";
-        String filename = UUID.randomUUID() + extension;
+        String filename = UUID.randomUUID() + "." + extension;
 
         Path productDir = uploadRoot.resolve("products").resolve(String.valueOf(productId));
         try {
@@ -95,21 +117,12 @@ public class ProductImageServiceImpl implements ProductImageService {
         image.setUrl(url);
         image.setAltText(altText);
         image.setIsThumbnail(isThumbnail);
-        image.setCreatedAt(Instant.now());
-        image.setUpdatedAt(Instant.now());
         image.setIsActive(true);
 
         ProductImage saved = productImageRepository.save(image);
 
         if (isThumbnail) {
-            // Ensure single thumbnail per product
-            productImageRepository.findByProductIdAndIsThumbnailTrue(productId)
-                    .stream()
-                    .filter(img -> !img.getId().equals(saved.getId()))
-                    .forEach(img -> { img.setIsThumbnail(false); img.setUpdatedAt(Instant.now()); });
-            product.setThumbnailUrl(url);
-            product.setUpdatedAt(Instant.now());
-            productRepository.save(product);
+            setThumbnailAtomically(productId, saved.getId(), url);
         }
 
         return toDTO(saved);
@@ -117,41 +130,140 @@ public class ProductImageServiceImpl implements ProductImageService {
 
     @Override
     public void delete(Long productId, Long imageId) {
-        verifyProduct(productId);
+        Product product = verifyProduct(productId);
+        
+        checkImagePermission(product);
+        
         ProductImage image = productImageRepository.findById(imageId)
                 .orElseThrow(() -> new ResourceNotFoundException("Image not found: " + imageId));
         if (!image.getProduct().getId().equals(productId)) {
             throw new ResourceNotFoundException("Image does not belong to product");
         }
 
+        if (Boolean.TRUE.equals(image.getIsThumbnail())) {
+            product.setThumbnailUrl(null);
+            productRepository.save(product);
+        }
+
+     
         productImageRepository.delete(image);
-        // Note: we don't delete the physical file to keep example simple
     }
 
     @Override
     public ProductImageDTO setThumbnail(Long productId, Long imageId) {
         Product product = verifyProduct(productId);
+        
+        // Security check: User can only set thumbnails for products (unless OWNER)
+        checkImagePermission(product);
+        
         ProductImage image = productImageRepository.findById(imageId)
                 .orElseThrow(() -> new ResourceNotFoundException("Image not found: " + imageId));
         if (!image.getProduct().getId().equals(productId)) {
             throw new ResourceNotFoundException("Image does not belong to product");
         }
 
-        // unset existing thumbnails
-        productImageRepository.findByProductIdAndIsThumbnailTrue(productId)
-                .forEach(img -> { img.setIsThumbnail(false); img.setUpdatedAt(Instant.now()); });
-
-        image.setIsThumbnail(true);
-        image.setUpdatedAt(Instant.now());
-        productImageRepository.save(image);
-
-        product.setThumbnailUrl(image.getUrl());
-        product.setUpdatedAt(Instant.now());
-        productRepository.save(product);
+        setThumbnailAtomically(productId, imageId, image.getUrl());
 
         return toDTO(image);
     }
+    
+   
+    private void setThumbnailAtomically(Long productId, Long newThumbnailId, String thumbnailUrl) {
+        List<ProductImage> existingThumbnails = productImageRepository.findByProductIdAndIsThumbnailTrue(productId);
+        for (ProductImage img : existingThumbnails) {
+            if (!img.getId().equals(newThumbnailId)) {
+                img.setIsThumbnail(false);
+            }
+        }
+        productImageRepository.saveAll(existingThumbnails);
 
+     
+        ProductImage newThumbnail = productImageRepository.findById(newThumbnailId)
+                .orElseThrow(() -> new ResourceNotFoundException("Image not found: " + newThumbnailId));
+        newThumbnail.setIsThumbnail(true);
+        productImageRepository.save(newThumbnail);
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
+        product.setThumbnailUrl(thumbnailUrl);
+        productRepository.save(product);
+    }
+
+    
+    private void checkImagePermission(Product product) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            throw new AccessDeniedException("User not authenticated");
+        }
+        
+        boolean isOwner = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(auth -> auth.equals("ROLE_OWNER"));
+        
+     
+        if (!isOwner) {
+            throw new AccessDeniedException("Only OWNER can manage product images");
+        }
+    }
+    
+    /**
+     * Sanitizes filename to prevent path traversal attacks.
+     * Removes any path separators and dangerous characters.
+     */
+    private String sanitizeFilename(String filename) {
+        if (filename == null) {
+            return "image";
+        }
+        
+        String sanitized = StringUtils.cleanPath(filename);
+        
+        sanitized = sanitized.replaceAll("[\\.\\./\\\\]", "");
+        
+        if (sanitized.trim().isEmpty()) {
+            return "image";
+        }
+        
+        return sanitized;
+    }
+    
+    /**
+     * Extracts file extension from filename (without the dot).
+     */
+    private String getFileExtension(String filename) {
+        if (filename == null || !filename.contains(".")) {
+            return "";
+        }
+        String ext = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
+        return ext;
+    }
+    
+    /**
+     * Validates if file extension is allowed.
+     */
+    private boolean isAllowedExtension(String extension) {
+        if (extension == null || extension.isEmpty()) {
+            return false;
+        }
+        Set<String> allowed = Arrays.stream(allowedExtensionsCsv.split(","))
+                .map(String::trim)
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet());
+        return allowed.contains(extension.toLowerCase());
+    }
+    
+    /**
+     * Validates if Content-Type is allowed.
+     */
+    private boolean isAllowedContentType(String contentType) {
+        if (contentType == null || contentType.isEmpty()) {
+            return false;
+        }
+        List<String> allowed = Arrays.stream(allowedTypesCsv.split(","))
+                .map(String::trim)
+                .collect(Collectors.toList());
+        return allowed.stream().anyMatch(contentType::equalsIgnoreCase);
+    }
+    
     private Product verifyProduct(Long productId) {
         return productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));

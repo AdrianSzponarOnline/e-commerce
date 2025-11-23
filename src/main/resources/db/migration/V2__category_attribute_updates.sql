@@ -1,10 +1,7 @@
--- Align category_attributes with application model
 
--- Ensure type is varchar(50)
 ALTER TABLE IF EXISTS category_attributes
     ALTER COLUMN type TYPE varchar(50);
 
--- Ensure unique (category_id, name)
 DO $$ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_constraint WHERE conname = 'category_attributes_category_id_name_key'
@@ -14,7 +11,6 @@ DO $$ BEGIN
     END IF;
 END $$;
 
--- Defaults and not nulls
 UPDATE category_attributes SET is_active = TRUE WHERE is_active IS NULL;
 ALTER TABLE category_attributes
     ALTER COLUMN is_active SET DEFAULT TRUE,

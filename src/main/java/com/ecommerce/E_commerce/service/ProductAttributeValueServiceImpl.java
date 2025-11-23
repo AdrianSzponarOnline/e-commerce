@@ -3,6 +3,7 @@ package com.ecommerce.E_commerce.service;
 import com.ecommerce.E_commerce.dto.productattributevalue.ProductAttributeValueCreateDTO;
 import com.ecommerce.E_commerce.dto.productattributevalue.ProductAttributeValueDTO;
 import com.ecommerce.E_commerce.dto.productattributevalue.ProductAttributeValueUpdateDTO;
+import com.ecommerce.E_commerce.exception.DuplicateResourceException;
 import com.ecommerce.E_commerce.exception.InvalidOperationException;
 import com.ecommerce.E_commerce.exception.ResourceNotFoundException;
 import com.ecommerce.E_commerce.mapper.ProductAttributeValueMapper;
@@ -19,7 +20,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,7 +41,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
                 .orElseThrow(() -> new ResourceNotFoundException("Attribute not found with id: " + dto.attributeId()));
         
         if (productAttributeValueRepository.findByProductIdAndAttributeId(dto.productId(), dto.attributeId()).isPresent()) {
-            throw new IllegalArgumentException("Product attribute value already exists for this product and attribute");
+            throw new DuplicateResourceException("Product attribute value already exists for this product and attribute");
         }
         
       
@@ -81,10 +81,8 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
         ProductAttributeValue productAttributeValue = productAttributeValueRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product attribute value not found with id: " + id));
         
-        productAttributeValue.setDeletedAt(Instant.now());
-        productAttributeValue.setActive(false);
-        
-        productAttributeValueRepository.save(productAttributeValue);
+        // @SQLDelete annotation handles deletedAt and isActive automatically
+        productAttributeValueRepository.delete(productAttributeValue);
     }
 
     @Override
@@ -193,8 +191,39 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
 
     @Override
     public List<ProductAttributeValueDTO> createBulk(List<ProductAttributeValueCreateDTO> dtos) {
-        return dtos.stream()
-                .map(this::create)
+        for (ProductAttributeValueCreateDTO dto : dtos) {
+            Product product = productRepository.findById(dto.productId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + dto.productId()));
+            
+            Attribute attribute = attributeRepository.findById(dto.attributeId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Attribute not found with id: " + dto.attributeId()));
+            
+            if (productAttributeValueRepository.findByProductIdAndAttributeId(dto.productId(), dto.attributeId()).isPresent()) {
+                throw new DuplicateResourceException("Product attribute value already exists for product id: " + dto.productId() + " and attribute id: " + dto.attributeId());
+            }
+            
+            validateAttributeValue(dto.value(), attribute.getType(), attribute.getName());
+        }
+        
+        
+        List<ProductAttributeValue> entities = dtos.stream()
+                .map(dto -> {
+                    Product product = productRepository.findById(dto.productId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + dto.productId()));
+                    Attribute attribute = attributeRepository.findById(dto.attributeId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Attribute not found with id: " + dto.attributeId()));
+                    
+                    ProductAttributeValue productAttributeValue = productAttributeValueMapper.toProductAttributeValue(dto);
+                    productAttributeValue.setProduct(product);
+                    productAttributeValue.setAttribute(attribute);
+                    return productAttributeValue;
+                })
+                .collect(Collectors.toList());
+        
+        List<ProductAttributeValue> savedEntities = productAttributeValueRepository.saveAll(entities);
+        
+        return savedEntities.stream()
+                .map(productAttributeValueMapper::toProductAttributeValueDTO)
                 .collect(Collectors.toList());
     }
 
@@ -203,7 +232,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
         List<ProductAttributeValue> existingValues = productAttributeValueRepository.findByProductIdAndIsActive(productId, true);
         
         if (dtos.size() != existingValues.size()) {
-            throw new IllegalArgumentException("Number of update DTOs must match existing attribute values");
+            throw new InvalidOperationException("Number of update DTOs must match existing attribute values");
         }
         
         for (int i = 0; i < existingValues.size(); i++) {
@@ -216,10 +245,15 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
             }
             
             productAttributeValueMapper.updateProductAttributeValueFromDTO(dto, existingValue);
-            productAttributeValueRepository.save(existingValue);
+            
+            if (dto.isActive() != null) {
+                existingValue.setActive(dto.isActive().booleanValue());
+            }
         }
         
-        return existingValues.stream()
+        List<ProductAttributeValue> savedValues = productAttributeValueRepository.saveAll(existingValues);
+        
+        return savedValues.stream()
                 .map(productAttributeValueMapper::toProductAttributeValueDTO)
                 .collect(Collectors.toList());
     }
@@ -227,14 +261,8 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
     @Override
     public void deleteByProduct(Long productId) {
         List<ProductAttributeValue> productAttributeValues = productAttributeValueRepository.findByProductIdAndIsActive(productId, true);
-        Instant now = Instant.now();
         
-        for (ProductAttributeValue pav : productAttributeValues) {
-            pav.setDeletedAt(now);
-            pav.setActive(false);
-        }
-        
-        productAttributeValueRepository.saveAll(productAttributeValues);
+        productAttributeValueRepository.deleteAll(productAttributeValues);
     }
 
     @Override

@@ -89,8 +89,8 @@ Uproszczony obiekt produktu używany dla:
   "isFeatured": "Boolean (optional, default false)",
   "attributeValues": [
     {
-      "categoryAttributeId": "Long (required)",
-      "value": "String (required, max 255)"
+      "attributeId": "Long (required)",
+      "value": "String (required, max 1000)"
     }
   ]
 }
@@ -596,9 +596,71 @@ Uproszczony obiekt produktu używany dla:
 
 ---
 
-### 5. Zaawansowane filtrowanie
+### 5. Filtrowanie po atrybutach
 
-#### 5.1 Produkty według kategorii i statusu wyróżnienia
+#### 5.1 Filtrowanie produktów po nazwie atrybutu i wartości
+**Endpoint:** `GET /api/products/filter/attribute`
+**Autoryzacja:** Public
+
+**Query Parameters:**
+- `categoryId` (Long, optional) - ID kategorii do filtrowania
+- `attributeName` (String, required) - Nazwa atrybutu (np. "Color", "Size")
+- `attributeValue` (String, required) - Wartość atrybutu (np. "Red", "Large")
+- `page` (int, default: 0) - Numer strony
+- `size` (int, default: 10) - Rozmiar strony
+- `sortBy` (string, default: "name") - Pole do sortowania
+- `sortDir` (string, default: "asc") - Kierunek sortowania
+
+**Zwracany wynik:**
+```json
+{
+  "content": [
+    {
+      "id": 1,
+      "name": "Laptop Gaming",
+      "price": 2999.99,
+      "shortDescription": "Wysokiej klasy laptop do gier",
+      "thumbnailUrl": "https://example.com/image.jpg",
+      "seoSlug": "laptop-gaming",
+      "categoryName": "Elektronika"
+    }
+  ],
+  "pageable": { /* Informacje o paginacji */ },
+  "totalElements": 5,
+  "totalPages": 1
+}
+```
+
+**Status codes:**
+- `200 OK` - Lista produktów spełniających kryteria
+
+---
+
+#### 5.2 Filtrowanie produktów po ID atrybutu i wartości
+**Endpoint:** `GET /api/products/filter/attribute/{attributeId}`
+**Autoryzacja:** Public
+
+**Path Parameters:**
+- `attributeId` (Long) - ID atrybutu
+
+**Query Parameters:**
+- `categoryId` (Long, optional) - ID kategorii do filtrowania
+- `attributeValue` (String, required) - Wartość atrybutu
+- `page` (int, default: 0) - Numer strony
+- `size` (int, default: 10) - Rozmiar strony
+- `sortBy` (string, default: "name") - Pole do sortowania
+- `sortDir` (string, default: "asc") - Kierunek sortowania
+
+**Zwracany wynik:** `Page<ProductSummaryDTO>`
+
+**Status codes:**
+- `200 OK` - Lista produktów spełniających kryteria
+
+---
+
+### 6. Zaawansowane filtrowanie
+
+#### 6.1 Produkty według kategorii i statusu wyróżnienia
 **Endpoint:** `GET /api/products/category/{categoryId}/featured`
 
 **Parametry:**
@@ -636,7 +698,7 @@ Uproszczony obiekt produktu używany dla:
 
 ---
 
-#### 5.2 Produkty według zakresu cen i statusu wyróżnienia
+#### 6.2 Produkty według zakresu cen i statusu wyróżnienia
 **Endpoint:** `GET /api/products/price-range/featured`
 
 **Parametry:**
@@ -675,9 +737,9 @@ Uproszczony obiekt produktu używany dla:
 
 ---
 
-### 6. Statystyki
+### 7. Statystyki
 
-#### 6.1 Liczba produktów w kategorii
+#### 7.1 Liczba produktów w kategorii
 **Endpoint:** `GET /api/products/stats/category/{categoryId}/count`
 
 **Parametry:**
@@ -693,7 +755,7 @@ Uproszczony obiekt produktu używany dla:
 
 ---
 
-#### 6.2 Liczba produktów wyróżnionych
+#### 7.2 Liczba produktów wyróżnionych
 **Endpoint:** `GET /api/products/stats/featured/count`
 
 **Parametry:**
@@ -709,7 +771,7 @@ Uproszczony obiekt produktu używany dla:
 
 ---
 
-#### 6.3 Liczba produktów aktywnych
+#### 7.3 Liczba produktów aktywnych
 **Endpoint:** `GET /api/products/stats/active/count`
 
 **Parametry:**
@@ -806,7 +868,7 @@ System atrybutów produktów pozwala na dynamiczne definiowanie cech produktów 
 ```json
 {
   "productId": 1,
-  "categoryAttributeId": 1,
+  "attributeId": 1,
   "value": "15.6 inch"
 }
 ```
@@ -815,16 +877,10 @@ System atrybutów produktów pozwala na dynamiczne definiowanie cech produktów 
 ```json
 {
   "id": 1,
-  "productId": 1,
-  "productName": "Laptop Gaming",
-  "categoryAttributeId": 1,
-  "categoryAttributeName": "Screen Size",
-  "categoryAttributeType": "TEXT",
+  "attributeName": "Screen Size",
+  "attributeType": "TEXT",
   "isKeyAttribute": true,
-  "value": "15.6 inch",
-  "createdAt": "2024-01-01T10:00:00Z",
-  "updatedAt": "2024-01-01T10:00:00Z",
-  "isActive": true
+  "value": "15.6 inch"
 }
 ```
 
@@ -833,12 +889,12 @@ System atrybutów produktów pozwala na dynamiczne definiowanie cech produktów 
 [
   {
     "productId": 1,
-    "categoryAttributeId": 1,
+    "attributeId": 1,
     "value": "15.6 inch"
   },
   {
     "productId": 1,
-    "categoryAttributeId": 2,
+    "attributeId": 2,
     "value": "Black"
   }
 ]
@@ -846,8 +902,10 @@ System atrybutów produktów pozwala na dynamiczne definiowanie cech produktów 
 
 ### Walidacja atrybutów produktu
 - `productId` - ID produktu (wymagane)
-- `categoryAttributeId` - ID atrybutu kategorii (wymagane)
-- `value` - Wartość atrybutu (wymagane, max 255 znaków)
+- `attributeId` - ID atrybutu (wymagane)
+- `value` - Wartość atrybutu (wymagane, max 1000 znaków)
+
+**Uwaga:** `attributeId` odnosi się do atrybutu z tabeli `attributes`, nie do `categoryAttribute`. System automatycznie sprawdza, czy atrybut jest przypisany do kategorii produktu.
 
 ### Uwagi techniczne
 - Atrybuty produktów są automatycznie usuwane przy usuwaniu produktu

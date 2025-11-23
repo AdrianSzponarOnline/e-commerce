@@ -78,6 +78,10 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.CONFLICT, "Duplicate Resource", e.getMessage());
     }
 
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<Object> handleInsufficientStockException(InsufficientStockException e) {
+        return buildErrorResponse(HttpStatus.CONFLICT, "Insufficient Stock", e.getMessage());
+    }
 
     private ResponseEntity<Object> buildErrorResponse(HttpStatus status, String error, String message) {
         Map<String, Object> body = new HashMap<>();

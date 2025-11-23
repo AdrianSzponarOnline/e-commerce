@@ -90,18 +90,15 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     public AddressDTO create(AddressCreateDTO dto) {
-        // Security check: User can only create address for themselves (unless OWNER)
-        checkAccess(dto.userId(), "You can only create addresses for yourself");
-        
-        // Get user - for non-OWNER we already have it in checkAccess, but for clarity we fetch it here
         User user = userRepository.findById(dto.userId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + dto.userId()));
+
+        checkAccess(dto.userId(), "You can only create addresses for yourself");
+
 
         Address address = addressMapper.toAddress(dto);
         address.setUser(user);
         address.setIsActive(dto.isActive() != null ? dto.isActive() : true);
-        // createdAt and updatedAt are automatically set by JPA Auditing
-
         Address savedAddress = addressRepository.save(address);
         return addressMapper.toAddressDTO(savedAddress);
     }
@@ -111,14 +108,12 @@ public class AddressServiceImpl implements AddressService {
         Address address = addressRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + id));
         
-        // Security check: User can only update their own addresses (unless OWNER)
         if (address.getUser() == null) {
             throw new ResourceNotFoundException("Address has no associated user");
         }
         checkAccess(address.getUser().getId(), "You can only update your own addresses");
 
         addressMapper.updateAddressFromDTO(dto, address);
-        // updatedAt is automatically set by JPA Auditing
 
         if (dto.isActive() != null) {
             address.setIsActive(dto.isActive());
@@ -138,7 +133,6 @@ public class AddressServiceImpl implements AddressService {
         }
         checkAccess(address.getUser().getId(), "You can only delete your own addresses");
 
-        // @SQLDelete annotation handles deletedAt and isActive automatically
         addressRepository.delete(address);
     }
 

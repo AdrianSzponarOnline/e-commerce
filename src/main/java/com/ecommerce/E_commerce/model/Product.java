@@ -8,6 +8,10 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.search.engine.backend.types.ObjectStructure;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -40,6 +44,7 @@ import java.util.List;
                 )
         }
 )
+@Indexed
 public class Product {
     @Id
     @ColumnDefault("nextval('products_id_seq'::regclass)")
@@ -49,9 +54,11 @@ public class Product {
     @Size(max = 255)
     @NotNull
     @Column(name = "name", nullable = false)
+    @FullTextField(analyzer = "standard")
     private String name;
 
     @NotNull
+    @FullTextField(analyzer = "standard")
     @Column(name = "description", nullable = false, length = Integer.MAX_VALUE)
     private String description;
 
@@ -100,6 +107,7 @@ public class Product {
     private Category category;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @IndexedEmbedded(structure = ObjectStructure.NESTED)
     private List<ProductAttributeValue> attributeValues = new ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -121,7 +129,7 @@ public class Product {
     @NotNull
     @ColumnDefault("true")
     @Column(name = "is_active", nullable = false)
-    private Boolean isActive = false;
+    private Boolean isActive = true;
 
     @PrePersist
     public void prePersist() {

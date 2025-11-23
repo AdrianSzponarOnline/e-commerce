@@ -42,8 +42,7 @@ public class SkuGenerator {
                 .map(value -> abbreviate(value, 2))
                 .collect(Collectors.joining());
 
-        String hashPart = RandomStringUtils.random(4).toUpperCase();
-
+        String hashPart = RandomStringUtils.randomAlphanumeric(4).toUpperCase();
         return String.join("-", categoryCode, productCode, keyAttributes, hashPart).toUpperCase();
     }
     private String abbreviate(String text, int length) {

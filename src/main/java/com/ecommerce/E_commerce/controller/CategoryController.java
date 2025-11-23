@@ -65,8 +65,8 @@ public class CategoryController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('OWNER')")
-    public ResponseEntity<Void> softDelete(@PathVariable("id") Long id) {
-        categoryService.softDelete(id);
+    public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
+        categoryService.delete(id);
         return ResponseEntity.noContent().build();
     }
 }

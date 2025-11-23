@@ -18,6 +18,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -27,6 +31,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentServiceImplTest {
@@ -85,6 +90,14 @@ class PaymentServiceImplTest {
                 Instant.now(), "TXN-123", "Payment notes", Instant.now(), Instant.now(), true
         );
 
+        // Mock SecurityContext
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
+        lenient().when(authentication.getName()).thenReturn("test@example.com");
+        lenient().doReturn(java.util.Set.of(new SimpleGrantedAuthority("ROLE_OWNER"))).when(authentication).getAuthorities();
+        SecurityContextHolder.setContext(securityContext);
+
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
         when(paymentMapper.toPayment(createDTO)).thenReturn(testPayment);
         when(paymentRepository.save(any(Payment.class))).thenReturn(testPayment);
@@ -122,6 +135,15 @@ class PaymentServiceImplTest {
         PaymentCreateDTO createDTO = new PaymentCreateDTO(
                 1L, new BigDecimal("199.98"), "CREDIT_CARD", "TXN-123", null
         );
+        
+        // Mock SecurityContext
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
+        lenient().when(authentication.getName()).thenReturn("test@example.com");
+        lenient().doReturn(java.util.Set.of(new SimpleGrantedAuthority("ROLE_OWNER"))).when(authentication).getAuthorities();
+        SecurityContextHolder.setContext(securityContext);
+        
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
 
         // When & Then
@@ -136,6 +158,15 @@ class PaymentServiceImplTest {
         PaymentCreateDTO createDTO = new PaymentCreateDTO(
                 1L, new BigDecimal("100.00"), "CREDIT_CARD", "TXN-123", null
         );
+        
+        // Mock SecurityContext
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
+        lenient().when(authentication.getName()).thenReturn("test@example.com");
+        lenient().doReturn(java.util.Set.of(new SimpleGrantedAuthority("ROLE_OWNER"))).when(authentication).getAuthorities();
+        SecurityContextHolder.setContext(securityContext);
+        
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
 
         // When & Then
@@ -152,6 +183,14 @@ class PaymentServiceImplTest {
                 1L, 1L, new BigDecimal("199.98"), "CREDIT_CARD", "COMPLETED",
                 Instant.now(), "TXN-123", null, Instant.now(), Instant.now(), true
         );
+
+        // Mock SecurityContext
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
+        lenient().when(authentication.getName()).thenReturn("test@example.com");
+        lenient().doReturn(java.util.Set.of(new SimpleGrantedAuthority("ROLE_OWNER"))).when(authentication).getAuthorities();
+        SecurityContextHolder.setContext(securityContext);
 
         when(paymentRepository.findById(1L)).thenReturn(Optional.of(testPayment));
         when(paymentRepository.save(any(Payment.class))).thenReturn(testPayment);
@@ -186,6 +225,15 @@ class PaymentServiceImplTest {
                 1L, 1L, new BigDecimal("199.98"), "CREDIT_CARD", "PENDING",
                 Instant.now(), "TXN-123", null, Instant.now(), Instant.now(), true
         );
+        
+        // Mock SecurityContext
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
+        lenient().when(authentication.getName()).thenReturn("test@example.com");
+        lenient().doReturn(java.util.Set.of(new SimpleGrantedAuthority("ROLE_OWNER"))).when(authentication).getAuthorities();
+        SecurityContextHolder.setContext(securityContext);
+        
         when(paymentRepository.findById(1L)).thenReturn(Optional.of(testPayment));
         when(paymentMapper.toPaymentDTO(testPayment)).thenReturn(paymentDTO);
 
@@ -201,6 +249,14 @@ class PaymentServiceImplTest {
     @Test
     void delete_ShouldDeletePayment() {
         // Given
+        // Mock SecurityContext
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
+        lenient().when(authentication.getName()).thenReturn("test@example.com");
+        lenient().doReturn(java.util.Set.of(new SimpleGrantedAuthority("ROLE_OWNER"))).when(authentication).getAuthorities();
+        SecurityContextHolder.setContext(securityContext);
+        
         when(paymentRepository.findById(1L)).thenReturn(Optional.of(testPayment));
 
         // When

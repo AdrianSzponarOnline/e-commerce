@@ -22,32 +22,38 @@ public class ProductImageController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductImageDTO>> list(@PathVariable Long productId) {
+    public ResponseEntity<List<ProductImageDTO>> list(@PathVariable("productId") Long productId) {
         return ResponseEntity.ok(productImageService.listByProduct(productId));
     }
 
     @PostMapping(consumes = {"multipart/form-data"})
     @PreAuthorize("hasRole('OWNER')")
-    public ResponseEntity<ProductImageDTO> upload(@PathVariable Long productId,
-                                                  @RequestPart("file") MultipartFile file,
-                                                  @RequestPart(value = "altText", required = false) String altText,
-                                                  @RequestPart(value = "isThumbnail", required = false) Boolean isThumbnail) {
+    public ResponseEntity<ProductImageDTO> upload(
+            @PathVariable("productId") Long productId,
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(value = "altText", required = false) String altText,
+            @RequestParam(value = "isThumbnail", required = false) Boolean isThumbnail) {
+
         ProductImageDTO dto = productImageService.upload(productId, file, altText, Boolean.TRUE.equals(isThumbnail));
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
     @DeleteMapping("/{imageId}")
     @PreAuthorize("hasRole('OWNER')")
-    public ResponseEntity<Void> delete(@PathVariable Long productId, @PathVariable Long imageId) {
+    public ResponseEntity<Void> delete(
+            @PathVariable("productId") Long productId,
+            @PathVariable("imageId") Long imageId) {
+
         productImageService.delete(productId, imageId);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{imageId}/thumbnail")
     @PreAuthorize("hasRole('OWNER')")
-    public ResponseEntity<ProductImageDTO> setThumbnail(@PathVariable Long productId, @PathVariable Long imageId) {
+    public ResponseEntity<ProductImageDTO> setThumbnail(
+            @PathVariable("productId") Long productId,
+            @PathVariable("imageId") Long imageId) {
+
         return ResponseEntity.ok(productImageService.setThumbnail(productId, imageId));
     }
 }
-
-
