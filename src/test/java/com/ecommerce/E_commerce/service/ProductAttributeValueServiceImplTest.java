@@ -99,6 +99,8 @@ class ProductAttributeValueServiceImplTest {
         );
 
         testUpdateDTO = new ProductAttributeValueUpdateDTO(
+                null, // id
+                null, // attributeId
                 "17.3 inches", // value
                 true // isActive
         );

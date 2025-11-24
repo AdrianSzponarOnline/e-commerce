@@ -163,29 +163,6 @@ class ProductControllerTest {
                 .andExpect(jsonPath("$.content").isArray());
     }
 
-    @Test
-    void searchProductsByName_ShouldReturnPage() throws Exception {
-        ProductSummaryDTO summary = new ProductSummaryDTO(
-                1L,
-                "Test Product",
-                new BigDecimal("99.99"),
-                "Short desc",
-                "https://example.com/image.jpg",
-                "test-product",
-                "Electronics"
-        );
-
-        Page<ProductSummaryDTO> page = new PageImpl<>(List.of(summary));
-        Mockito.when(productService.searchByName(anyString(), anyInt(), anyInt(), anyString(), anyString()))
-                .thenReturn(page);
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/products/search/name")
-                        .param("name", "test")
-                        .param("page", "0")
-                        .param("size", "10"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").isArray());
-    }
 
     @Test
     void updateProduct_ShouldReturnUpdatedProduct() throws Exception {

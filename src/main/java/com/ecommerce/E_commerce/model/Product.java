@@ -9,7 +9,9 @@ import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.search.engine.backend.types.ObjectStructure;
+import org.hibernate.search.engine.backend.types.Sortable;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
 
@@ -48,6 +50,7 @@ import java.util.List;
 public class Product {
     @Id
     @ColumnDefault("nextval('products_id_seq'::regclass)")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 
@@ -68,6 +71,7 @@ public class Product {
 
     @NotNull
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
+    @GenericField(sortable = Sortable.YES)
     private BigDecimal price;
 
     @Size(max = 64)

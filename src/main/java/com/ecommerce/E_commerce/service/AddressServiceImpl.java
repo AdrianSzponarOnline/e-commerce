@@ -39,10 +39,7 @@ public class AddressServiceImpl implements AddressService {
         this.addressMapper = addressMapper;
     }
 
-    /**
-     * Helper method to check if current user is OWNER
-     * @return true if user has ROLE_OWNER, false otherwise
-     */
+
     private boolean isOwner() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {
@@ -53,10 +50,7 @@ public class AddressServiceImpl implements AddressService {
                 .anyMatch(auth -> auth.equals("ROLE_OWNER"));
     }
 
-    /**
-     * Helper method to get current authenticated user
-     * @return Optional containing User if found, empty otherwise
-     */
+
     private Optional<User> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {
@@ -66,12 +60,7 @@ public class AddressServiceImpl implements AddressService {
         return userRepository.findByEmail(userEmail);
     }
 
-    /**
-     * Helper method to check if user has access to resource
-     * @param resourceUserId ID of the user who owns the resource
-     * @param errorMessage Error message to throw if access denied
-     * @throws AccessDeniedException if user doesn't have access
-     */
+
     private void checkAccess(Long resourceUserId, String errorMessage) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {

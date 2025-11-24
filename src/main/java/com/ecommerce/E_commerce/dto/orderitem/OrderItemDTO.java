@@ -1,6 +1,7 @@
 package com.ecommerce.E_commerce.dto.orderitem;
 
 import com.ecommerce.E_commerce.dto.product.ProductDTO;
+import com.ecommerce.E_commerce.dto.product.ProductSummaryDTO;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -8,7 +9,7 @@ import java.time.Instant;
 public record OrderItemDTO(
         Long id,
         Long orderId,
-        ProductDTO product,
+        ProductSummaryDTO product,
         Integer quantity,
         BigDecimal price,
         Instant createdAt,

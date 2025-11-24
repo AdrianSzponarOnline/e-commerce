@@ -179,7 +179,7 @@ class PaymentControllerTest {
 
     @Test
     void updatePayment_ShouldReturnUpdatedPayment() throws Exception {
-        PaymentUpdateDTO updateDTO = new PaymentUpdateDTO("COMPLETED", null, null, null);
+        PaymentUpdateDTO updateDTO = new PaymentUpdateDTO("COMPLETED", null, null);
 
         PaymentDTO paymentDTO = new PaymentDTO(
                 1L,

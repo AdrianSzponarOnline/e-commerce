@@ -59,7 +59,7 @@ public class CategoryAttributeControllerTest {
     @Test
     @WithMockUser(roles = {"OWNER"})
     void create_requiresOwnerAndReturnsCreated() throws Exception {
-        var body = new CategoryAttributeCreateDTO(10L, 100L, false, true);
+        var body = new CategoryAttributeCreateDTO(10L, 100L, false);
         var response = new CategoryAttributeDTO(5L, 10L, 100L, "color", CategoryAttributeType.TEXT, false, true, Instant.now(), Instant.now());
         when(service.create(any())).thenReturn(response);
         mockMvc.perform(post("/api/categories/10/attributes")

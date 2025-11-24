@@ -24,6 +24,7 @@ public class Inventory {
     @Id
     @ColumnDefault("nextval('inventory_id_seq'::regclass)")
     @Column(name = "id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotNull

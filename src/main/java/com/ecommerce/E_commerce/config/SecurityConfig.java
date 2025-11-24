@@ -70,14 +70,8 @@ public class SecurityConfig {
                                     "/api/products/sku/*",
                                     "/api/products/category/*",
                                     "/api/products/category-slug/*",
-                                    "/api/products/price-range",
                                     "/api/products/featured",
                                     "/api/products/active",
-                                    "/api/products/search/name",
-                                    "/api/products/search/description",
-                                    "/api/products/category/*/price-range",
-                                    "/api/products/category/*/featured",
-                                    "/api/products/price-range/featured",
                                     "/api/products/stats/category/*/count",
                                     "/api/products/stats/featured/count",
                                     "/api/products/stats/active/count",
@@ -99,12 +93,18 @@ public class SecurityConfig {
                                     "/api/product-attribute-values/stats/category/{categoryId}",
                                     "/api/product-attribute-values/distinct-values/attribute/{attributeId}",
                                     "/api/product-attribute-values/product/{productId}/key-attributes/list",
-                                    "/api/product-attribute-values/product/{productId}/attribute-type/{attributeType}"
+                                    "/api/product-attribute-values/product/{productId}/attribute-type/{attributeType}",
+                                    "/api/inventory",
+                                    "/api/inventory/{id}",
+                                    "/api/inventory/product/{productId}",
+                                    "/api/inventory/summary",
+                                    "/api/inventory/product/{productId}/available"
                             ).permitAll()
                             .requestMatchers(
                                     "/error",
                                     "/api/auth/login",
-                                    "/api/auth/register"
+                                    "/api/auth/register",
+                                    "/uploads/**"
                             ).permitAll();
                     if (isDevOrTest) {
                         authorize.requestMatchers(

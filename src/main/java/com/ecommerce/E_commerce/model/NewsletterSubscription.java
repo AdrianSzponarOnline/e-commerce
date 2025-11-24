@@ -19,6 +19,7 @@ public class NewsletterSubscription {
     @Id
     @ColumnDefault("nextval('newsletter_subscriptions_id_seq'::regclass)")
     @Column(name = "id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)

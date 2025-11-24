@@ -60,7 +60,7 @@ public class CategoryAttributeServiceImplTest {
         saved.setActive(true);
         when(attrRepo.save(any())).thenReturn(saved);
 
-        CategoryAttributeDTO dto = service.create(new CategoryAttributeCreateDTO(3L, 1L, true, true));
+        CategoryAttributeDTO dto = service.create(new CategoryAttributeCreateDTO(3L, 1L, true));
         assertEquals(10L, dto.id());
         assertEquals(3L, dto.categoryId());
     }
@@ -69,7 +69,7 @@ public class CategoryAttributeServiceImplTest {
     void create_throwsWhenCategoryMissing() {
         when(categoryRepo.findById(5L)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () ->
-                service.create(new CategoryAttributeCreateDTO(5L, 1L, true, true)));
+                service.create(new CategoryAttributeCreateDTO(5L, 1L, true)));
     }
 
     @Test

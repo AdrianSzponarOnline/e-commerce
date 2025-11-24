@@ -45,7 +45,7 @@ public class CategoryAttributeMapperTest {
 
     @Test
     void fromCreateDTO_ignoresCategory() {
-        CategoryAttributeCreateDTO dto = new CategoryAttributeCreateDTO(9L, 3L, true, true);
+        CategoryAttributeCreateDTO dto = new CategoryAttributeCreateDTO(9L, 3L, true);
         CategoryAttribute entity = mapper.fromCreateDTO(dto);
         assertNull(entity.getCategory());
         assertNull(entity.getAttribute());

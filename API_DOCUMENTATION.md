@@ -8,11 +8,13 @@ Kompletna dokumentacja API dla systemu e-commerce z obsługą produktów, katego
 - **Categories API:** `/api/categories`
 - **Category Attributes API:** `/api/categories/{categoryId}/attributes`
 - **Products API:** `/api/products`
+- **Search API:** `/api/search` - Wyszukiwanie produktów (Elasticsearch)
 - **Product Attribute Values API:** `/api/product-attribute-values`
 - **Product Images API:** `/api/products/{productId}/images`
 - **Orders API:** `/api/orders`
 - **Payments API:** `/api/payments`
 - **Addresses API:** `/api/addresses`
+- **Inventory API:** `/api/inventory`
 
 ## Autoryzacja
 - **Publiczne endpointy** - dostępne dla wszystkich użytkowników
@@ -520,66 +522,18 @@ API kategorii obsługuje hierarchiczną strukturę kategorii z relacjami rodzic-
 **Endpoint:** `GET /api/products/category-slug/{categorySlug}`  
 **Autoryzacja:** Public
 
-### 4.10 Produkty w zakresie cenowym
-**Endpoint:** `GET /api/products/price-range`  
-**Autoryzacja:** Public
-
-**Query Parameters:**
-- `minPrice` (BigDecimal) - minimalna cena
-- `maxPrice` (BigDecimal) - maksymalna cena
-
-### 4.11 Produkty polecane
+### 4.10 Produkty polecane
 **Endpoint:** `GET /api/products/featured`  
 **Autoryzacja:** Public
 
-### 4.12 Produkty aktywne/nieaktywne
+### 4.11 Produkty aktywne/nieaktywne
 **Endpoint:** `GET /api/products/active`  
 **Autoryzacja:** Public (aktywne), `ROLE_OWNER` (nieaktywne)
 
 **Query Parameters:**
 - `isActive` (Boolean) - status aktywności
 
-### 4.13 Wyszukiwanie produktów
-**Endpoint:** `GET /api/products/search`  
-**Autoryzacja:** Public
-
-**Query Parameters:**
-- `name` (string) - wyszukiwanie po nazwie
-- `description` (string) - wyszukiwanie po opisie
-
-### 4.14 Filtrowanie produktów po atrybutach (nazwa)
-**Endpoint:** `GET /api/products/filter/attribute`  
-**Autoryzacja:** Public
-
-**Query Parameters:**
-- `categoryId` (Long, optional) - ID kategorii do filtrowania
-- `attributeName` (String, required) - Nazwa atrybutu
-- `attributeValue` (String, required) - Wartość atrybutu
-- `page` (int, default: 0) - numer strony
-- `size` (int, default: 10) - rozmiar strony
-- `sortBy` (string, default: "name") - pole sortowania
-- `sortDir` (string, default: "asc") - kierunek sortowania (asc/desc)
-
-**Response:** `Page<ProductSummaryDTO>`
-
-### 4.15 Filtrowanie produktów po atrybutach (ID)
-**Endpoint:** `GET /api/products/filter/attribute/{attributeId}`  
-**Autoryzacja:** Public
-
-**Path Parameters:**
-- `attributeId` (Long) - ID atrybutu
-
-**Query Parameters:**
-- `categoryId` (Long, optional) - ID kategorii do filtrowania
-- `attributeValue` (String, required) - Wartość atrybutu
-- `page` (int, default: 0) - numer strony
-- `size` (int, default: 10) - rozmiar strony
-- `sortBy` (string, default: "name") - pole sortowania
-- `sortDir` (string, default: "asc") - kierunek sortowania (asc/desc)
-
-**Response:** `Page<ProductSummaryDTO>`
-
-### 4.16 Statystyki produktów
+### 4.12 Statystyki produktów
 
 #### 4.16.1 Liczba produktów w kategorii
 **Endpoint:** `GET /api/products/stats/category/{categoryId}/count`  
@@ -607,7 +561,66 @@ API kategorii obsługuje hierarchiczną strukturę kategorii z relacjami rodzic-
 
 ---
 
-## 5. Product Attribute Values API (`/api/product-attribute-values`)
+## 5. Search API (`/api/search`)
+
+### 5.1 Wyszukiwanie produktów
+**Endpoint:** `POST /api/search`  
+**Autoryzacja:** Public
+
+**Query Parameters:**
+- `query` (String, optional) - Tekst do wyszukania w nazwie i opisie produktu
+- `minPrice` (BigDecimal, optional) - Minimalna cena
+- `maxPrice` (BigDecimal, optional) - Maksymalna cena
+- `page` (int, default: 0) - Numer strony
+- `size` (int, default: 20) - Rozmiar strony
+- `sort` (String, optional) - Sortowanie (np. "name,asc", "price,desc")
+
+**Request Body (optional):**
+```json
+{
+  "Color": "Black",
+  "Screen Size": "15.6 inch"
+}
+```
+
+**Response:**
+```json
+{
+  "content": [
+    {
+      "id": 1,
+      "name": "Laptop Gaming",
+      "price": 2999.99,
+      "shortDescription": "Wysokiej klasy laptop do gier",
+      "thumbnailUrl": "https://example.com/image.jpg",
+      "seoSlug": "laptop-gaming",
+      "categoryName": "Elektronika"
+    }
+  ],
+  "pageable": {
+    "pageNumber": 0,
+    "pageSize": 20
+  },
+  "totalElements": 15,
+  "totalPages": 1
+}
+```
+
+**Funkcjonalności:**
+- Fuzzy matching dla zapytań tekstowych (tolerancja 2 znaki)
+- Wyszukiwanie w polach `name` i `description`
+- Filtrowanie po zakresie cen
+- Filtrowanie po atrybutach produktów (nazwa atrybutu -> wartość)
+- Automatyczne indeksowanie produktów przy starcie aplikacji
+
+**Uwagi:**
+- Wyszukiwanie wykorzystuje Elasticsearch (Hibernate Search)
+- Wszystkie produkty są automatycznie indeksowane przy starcie aplikacji
+- Fuzzy matching pozwala na znalezienie produktów nawet przy drobnych błędach w zapytaniu
+
+---
+
+## 6. Product Attribute Values API (`/api/product-attribute-values`)
 
 ### 5.1 Tworzenie wartości atrybutu produktu
 **Endpoint:** `POST /api/product-attribute-values`  
@@ -863,7 +876,7 @@ API kategorii obsługuje hierarchiczną strukturę kategorii z relacjami rodzic-
 
 ---
 
-## 6. Product Images API (`/api/products/{productId}/images`)
+## 7. Product Images API (`/api/products/{productId}/images`)
 
 ### 6.1 Lista obrazów
 **Endpoint:** `GET /api/products/{productId}/images`  
@@ -912,7 +925,7 @@ Zdejmuje flagę `isThumbnail` z innych obrazów produktu i ustawia `thumbnail_ur
 
 ---
 
-## 7. Modele danych
+## 8. Modele danych
 
 ### 7.1 CategoryAttributeType
 ```json
@@ -936,7 +949,7 @@ Zdejmuje flagę `isThumbnail` z innych obrazów produktu i ustawia `thumbnail_ur
 
 ---
 
-## 8. Kody błędów
+## 9. Kody błędów
 
 ### 8.1 HTTP Status Codes
 - `200 OK` - Sukces
@@ -968,7 +981,7 @@ Zdejmuje flagę `isThumbnail` z innych obrazów produktu i ustawia `thumbnail_ur
 
 ---
 
-## 9. Przykłady użycia
+## 10. Przykłady użycia
 
 ### 9.1 Tworzenie produktu z atrybutami
 ```bash
@@ -995,19 +1008,24 @@ curl -X POST "http://localhost:8080/api/products" \
   }'
 ```
 
-### 9.2 Wyszukiwanie produktów z filtrami
+### 10.2 Wyszukiwanie produktów z Elasticsearch
 ```bash
-curl -X GET "http://localhost:8080/api/products/filter?categoryId=1&minPrice=1000&maxPrice=5000&isFeatured=true&page=0&size=10&sortBy=price&sortDir=asc"
+curl -X POST "http://localhost:8080/api/search?query=laptop&minPrice=1000&maxPrice=5000&page=0&size=20" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "Color": "Black",
+    "Screen Size": "15.6 inch"
+  }'
 ```
 
-### 9.3 Pobieranie atrybutów produktu
+### 10.3 Pobieranie atrybutów produktu
 ```bash
 curl -X GET "http://localhost:8080/api/product-attribute-values/product/1"
 ```
 
 ---
 
-## 10. Testy
+## 11. Testy
 
 ### 10.1 Pokrycie testami
 - **SkuGeneratorTest:** 8 testów
@@ -1037,7 +1055,7 @@ mvn test jacoco:report
 
 ---
 
-## 11. Migracje bazy danych
+## 12. Migracje bazy danych
 
 ### 11.1 Dostępne migracje
 - `V1__baseline.sql` - Podstawowa struktura bazy danych
@@ -1056,7 +1074,7 @@ mvn flyway:migrate
 
 ---
 
-## 12. Konfiguracja
+## 13. Konfiguracja
 
 ### 12.1 Wymagane zmienne środowiskowe
 ```properties
@@ -1081,7 +1099,7 @@ spring.flyway.locations=classpath:db/migration
 
 ---
 
-## 13. Bezpieczeństwo
+## 14. Bezpieczeństwo
 
 ### 13.1 Role i uprawnienia
 - **USER** - Podstawowe operacje (odczyt)
@@ -1100,7 +1118,7 @@ spring.flyway.locations=classpath:db/migration
 
 ---
 
-## 14. Orders API (`/api/orders`)
+## 15. Orders API (`/api/orders`)
 
 ### 14.1 Tworzenie zamówienia
 **Endpoint:** `POST /api/orders`  
@@ -1182,7 +1200,7 @@ spring.flyway.locations=classpath:db/migration
 
 ---
 
-## 15. Payments API (`/api/payments`)
+## 16. Payments API (`/api/payments`)
 
 ### 15.1 Tworzenie płatności
 **Endpoint:** `POST /api/payments`  
@@ -1260,9 +1278,56 @@ spring.flyway.locations=classpath:db/migration
 - `CANCELLED` - Anulowana
 - `REFUNDED` - Zwrócona
 
+### 15.7 Symulacja płatności (Mock Payment Gateway)
+**Endpoint:** `POST /api/payments/{paymentId}/simulate`  
+**Autoryzacja:** USER (tylko własne zamówienia) lub OWNER
+
+**Query Parameters:**
+- `scenario` (opcjonalny, default: `SUCCESS`) - Scenariusz symulacji:
+  - `SUCCESS` - Płatność udana (status → `COMPLETED`)
+  - `FAIL` - Odmowa banku (status → `FAILED`)
+  - `ERROR` - Błąd połączenia (status → `FAILED`)
+
+**Response:** `200 OK`
+```json
+{
+  "id": 1,
+  "orderId": 1,
+  "amount": 199.98,
+  "method": "CREDIT_CARD",
+  "status": "COMPLETED",
+  "transactionId": "MOCK-A1B2C3D4",
+  "transactionDate": "2024-01-01T10:00:00Z",
+  "notes": "Symulacja: Płatność udana (Bank OK)",
+  "createdAt": "2024-01-01T10:00:00Z",
+  "updatedAt": "2024-01-01T10:01:00Z"
+}
+```
+
+**Przykład użycia:**
+```bash
+# Symulacja udanej płatności
+curl -X POST "http://localhost:8080/api/payments/1/simulate?scenario=SUCCESS" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+
+# Symulacja nieudanej płatności
+curl -X POST "http://localhost:8080/api/payments/1/simulate?scenario=FAIL" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+**Uwagi:**
+- Endpoint symuluje odpowiedź z bramki płatniczej (mock)
+- Automatycznie generuje `transactionId` w formacie `MOCK-XXXXXXXX`
+- Automatycznie aktualizuje status zamówienia:
+  - `SUCCESS` → zamówienie zmienia status na `CONFIRMED` (jeśli było `NEW`)
+  - `FAIL`/`ERROR` → zamówienie zmienia status na `CANCELLED` (jeśli było `NEW`)
+- Dodaje odpowiednie notatki opisujące scenariusz
+- Opóźnienie 1 sekundy symuluje czas oczekiwania na odpowiedź bramki
+- Nie można symulować płatności już zakończonych (`COMPLETED`)
+
 ---
 
-## 16. Addresses API (`/api/addresses`)
+## 17. Addresses API (`/api/addresses`)
 
 ### 16.1 Tworzenie adresu
 **Endpoint:** `POST /api/addresses`  

@@ -5,6 +5,7 @@ import com.ecommerce.E_commerce.model.Product;
 import com.ecommerce.E_commerce.model.ProductImage;
 import com.ecommerce.E_commerce.repository.ProductImageRepository;
 import com.ecommerce.E_commerce.repository.ProductRepository;
+import com.ecommerce.E_commerce.service.ImageUrlService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
@@ -35,7 +36,8 @@ class ProductImageServiceImplTest {
 
     private ProductImageServiceImpl buildService(ProductRepository productRepository,
                                                  ProductImageRepository imageRepository) throws IOException {
-        ProductImageServiceImpl service = new ProductImageServiceImpl(productRepository, imageRepository, temp.toString());
+        ImageUrlService imageUrlService = mock(ImageUrlService.class);
+        ProductImageServiceImpl service = new ProductImageServiceImpl(productRepository, imageRepository, imageUrlService, temp.toString());
         ReflectionTestUtils.setField(service, "maxUploadBytes", 10_000_000L);
         ReflectionTestUtils.setField(service, "allowedTypesCsv", "image/jpeg,image/png");
         ReflectionTestUtils.setField(service, "allowedExtensionsCsv", "jpg,jpeg,png,webp");

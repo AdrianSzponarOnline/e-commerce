@@ -84,6 +84,20 @@ public class OrderController {
         return ResponseEntity.ok(orders);
     }
     
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('USER') or hasRole('OWNER')")
+    public ResponseEntity<Page<OrderDTO>> getMyOrders(
+            @AuthenticationPrincipal User user,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<OrderDTO> orders = orderService.findByUserId(user.getId(), pageable);
+        return ResponseEntity.ok(orders);
+    }
+    
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and #userId == authentication.principal.id)")
     public ResponseEntity<Page<OrderDTO>> getOrdersByUserId(

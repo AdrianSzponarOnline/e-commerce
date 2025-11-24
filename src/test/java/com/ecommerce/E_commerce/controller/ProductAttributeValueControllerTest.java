@@ -123,7 +123,7 @@ class ProductAttributeValueControllerTest {
 
     @Test
     void updateProductAttributeValue_ShouldReturnUpdated() throws Exception {
-        ProductAttributeValueUpdateDTO updateDTO = new ProductAttributeValueUpdateDTO("Blue", null);
+        ProductAttributeValueUpdateDTO updateDTO = new ProductAttributeValueUpdateDTO(null, null, "Blue", null);
 
         ProductAttributeValueDTO dto = new ProductAttributeValueDTO(
                 1L,

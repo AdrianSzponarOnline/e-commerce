@@ -58,7 +58,7 @@ class OrderControllerTest {
 
         OrderDTO orderDTO = new OrderDTO(
                 1L, 1L, null, "NEW", new BigDecimal("199.98"),
-                List.of(), Instant.now(), Instant.now(), true
+                List.of(), List.of(), Instant.now(), Instant.now(), true
         );
 
 

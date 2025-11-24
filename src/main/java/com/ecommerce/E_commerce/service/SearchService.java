@@ -24,6 +24,7 @@ import java.util.Map;
 public class SearchService {
     private final EntityManager em;
     private final ProductMapper productMapper;
+    private final ImageUrlService imageUrlService;
 
     public Page<ProductSearchDTO> search(
             String query,
@@ -32,7 +33,7 @@ public class SearchService {
             Map<String, String> attributes,
             Pageable pageable
     ) {
-        System.out.println("🔍 SEARCH REQUEST: query='" + query + "', filters=" + attributes);
+        System.out.println("SEARCH REQUEST: query='" + query + "', filters=" + attributes);
 
         SearchSession searchSession = Search.session(em);
 

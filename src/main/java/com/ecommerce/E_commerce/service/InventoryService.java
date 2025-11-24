@@ -1,9 +1,31 @@
 package com.ecommerce.E_commerce.service;
 
+import com.ecommerce.E_commerce.dto.inventory.InventoryCreateDTO;
+import com.ecommerce.E_commerce.dto.inventory.InventoryDTO;
+import com.ecommerce.E_commerce.dto.inventory.InventorySummaryDTO;
+import com.ecommerce.E_commerce.dto.inventory.InventoryUpdateDTO;
 import com.ecommerce.E_commerce.exception.ResourceNotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface InventoryService {
     
+    // CRUD Operations
+    InventoryDTO create(InventoryCreateDTO dto);
+    
+    InventoryDTO update(Long id, InventoryUpdateDTO dto);
+    
+    void delete(Long id);
+    
+    InventoryDTO getById(Long id);
+    
+    InventoryDTO getByProductId(Long productId);
+    
+    Page<InventoryDTO> findAll(Pageable pageable);
+    
+    Page<InventorySummaryDTO> findAllSummary(Pageable pageable);
+    
+    // Stock Management Operations
     /**
      * Reserves stock for a product (decreases available quantity, increases reserved quantity).
      * 

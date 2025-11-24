@@ -14,6 +14,7 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 public interface PaymentMapper {
     
     @Mapping(target = "orderId", source = "order.id")
+    @Mapping(target = "transactionDate", source = "updatedAt")
     @Mapping(target = "method", expression = "java(payment.getMethod() != null ? payment.getMethod().name() : null)")
     @Mapping(target = "status", expression = "java(payment.getStatus() != null ? payment.getStatus().name() : null)")
     PaymentDTO toPaymentDTO(Payment payment);

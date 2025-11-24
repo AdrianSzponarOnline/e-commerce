@@ -21,6 +21,7 @@ import java.time.Instant;
 public class ProductImage {
     @Id
     @ColumnDefault("nextval('product_images_id_seq'::regclass)")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 

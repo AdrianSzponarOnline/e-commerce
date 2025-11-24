@@ -36,18 +36,21 @@ public class ProductServiceImpl implements ProductService {
     private final AttributeRepository attributeRepository;
     private final ProductMapper productMapper;
     private final ProductAttributeValueService productAttributeValueService;
+    private final ImageUrlService imageUrlService;
 
     @Autowired
     public ProductServiceImpl(ProductRepository productRepository,
                               CategoryRepository categoryRepository,
                               AttributeRepository attributeRepository,
                               ProductMapper productMapper,
-                              ProductAttributeValueService productAttributeValueService) {
+                              ProductAttributeValueService productAttributeValueService,
+                              ImageUrlService imageUrlService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.attributeRepository = attributeRepository;
         this.productMapper = productMapper;
         this.productAttributeValueService = productAttributeValueService;
+        this.imageUrlService = imageUrlService;
     }
 
     @Override
@@ -171,12 +174,6 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProductSummaryDTO> findByPriceRange(BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
-        return productRepository.findByPriceBetween(minPrice, maxPrice, pageable).map(productMapper::toProductSummaryDTO);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public Page<ProductSummaryDTO> findByFeatured(Boolean isFeatured, Pageable pageable) {
         return productRepository.findByIsFeatured(isFeatured, pageable).map(productMapper::toProductSummaryDTO);
     }
@@ -185,46 +182,6 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public Page<ProductSummaryDTO> findByActive(Boolean isActive, Pageable pageable) {
         return productRepository.findByIsActive(isActive, pageable).map(productMapper::toProductSummaryDTO);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductSummaryDTO> searchByName(String name, Pageable pageable) {
-        return productRepository.findByNameContainingIgnoreCase(name, pageable).map(productMapper::toProductSummaryDTO);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductSummaryDTO> searchByDescription(String description, Pageable pageable) {
-        return productRepository.findByDescriptionContainingIgnoreCase(description, pageable).map(productMapper::toProductSummaryDTO);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductSummaryDTO> findByCategoryAndPriceRange(Long categoryId,
-                                                               BigDecimal minPrice,
-                                                               BigDecimal maxPrice,
-                                                               Pageable pageable) {
-        return productRepository.findByCategoryIdAndPriceBetween(categoryId, minPrice, maxPrice, pageable)
-                .map(productMapper::toProductSummaryDTO);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductSummaryDTO> findByCategoryAndFeatured(Long categoryId,
-                                                             Boolean isFeatured,
-                                                             Pageable pageable) {
-        return productRepository.findByCategoryIdAndIsFeatured(categoryId, isFeatured, pageable)
-                .map(productMapper::toProductSummaryDTO);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductSummaryDTO> findByPriceRangeAndFeatured(BigDecimal minPrice,
-                                                               BigDecimal maxPrice,
-                                                               Boolean isFeatured,
-                                                               Pageable pageable) {
-        return productRepository.findByPriceBetweenAndIsFeatured(minPrice, maxPrice, isFeatured, pageable).map(productMapper::toProductSummaryDTO);
     }
 
     @Override
@@ -272,12 +229,6 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProductSummaryDTO> findByPriceRange(BigDecimal minPrice, BigDecimal maxPrice, int page, int size, String sortBy, String sortDir) {
-        return findByPriceRange(minPrice, maxPrice, buildPageable(page, size, sortBy, sortDir));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public Page<ProductSummaryDTO> findByFeatured(Boolean isFeatured, int page, int size, String sortBy, String sortDir) {
         return findByFeatured(isFeatured, buildPageable(page, size, sortBy, sortDir));
     }
@@ -286,62 +237,6 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public Page<ProductSummaryDTO> findByActive(Boolean isActive, int page, int size, String sortBy, String sortDir) {
         return findByActive(isActive, buildPageable(page, size, sortBy, sortDir));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductSummaryDTO> searchByName(String name, int page, int size, String sortBy, String sortDir) {
-        return searchByName(name, buildPageable(page, size, sortBy, sortDir));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductSummaryDTO> searchByDescription(String description, int page, int size, String sortBy, String sortDir) {
-        return searchByDescription(description, buildPageable(page, size, sortBy, sortDir));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductSummaryDTO> findByCategoryAndPriceRange(Long categoryId, BigDecimal minPrice, BigDecimal maxPrice, int page, int size, String sortBy, String sortDir) {
-        return findByCategoryAndPriceRange(categoryId, minPrice, maxPrice, buildPageable(page, size, sortBy, sortDir));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductSummaryDTO> findByCategoryAndFeatured(Long categoryId, Boolean isFeatured, int page, int size, String sortBy, String sortDir) {
-        return findByCategoryAndFeatured(categoryId, isFeatured, buildPageable(page, size, sortBy, sortDir));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductSummaryDTO> findByPriceRangeAndFeatured(BigDecimal minPrice, BigDecimal maxPrice, Boolean isFeatured, int page, int size, String sortBy, String sortDir) {
-        return findByPriceRangeAndFeatured(minPrice, maxPrice, isFeatured, buildPageable(page, size, sortBy, sortDir));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductSummaryDTO> filterByAttribute(Long categoryId, String attributeName, String attributeValue, Pageable pageable) {
-        return productRepository.findByAttribute(categoryId, attributeName, attributeValue, pageable)
-                .map(productMapper::toProductSummaryDTO);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductSummaryDTO> filterByAttribute(Long categoryId, String attributeName, String attributeValue, int page, int size, String sortBy, String sortDir) {
-        return filterByAttribute(categoryId, attributeName, attributeValue, buildPageable(page, size, sortBy, sortDir));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductSummaryDTO> filterByAttributeId(Long categoryId, Long attributeId, String attributeValue, Pageable pageable) {
-        return productRepository.findByAttributeIdAndValue(categoryId, attributeId, attributeValue, pageable)
-                .map(productMapper::toProductSummaryDTO);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductSummaryDTO> filterByAttributeId(Long categoryId, Long attributeId, String attributeValue, int page, int size, String sortBy, String sortDir) {
-        return filterByAttributeId(categoryId, attributeId, attributeValue, buildPageable(page, size, sortBy, sortDir));
     }
 
 }

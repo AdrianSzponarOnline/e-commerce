@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -60,7 +61,6 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
         ProductAttributeValue productAttributeValue = productAttributeValueRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product attribute value not found with id: " + id));
         
-        // Validate value against attribute type if value is being updated
         if (dto.value() != null) {
             Attribute attribute = productAttributeValue.getAttribute();
             validateAttributeValue(dto.value(), attribute.getType(), attribute.getName());
@@ -81,7 +81,6 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
         ProductAttributeValue productAttributeValue = productAttributeValueRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product attribute value not found with id: " + id));
         
-        // @SQLDelete annotation handles deletedAt and isActive automatically
         productAttributeValueRepository.delete(productAttributeValue);
     }
 
@@ -171,7 +170,6 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
     @Transactional(readOnly = true)
     public Page<ProductAttributeValueDTO> findByKeyAttributes(Long productId, Pageable pageable) {
         List<ProductAttributeValue> productAttributeValues = productAttributeValueRepository.findByProductIdAndKeyAttributeAndIsActive(productId, true, true);
-        // Convert to page manually since we have a list
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), productAttributeValues.size());
         List<ProductAttributeValue> pageContent = productAttributeValues.subList(start, end);
@@ -231,27 +229,81 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
     public List<ProductAttributeValueDTO> updateByProduct(Long productId, List<ProductAttributeValueUpdateDTO> dtos) {
         List<ProductAttributeValue> existingValues = productAttributeValueRepository.findByProductIdAndIsActive(productId, true);
         
-        if (dtos.size() != existingValues.size()) {
-            throw new InvalidOperationException("Number of update DTOs must match existing attribute values");
-        }
+    
+        Map<Long, ProductAttributeValue> existingById = existingValues.stream()
+                .collect(Collectors.toMap(ProductAttributeValue::getId, v -> v));
         
-        for (int i = 0; i < existingValues.size(); i++) {
-            ProductAttributeValue existingValue = existingValues.get(i);
-            ProductAttributeValueUpdateDTO dto = dtos.get(i);
+        Map<Long, ProductAttributeValue> existingByAttributeId = existingValues.stream()
+                .collect(Collectors.toMap(v -> v.getAttribute().getId(), v -> v, (v1, v2) -> v1));
+        
+        List<ProductAttributeValue> toUpdate = new java.util.ArrayList<>();
+        List<ProductAttributeValue> toCreate = new java.util.ArrayList<>();
+        
+        for (ProductAttributeValueUpdateDTO dto : dtos) {
+            ProductAttributeValue existingValue = null;
             
-            if (dto.value() != null) {
-                Attribute attribute = existingValue.getAttribute();
-                validateAttributeValue(dto.value(), attribute.getType(), attribute.getName());
+            if (dto.id() != null) {
+                existingValue = existingById.get(dto.id());
+                if (existingValue == null) {
+                    throw new ResourceNotFoundException("Product attribute value not found with id: " + dto.id());
+                }
+            } 
+        
+            else if (dto.attributeId() != null) {
+                existingValue = existingByAttributeId.get(dto.attributeId());
             }
             
-            productAttributeValueMapper.updateProductAttributeValueFromDTO(dto, existingValue);
-            
-            if (dto.isActive() != null) {
-                existingValue.setActive(dto.isActive().booleanValue());
+            if (existingValue != null) {
+             
+                if (dto.value() != null) {
+                    Attribute attribute = existingValue.getAttribute();
+                    validateAttributeValue(dto.value(), attribute.getType(), attribute.getName());
+                }
+                
+                productAttributeValueMapper.updateProductAttributeValueFromDTO(dto, existingValue);
+                
+                if (dto.isActive() != null) {
+                    existingValue.setActive(dto.isActive().booleanValue());
+                }
+                
+                toUpdate.add(existingValue);
+            } else {
+
+                if (dto.attributeId() == null) {
+                    throw new IllegalArgumentException("Cannot create new attribute value: attributeId is required when id is not provided");
+                }
+                
+                Product product = productRepository.findById(productId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
+                
+                Attribute attribute = attributeRepository.findById(dto.attributeId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Attribute not found with id: " + dto.attributeId()));
+                
+                if (productAttributeValueRepository.findByProductIdAndAttributeId(productId, dto.attributeId()).isPresent()) {
+                    throw new DuplicateResourceException("Product attribute value already exists for this product and attribute");
+                }
+                
+                if (dto.value() != null) {
+                    validateAttributeValue(dto.value(), attribute.getType(), attribute.getName());
+                }
+                
+                ProductAttributeValue newValue = new ProductAttributeValue();
+                newValue.setProduct(product);
+                newValue.setAttribute(attribute);
+                newValue.setValue(dto.value());
+                newValue.setActive(dto.isActive() != null ? dto.isActive() : true);
+                
+                toCreate.add(newValue);
             }
         }
         
-        List<ProductAttributeValue> savedValues = productAttributeValueRepository.saveAll(existingValues);
+        List<ProductAttributeValue> savedValues = new java.util.ArrayList<>();
+        if (!toUpdate.isEmpty()) {
+            savedValues.addAll(productAttributeValueRepository.saveAll(toUpdate));
+        }
+        if (!toCreate.isEmpty()) {
+            savedValues.addAll(productAttributeValueRepository.saveAll(toCreate));
+        }
         
         return savedValues.stream()
                 .map(productAttributeValueMapper::toProductAttributeValueDTO)

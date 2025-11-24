@@ -45,6 +45,9 @@ class PaymentServiceImplTest {
     @Mock
     private PaymentMapper paymentMapper;
 
+    @Mock
+    private InventoryService inventoryService;
+
     private PaymentServiceImpl paymentService;
 
     private Order testOrder;
@@ -53,7 +56,7 @@ class PaymentServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        paymentService = new PaymentServiceImpl(paymentRepository, orderRepository, paymentMapper);
+        paymentService = new PaymentServiceImpl(paymentRepository, orderRepository, paymentMapper, inventoryService);
 
         testUser = new User();
         testUser.setId(1L);
@@ -178,7 +181,7 @@ class PaymentServiceImplTest {
     @Test
     void update_ShouldUpdatePaymentSuccessfully() {
         // Given
-        PaymentUpdateDTO updateDTO = new PaymentUpdateDTO("COMPLETED", null, null, null);
+        PaymentUpdateDTO updateDTO = new PaymentUpdateDTO("COMPLETED", null, null);
         PaymentDTO paymentDTO = new PaymentDTO(
                 1L, 1L, new BigDecimal("199.98"), "CREDIT_CARD", "COMPLETED",
                 Instant.now(), "TXN-123", null, Instant.now(), Instant.now(), true
@@ -209,7 +212,7 @@ class PaymentServiceImplTest {
     @Test
     void update_ShouldThrowException_WhenPaymentNotFound() {
         // Given
-        PaymentUpdateDTO updateDTO = new PaymentUpdateDTO("COMPLETED", null, null, null);
+        PaymentUpdateDTO updateDTO = new PaymentUpdateDTO("COMPLETED", null, null);
         when(paymentRepository.findById(1L)).thenReturn(Optional.empty());
 
         // When & Then

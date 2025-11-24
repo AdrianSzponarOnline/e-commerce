@@ -18,6 +18,10 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findByOrderId(Long orderId);
     Page<Payment> findByOrderId(Long orderId, Pageable pageable);
     
+    // Find by user (through order)
+    @Query("SELECT p FROM Payment p WHERE p.order.user.id = :userId")
+    Page<Payment> findByUserId(@Param("userId") Long userId, Pageable pageable);
+    
     // Find by status
     Page<Payment> findByStatus(PaymentStatus status, Pageable pageable);
     Page<Payment> findByOrderIdAndStatus(Long orderId, PaymentStatus status, Pageable pageable);

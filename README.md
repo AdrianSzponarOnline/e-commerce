@@ -11,7 +11,7 @@ Kompleksowy system e-commerce zbudowany w Spring Boot z obsługą produktów, ka
 - **Zarządzanie produktami** - Pełne CRUD z dynamicznymi atrybutami
 - **System atrybutów** - Dynamiczne atrybuty produktów (rozmiar, kolor, etc.)
 - **Generowanie SKU** - Automatyczne SKU na podstawie atrybutów
-- **Wyszukiwanie i filtrowanie** - Zaawansowane zapytania z paginacją
+- **Wyszukiwanie Elasticsearch** - Zaawansowane wyszukiwanie produktów z obsługą fuzzy matching i filtrowania
 - **Bezpieczeństwo** - Role-based access control (RBAC) z walidacją właściciela zasobów
 - **Testy** - 130+ testów jednostkowych i integracyjnych
 - **Obrazy produktów** - upload, lista, usuwanie, miniatura, serwowanie z `/uploads/**`
@@ -31,6 +31,7 @@ Kompleksowy system e-commerce zbudowany w Spring Boot z obsługą produktów, ka
 ### Technologie
 - **Backend:** Spring Boot 3.x, Spring Security, Spring Data JPA
 - **Baza danych:** PostgreSQL (produkcja), H2 (testy)
+- **Wyszukiwanie:** Elasticsearch (Hibernate Search)
 - **Mapowanie:** MapStruct
 - **Migracje:** Flyway
 - **Testy:** JUnit 5, Mockito
@@ -138,11 +139,13 @@ mvn spring-boot:run -Dspring.profiles.active=test
 - **Categories API:** `/api/categories` - Zarządzanie kategoriami
 - **Category Attributes API:** `/api/categories/{categoryId}/attributes` - Atrybuty kategorii
 - **Products API:** `/api/products` - Zarządzanie produktami
+- **Search API:** `/api/search` - Wyszukiwanie produktów (Elasticsearch)
 - **Product Attribute Values API:** `/api/product-attribute-values` - Wartości atrybutów
 - **Product Images API:** `/api/products/{productId}/images` - Zarządzanie obrazami produktów
 - **Orders API:** `/api/orders` - Zarządzanie zamówieniami
 - **Payments API:** `/api/payments` - Zarządzanie płatnościami
 - **Addresses API:** `/api/addresses` - Zarządzanie adresami użytkowników
+- **Inventory API:** `/api/inventory` - Zarządzanie stanem magazynowym
 
 ### Dokumentacja
 - [Kompletna dokumentacja API](API_DOCUMENTATION.md)
@@ -251,9 +254,14 @@ curl -X POST "http://localhost:8080/api/products" \
   }'
 ```
 
-### Wyszukiwanie produktów z filtrami
+### Wyszukiwanie produktów z Elasticsearch
 ```bash
-curl -X GET "http://localhost:8080/api/products/filter?categoryId=1&minPrice=1000&maxPrice=5000&isFeatured=true&page=0&size=10&sortBy=price&sortDir=asc"
+curl -X POST "http://localhost:8080/api/search?query=laptop&minPrice=1000&maxPrice=5000&page=0&size=20" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "Color": "Black",
+    "Screen Size": "15.6 inch"
+  }'
 ```
 
 ### Pobieranie atrybutów produktu
@@ -290,12 +298,18 @@ export JWT_EXPIRATION=86400000
 - Poprawki bezpieczeństwa - walidacja właściciela zasobów
 - Enum dla statusów zamówień i płatności (zamiast magic strings)
 
+### v1.2.0 (2024-01-XX)
+- Integracja Elasticsearch (Hibernate Search) dla wyszukiwania produktów
+- Usunięcie wyszukiwania z bazy danych na rzecz Elasticsearch
+- Endpoint `/api/search` z obsługą fuzzy matching i filtrowania
+- Automatyczne indeksowanie produktów przy starcie aplikacji
+- Walidacja XSS w DTOs
+
 ### v1.0.0 (2024-01-01)
 -  Implementacja systemu autoryzacji JWT
 -  Zarządzanie kategoriami i atrybutami kategorii
 -  Kompleksowy system produktów z dynamicznymi atrybutami
 -  Automatyczne generowanie SKU
--  Zaawansowane wyszukiwanie i filtrowanie
 -  130+ testów jednostkowych i integracyjnych
 -  Kompletna dokumentacja API
 
@@ -319,10 +333,22 @@ export JWT_EXPIRATION=86400000
 - Walidacja: kwota musi odpowiadać `totalAmount` zamówienia
 - Status płatności: `PENDING`
 
+### 2.1 Symulacja płatności (Mock Payment Gateway)
+- Endpoint: `POST /api/payments/{paymentId}/simulate?scenario=SUCCESS`
+- Dostępne scenariusze:
+  - `SUCCESS` - Płatność udana (status → `COMPLETED`, zamówienie → `CONFIRMED`)
+  - `FAIL` - Odmowa banku (status → `FAILED`, zamówienie → `CANCELLED`)
+  - `ERROR` - Błąd połączenia (status → `FAILED`, zamówienie → `CANCELLED`)
+- Automatycznie generuje mock `transactionId` i aktualizuje status zamówienia
+- Opóźnienie 1 sekundy symuluje czas oczekiwania na odpowiedź bramki
+
 ### 3. Finalizacja płatności
 - Gdy płatność zmienia status na `COMPLETED`:
   - Automatyczna zmiana statusu zamówienia na `CONFIRMED`
   - Finalizacja rezerwacji magazynu (stock sprzedany)
+- Gdy płatność zmienia status na `FAILED`/`CANCELLED`:
+  - Automatyczna zmiana statusu zamówienia na `CANCELLED` (jeśli było `NEW`)
+  - Zwolnienie rezerwacji magazynu
 
 ### 4. Anulowanie
 - USER może anulować zamówienie (tylko status NEW/CONFIRMED)

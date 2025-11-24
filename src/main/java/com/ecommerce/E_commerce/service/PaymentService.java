@@ -11,7 +11,6 @@ import java.time.Instant;
 
 public interface PaymentService {
     
-    // CRUD Operations
     @PreAuthorize("hasRole('USER') or hasRole('OWNER')")
     PaymentDTO create(PaymentCreateDTO dto);
     
@@ -21,13 +20,14 @@ public interface PaymentService {
     @PreAuthorize("hasRole('OWNER')")
     void delete(Long id);
     
-    // Single Payment Retrieval
     @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and @paymentService.isPaymentOwner(#id, authentication.name))")
     PaymentDTO getById(Long id);
     
-    // Paginated Payment Lists
     @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and #orderId != null and @orderService.isOrderOwner(#orderId, authentication.name))")
     Page<PaymentDTO> findByOrderId(Long orderId, Pageable pageable);
+    
+    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and #userId == authentication.principal.id)")
+    Page<PaymentDTO> findByUserId(Long userId, Pageable pageable);
     
     @PreAuthorize("hasRole('OWNER')")
     Page<PaymentDTO> findByStatus(String status, Pageable pageable);
@@ -38,18 +38,17 @@ public interface PaymentService {
     @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and #orderId != null and @orderService.isOrderOwner(#orderId, authentication.name))")
     Page<PaymentDTO> findByOrderIdAndStatus(Long orderId, String status, Pageable pageable);
     
-    // Advanced filtering
     @PreAuthorize("hasRole('OWNER')")
     Page<PaymentDTO> findByMultipleCriteria(Long orderId, String status, String method, Boolean isActive, Instant startDate, Instant endDate, Pageable pageable);
     
-    // Statistics
     @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and #orderId != null and @orderService.isOrderOwner(#orderId, authentication.name))")
     long countByOrderId(Long orderId);
     
     @PreAuthorize("hasRole('OWNER')")
     long countByStatus(String status);
+
+    PaymentDTO simulatePayment(Long paymentId, String scenario);
     
-    // Helper method for security
     boolean isPaymentOwner(Long paymentId, String userEmail);
 }
 

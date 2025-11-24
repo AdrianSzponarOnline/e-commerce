@@ -1,13 +1,11 @@
 package com.ecommerce.E_commerce.dto.address;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record AddressCreateDTO(
-        @NotNull(message = "User ID is required")
-        Long userId,
+        Long userId, 
 
         @NotBlank(message = "Address line 1 is required")
         @Size(max = 255, message = "Address line 1 must not exceed 255 characters")

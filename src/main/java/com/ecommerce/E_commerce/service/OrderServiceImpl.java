@@ -65,10 +65,8 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderMapper.toOrder(dto);
         order.setUser(user);
         order.setAddress(address);
-        // Status NEW jest domyślny w encji (@PrePersist), ale można go ustawić jawnie z DTO
         order.setStatus(dto.status() != null ? OrderStatus.valueOf(dto.status().toUpperCase()) : OrderStatus.NEW);
 
-        // --- KLUCZOWA ZMIANA: Wykorzystanie metod Encji ---
         for (OrderItemCreateDTO itemDto : dto.items()) {
             Product product = productRepository.findById(itemDto.productId())
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + itemDto.productId()));
@@ -79,7 +77,6 @@ public class OrderServiceImpl implements OrderService {
 
             inventoryService.reserveStock(itemDto.productId(), itemDto.quantity());
 
-         
             order.addItem(product, itemDto.quantity());
         }
 
@@ -143,16 +140,14 @@ public class OrderServiceImpl implements OrderService {
 
 
     private void handleInventoryStatusChange(Order order, OrderStatus oldStatus, OrderStatus newStatus) {
- 
+
         if (newStatus == OrderStatus.CANCELLED) {
             if (isReservationActive(oldStatus)) {
                 for (OrderItem item : order.getItems()) {
                     inventoryService.releaseStock(item.getProduct().getId(), item.getQuantity());
                 }
             }
-        }
-  
-        else if (isFinalizingStatus(newStatus) && !isFinalizingStatus(oldStatus)) {
+        } else if (isFinalizingStatus(newStatus) && !isFinalizingStatus(oldStatus)) {
             for (OrderItem item : order.getItems()) {
                 inventoryService.finalizeReservation(item.getProduct().getId(), item.getQuantity());
             }
@@ -163,12 +158,9 @@ public class OrderServiceImpl implements OrderService {
         return status == OrderStatus.NEW || status == OrderStatus.CONFIRMED;
     }
 
- 
     private boolean isFinalizingStatus(OrderStatus status) {
         return status == OrderStatus.SHIPPED || status == OrderStatus.DELIVERED;
     }
-
-
 
     private void checkCancelPermission(Order order) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -184,19 +176,18 @@ public class OrderServiceImpl implements OrderService {
             if (order.getStatus() != OrderStatus.NEW && order.getStatus() != OrderStatus.CONFIRMED) {
                 throw new AccessDeniedException("You can only cancel orders with status NEW or CONFIRMED.");
             }
-            
+
             String currentUserEmail = authentication.getName();
             if (!order.getUser().getEmail().equals(currentUserEmail)) {
                 throw new AccessDeniedException("You can only cancel your own orders");
             }
         }
     }
-    
+
     private Order getOrderOrThrow(Long id) {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
     }
-
 
     @Override
     @Transactional(readOnly = true)

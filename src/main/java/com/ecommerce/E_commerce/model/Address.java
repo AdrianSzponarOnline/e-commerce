@@ -26,6 +26,7 @@ import java.time.Instant;
 public class Address {
     @Id
     @ColumnDefault("nextval('addresses_id_seq'::regclass)")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
 

@@ -3,8 +3,11 @@ package com.ecommerce.E_commerce.controller;
 import com.ecommerce.E_commerce.dto.payment.PaymentCreateDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentUpdateDTO;
+import com.ecommerce.E_commerce.model.User;
 import com.ecommerce.E_commerce.service.PaymentService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
+import org.hibernate.annotations.Parameter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,6 +17,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -70,6 +74,34 @@ public class PaymentController {
         Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<PaymentDTO> payments = paymentService.findAll(pageable);
+        return ResponseEntity.ok(payments);
+    }
+    
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('USER') or hasRole('OWNER')")
+    public ResponseEntity<Page<PaymentDTO>> getMyPayments(
+            @AuthenticationPrincipal User user,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<PaymentDTO> payments = paymentService.findByUserId(user.getId(), pageable);
+        return ResponseEntity.ok(payments);
+    }
+    
+    @GetMapping("/user/{userId}")
+    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and #userId == authentication.principal.id)")
+    public ResponseEntity<Page<PaymentDTO>> getPaymentsByUserId(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<PaymentDTO> payments = paymentService.findByUserId(userId, pageable);
         return ResponseEntity.ok(payments);
     }
     
@@ -152,5 +184,25 @@ public class PaymentController {
         }
         return ResponseEntity.ok(count);
     }
+
+    @PostMapping("/{paymentId}/simulate")
+    @Operation(summary = "Simulate payment gateway response",
+            description = "Mocks a payment result. Scenarios: SUCCESS, FAIL, ERROR. Changes Order status automatically.")
+    public ResponseEntity<PaymentDTO> simulatePayment(
+
+            @PathVariable Long paymentId,
+
+            @RequestParam(defaultValue = "SUCCESS") String scenario
+    ) {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        PaymentDTO result = paymentService.simulatePayment(paymentId, scenario);
+        return ResponseEntity.ok(result);
+    }
 }
+
 

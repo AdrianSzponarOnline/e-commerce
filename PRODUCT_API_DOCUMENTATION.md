@@ -18,16 +18,16 @@ API produktów zapewnia pełną funkcjonalność CRUD oraz zaawansowane wyszukiw
   - `GET /api/products/active?isActive=false` - pobieranie nieaktywnych produktów
 
 ## Funkcjonalności
-- ✅ Pełne CRUD operacje na produktach
-- ✅ Dynamiczne atrybuty produktów (rozmiar, kolor, materiał, etc.)
-- ✅ Automatyczne generowanie SKU na podstawie atrybutów
-- ✅ Zaawansowane wyszukiwanie i filtrowanie
-- ✅ Paginacja i sortowanie
-- ✅ Integracja z kategoriami i atrybutami kategorii
-- ✅ Operacje bulk dla atrybutów produktów
-- ✅ Statystyki i analityka
-- ✅ Bezpieczeństwo na poziomie metody
-- ✅ Optymalizacja odpowiedzi - uproszczone DTO dla list produktów
+- Pełne CRUD operacje na produktach
+-  Dynamiczne atrybuty produktów (rozmiar, kolor, materiał, etc.)
+-  Automatyczne generowanie SKU na podstawie atrybutów
+-  Wyszukiwanie przez Elasticsearch (endpoint `/api/search`)
+-  Paginacja i sortowanie
+-  Integracja z kategoriami i atrybutami kategorii
+-  Operacje bulk dla atrybutów produktów
+-  Statystyki i analityka
+-  Bezpieczeństwo na poziomie metody
+-  Optymalizacja odpowiedzi - uproszczone DTO dla list produktów
 
 ## Typy DTO
 
@@ -364,45 +364,7 @@ Uproszczony obiekt produktu używany dla:
 
 ---
 
-#### 3.4 Produkty według zakresu cen
-**Endpoint:** `GET /api/products/price-range`
-
-**Parametry:**
-- `minPrice` (BigDecimal, required) - Minimalna cena
-- `maxPrice` (BigDecimal, required) - Maksymalna cena
-- `page` (int, default: 0) - Numer strony
-- `size` (int, default: 10) - Rozmiar strony
-- `sortBy` (string, default: "price") - Pole do sortowania
-- `sortDir` (string, default: "asc") - Kierunek sortowania
-
-**Zwracany wynik:**
-```json
-{
-  "content": [
-    {
-      "id": 1,
-      "name": "Laptop Gaming",
-      "price": 2999.99,
-      "shortDescription": "Wysokiej klasy laptop do gier",
-      "thumbnailUrl": "https://example.com/image.jpg",
-      "seoSlug": "laptop-gaming",
-      "categoryName": "Elektronika"
-    }
-  ],
-  "pageable": { /* Informacje o paginacji */ },
-  "totalElements": 50,
-  "totalPages": 5
-}
-```
-
-**Uwaga:** Zwraca `ProductSummaryDTO` - uproszczony obiekt produktu.
-
-**Status codes:**
-- `200 OK` - Lista produktów w zakresie cen
-
----
-
-#### 3.5 Produkty wyróżnione
+#### 3.4 Produkty wyróżnione
 **Endpoint:** `GET /api/products/featured`
 
 **Parametry:**
@@ -439,7 +401,7 @@ Uproszczony obiekt produktu używany dla:
 
 ---
 
-#### 3.6 Produkty aktywne/nieaktywne
+#### 3.5 Produkty aktywne/nieaktywne
 **Endpoint:** `GET /api/products/active`
 **Autoryzacja:** 
 - `isActive=true` - publiczne
@@ -481,265 +443,32 @@ Uproszczony obiekt produktu używany dla:
 
 ---
 
-### 4. Wyszukiwanie i filtrowanie
+### 4. Wyszukiwanie produktów
 
-#### 4.1 Wyszukiwanie po nazwie
-**Endpoint:** `GET /api/products/search/name`
+Wyszukiwanie produktów zostało przeniesione do dedykowanego endpointu `/api/search`, który wykorzystuje Elasticsearch. Zobacz dokumentację Search API w `API_DOCUMENTATION.md`.
 
-**Parametry:**
-- `name` (string, required) - Nazwa do wyszukania
-- `page` (int, default: 0) - Numer strony
-- `size` (int, default: 10) - Rozmiar strony
-- `sortBy` (string, default: "name") - Pole do sortowania
-- `sortDir` (string, default: "asc") - Kierunek sortowania
+**Przykład użycia:**
+```bash
+POST /api/search?query=laptop&minPrice=1000&maxPrice=5000&page=0&size=20
+Content-Type: application/json
 
-**Zwracany wynik:**
-```json
 {
-  "content": [
-    {
-      "id": 1,
-      "name": "Laptop Gaming",
-      "price": 2999.99,
-      "shortDescription": "Wysokiej klasy laptop do gier",
-      "thumbnailUrl": "https://example.com/image.jpg",
-      "seoSlug": "laptop-gaming",
-      "categoryName": "Elektronika"
-    }
-  ],
-  "pageable": { /* Informacje o paginacji */ },
-  "totalElements": 5,
-  "totalPages": 1
+  "Color": "Black",
+  "Screen Size": "15.6 inch"
 }
 ```
 
-**Uwaga:** Zwraca `ProductSummaryDTO` - uproszczony obiekt produktu.
-
-**Status codes:**
-- `200 OK` - Lista znalezionych produktów
-
----
-
-#### 4.2 Wyszukiwanie po opisie
-**Endpoint:** `GET /api/products/search/description`
-
-**Parametry:**
-- `description` (string, required) - Opis do wyszukania
-- `page` (int, default: 0) - Numer strony
-- `size` (int, default: 10) - Rozmiar strony
-- `sortBy` (string, default: "name") - Pole do sortowania
-- `sortDir` (string, default: "asc") - Kierunek sortowania
-
-**Zwracany wynik:**
-```json
-{
-  "content": [
-    {
-      "id": 1,
-      "name": "Laptop Gaming",
-      "price": 2999.99,
-      "shortDescription": "Wysokiej klasy laptop do gier",
-      "thumbnailUrl": "https://example.com/image.jpg",
-      "seoSlug": "laptop-gaming",
-      "categoryName": "Elektronika"
-    }
-  ],
-  "pageable": { /* Informacje o paginacji */ },
-  "totalElements": 8,
-  "totalPages": 1
-}
-```
-
-**Uwaga:** Zwraca `ProductSummaryDTO` - uproszczony obiekt produktu.
-
-**Status codes:**
-- `200 OK` - Lista znalezionych produktów
+**Funkcjonalności:**
+- Fuzzy matching dla zapytań tekstowych
+- Wyszukiwanie w polach `name` i `description`
+- Filtrowanie po zakresie cen
+- Filtrowanie po atrybutach produktów
 
 ---
 
-#### 4.3 Produkty według kategorii i zakresu cen
-**Endpoint:** `GET /api/products/category/{categoryId}/price-range`
+### 5. Statystyki
 
-**Parametry:**
-- `categoryId` (path parameter) - ID kategorii
-- `minPrice` (BigDecimal, required) - Minimalna cena
-- `maxPrice` (BigDecimal, required) - Maksymalna cena
-- `page` (int, default: 0) - Numer strony
-- `size` (int, default: 10) - Rozmiar strony
-- `sortBy` (string, default: "price") - Pole do sortowania
-- `sortDir` (string, default: "asc") - Kierunek sortowania
-
-**Zwracany wynik:**
-```json
-{
-  "content": [
-    {
-      "id": 1,
-      "name": "Laptop Gaming",
-      "price": 2999.99,
-      "shortDescription": "Wysokiej klasy laptop do gier",
-      "thumbnailUrl": "https://example.com/image.jpg",
-      "seoSlug": "laptop-gaming",
-      "categoryName": "Elektronika"
-    }
-  ],
-  "pageable": { /* Informacje o paginacji */ },
-  "totalElements": 12,
-  "totalPages": 2
-}
-```
-
-**Uwaga:** Zwraca `ProductSummaryDTO` - uproszczony obiekt produktu.
-
-**Status codes:**
-- `200 OK` - Lista produktów z kategorii w zakresie cen
-
----
-
-### 5. Filtrowanie po atrybutach
-
-#### 5.1 Filtrowanie produktów po nazwie atrybutu i wartości
-**Endpoint:** `GET /api/products/filter/attribute`
-**Autoryzacja:** Public
-
-**Query Parameters:**
-- `categoryId` (Long, optional) - ID kategorii do filtrowania
-- `attributeName` (String, required) - Nazwa atrybutu (np. "Color", "Size")
-- `attributeValue` (String, required) - Wartość atrybutu (np. "Red", "Large")
-- `page` (int, default: 0) - Numer strony
-- `size` (int, default: 10) - Rozmiar strony
-- `sortBy` (string, default: "name") - Pole do sortowania
-- `sortDir` (string, default: "asc") - Kierunek sortowania
-
-**Zwracany wynik:**
-```json
-{
-  "content": [
-    {
-      "id": 1,
-      "name": "Laptop Gaming",
-      "price": 2999.99,
-      "shortDescription": "Wysokiej klasy laptop do gier",
-      "thumbnailUrl": "https://example.com/image.jpg",
-      "seoSlug": "laptop-gaming",
-      "categoryName": "Elektronika"
-    }
-  ],
-  "pageable": { /* Informacje o paginacji */ },
-  "totalElements": 5,
-  "totalPages": 1
-}
-```
-
-**Status codes:**
-- `200 OK` - Lista produktów spełniających kryteria
-
----
-
-#### 5.2 Filtrowanie produktów po ID atrybutu i wartości
-**Endpoint:** `GET /api/products/filter/attribute/{attributeId}`
-**Autoryzacja:** Public
-
-**Path Parameters:**
-- `attributeId` (Long) - ID atrybutu
-
-**Query Parameters:**
-- `categoryId` (Long, optional) - ID kategorii do filtrowania
-- `attributeValue` (String, required) - Wartość atrybutu
-- `page` (int, default: 0) - Numer strony
-- `size` (int, default: 10) - Rozmiar strony
-- `sortBy` (string, default: "name") - Pole do sortowania
-- `sortDir` (string, default: "asc") - Kierunek sortowania
-
-**Zwracany wynik:** `Page<ProductSummaryDTO>`
-
-**Status codes:**
-- `200 OK` - Lista produktów spełniających kryteria
-
----
-
-### 6. Zaawansowane filtrowanie
-
-#### 6.1 Produkty według kategorii i statusu wyróżnienia
-**Endpoint:** `GET /api/products/category/{categoryId}/featured`
-
-**Parametry:**
-- `categoryId` (path parameter) - ID kategorii
-- `isFeatured` (Boolean, default: true) - Czy produkt jest wyróżniony
-- `page` (int, default: 0) - Numer strony
-- `size` (int, default: 10) - Rozmiar strony
-- `sortBy` (string, default: "name") - Pole do sortowania
-- `sortDir` (string, default: "asc") - Kierunek sortowania
-
-**Zwracany wynik:**
-```json
-{
-  "content": [
-    {
-      "id": 1,
-      "name": "Laptop Gaming",
-      "price": 2999.99,
-      "shortDescription": "Wysokiej klasy laptop do gier",
-      "thumbnailUrl": "https://example.com/image.jpg",
-      "seoSlug": "laptop-gaming",
-      "categoryName": "Elektronika"
-    }
-  ],
-  "pageable": { /* Informacje o paginacji */ },
-  "totalElements": 3,
-  "totalPages": 1
-}
-```
-
-**Uwaga:** Zwraca `ProductSummaryDTO` - uproszczony obiekt produktu.
-
-**Status codes:**
-- `200 OK` - Lista produktów wyróżnionych z kategorii
-
----
-
-#### 6.2 Produkty według zakresu cen i statusu wyróżnienia
-**Endpoint:** `GET /api/products/price-range/featured`
-
-**Parametry:**
-- `minPrice` (BigDecimal, required) - Minimalna cena
-- `maxPrice` (BigDecimal, required) - Maksymalna cena
-- `isFeatured` (Boolean, default: true) - Czy produkt jest wyróżniony
-- `page` (int, default: 0) - Numer strony
-- `size` (int, default: 10) - Rozmiar strony
-- `sortBy` (string, default: "price") - Pole do sortowania
-- `sortDir` (string, default: "asc") - Kierunek sortowania
-
-**Zwracany wynik:**
-```json
-{
-  "content": [
-    {
-      "id": 1,
-      "name": "Laptop Gaming",
-      "price": 2999.99,
-      "shortDescription": "Wysokiej klasy laptop do gier",
-      "thumbnailUrl": "https://example.com/image.jpg",
-      "seoSlug": "laptop-gaming",
-      "categoryName": "Elektronika"
-    }
-  ],
-  "pageable": { /* Informacje o paginacji */ },
-  "totalElements": 7,
-  "totalPages": 1
-}
-```
-
-**Uwaga:** Zwraca `ProductSummaryDTO` - uproszczony obiekt produktu.
-
-**Status codes:**
-- `200 OK` - Lista produktów wyróżnionych w zakresie cen
-
----
-
-### 7. Statystyki
-
-#### 7.1 Liczba produktów w kategorii
+#### 5.1 Liczba produktów w kategorii
 **Endpoint:** `GET /api/products/stats/category/{categoryId}/count`
 
 **Parametry:**
@@ -755,7 +484,7 @@ Uproszczony obiekt produktu używany dla:
 
 ---
 
-#### 7.2 Liczba produktów wyróżnionych
+#### 5.2 Liczba produktów wyróżnionych
 **Endpoint:** `GET /api/products/stats/featured/count`
 
 **Parametry:**
@@ -771,7 +500,7 @@ Uproszczony obiekt produktu używany dla:
 
 ---
 
-#### 7.3 Liczba produktów aktywnych
+#### 5.3 Liczba produktów aktywnych
 **Endpoint:** `GET /api/products/stats/active/count`
 
 **Parametry:**
@@ -799,19 +528,14 @@ GET /api/products?page=0&size=10&sortBy=price&sortDir=desc
 GET /api/products/category/1?page=0&size=5&sortBy=name&sortDir=asc
 ```
 
-### Produkty w zakresie cen 100-500 zł posortowane według ceny
+### Wyszukiwanie produktów z Elasticsearch
 ```bash
-GET /api/products/price-range?minPrice=100&maxPrice=500&sortBy=price&sortDir=asc
-```
+POST /api/search?query=gaming&minPrice=100&maxPrice=500&page=0&size=20
+Content-Type: application/json
 
-### Wyszukiwanie produktów zawierających "gaming" w nazwie
-```bash
-GET /api/products/search/name?name=gaming&sortBy=price&sortDir=asc
-```
-
-### Produkty wyróżnione z kategorii Elektronika
-```bash
-GET /api/products/category/1/featured?isFeatured=true&sortBy=name&sortDir=asc
+{
+  "Color": "Black"
+}
 ```
 
 ## Obsługiwane pola sortowania

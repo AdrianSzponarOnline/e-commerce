@@ -13,8 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
-
 @RestController
 @RequestMapping("/api/products")
 @CrossOrigin(origins = "*")
@@ -27,7 +25,6 @@ public class ProductController {
         this.productService = productService;
     }
 
-    // CRUD Operations - Owner only
     @PostMapping
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<ProductDTO> createProduct(@Valid @RequestBody ProductCreateDTO dto) {
@@ -49,7 +46,6 @@ public class ProductController {
         return ResponseEntity.noContent().build();
     }
 
-    // Single Product Retrieval
     @GetMapping("/{id}")
     public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id) {
         ProductDTO product = productService.getById(id);
@@ -100,18 +96,6 @@ public class ProductController {
         return ResponseEntity.ok(products);
     }
 
-    @GetMapping("/price-range")
-    public ResponseEntity<Page<ProductSummaryDTO>> getProductsByPriceRange(
-            @RequestParam BigDecimal minPrice,
-            @RequestParam BigDecimal maxPrice,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "price") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Page<ProductSummaryDTO> products = productService.findByPriceRange(minPrice, maxPrice, page, size, sortBy, sortDir);
-        return ResponseEntity.ok(products);
-    }
-
     @GetMapping("/featured")
     public ResponseEntity<Page<ProductSummaryDTO>> getFeaturedProducts(
             @RequestParam(defaultValue = "true") Boolean isFeatured,
@@ -134,67 +118,6 @@ public class ProductController {
         return ResponseEntity.ok(products);
     }
 
-    // Search and Filter
-    @GetMapping("/search/name")
-    public ResponseEntity<Page<ProductSummaryDTO>> searchProductsByName(
-            @RequestParam String name,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "name") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Page<ProductSummaryDTO> products = productService.searchByName(name, page, size, sortBy, sortDir);
-        return ResponseEntity.ok(products);
-    }
-
-    @GetMapping("/search/description")
-    public ResponseEntity<Page<ProductSummaryDTO>> searchProductsByDescription(
-            @RequestParam String description,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "name") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Page<ProductSummaryDTO> products = productService.searchByDescription(description, page, size, sortBy, sortDir);
-        return ResponseEntity.ok(products);
-    }
-
-    @GetMapping("/category/{categoryId}/price-range")
-    public ResponseEntity<Page<ProductSummaryDTO>> getProductsByCategoryAndPriceRange(
-            @PathVariable Long categoryId,
-            @RequestParam BigDecimal minPrice,
-            @RequestParam BigDecimal maxPrice,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "price") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Page<ProductSummaryDTO> products = productService.findByCategoryAndPriceRange(categoryId, minPrice, maxPrice, page, size, sortBy, sortDir);
-        return ResponseEntity.ok(products);
-    }
-
-    @GetMapping("/category/{categoryId}/featured")
-    public ResponseEntity<Page<ProductSummaryDTO>> getProductsByCategoryAndFeatured(
-            @PathVariable Long categoryId,
-            @RequestParam(defaultValue = "true") Boolean isFeatured,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "name") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Page<ProductSummaryDTO> products = productService.findByCategoryAndFeatured(categoryId, isFeatured, page, size, sortBy, sortDir);
-        return ResponseEntity.ok(products);
-    }
-
-    @GetMapping("/price-range/featured")
-    public ResponseEntity<Page<ProductSummaryDTO>> getProductsByPriceRangeAndFeatured(
-            @RequestParam BigDecimal minPrice,
-            @RequestParam BigDecimal maxPrice,
-            @RequestParam(defaultValue = "true") Boolean isFeatured,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "price") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Page<ProductSummaryDTO> products = productService.findByPriceRangeAndFeatured(minPrice, maxPrice, isFeatured, page, size, sortBy, sortDir);
-        return ResponseEntity.ok(products);
-    }
-
     // Statistics
     @GetMapping("/stats/category/{categoryId}/count")
     public ResponseEntity<Long> getProductCountByCategory(@PathVariable Long categoryId) {
@@ -212,31 +135,5 @@ public class ProductController {
     public ResponseEntity<Long> getActiveProductCount(@RequestParam(defaultValue = "true") Boolean isActive) {
         long count = productService.countByActive(isActive);
         return ResponseEntity.ok(count);
-    }
-
-    @GetMapping("/filter/attribute")
-    public ResponseEntity<Page<ProductSummaryDTO>> filterProductsByAttribute(
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam String attributeName,
-            @RequestParam String attributeValue,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "name") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Page<ProductSummaryDTO> products = productService.filterByAttribute(categoryId, attributeName, attributeValue, page, size, sortBy, sortDir);
-        return ResponseEntity.ok(products);
-    }
-
-    @GetMapping("/filter/attribute/{attributeId}")
-    public ResponseEntity<Page<ProductSummaryDTO>> filterProductsByAttributeId(
-            @PathVariable Long attributeId,
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam String attributeValue,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "name") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Page<ProductSummaryDTO> products = productService.filterByAttributeId(categoryId, attributeId, attributeValue, page, size, sortBy, sortDir);
-        return ResponseEntity.ok(products);
     }
 }

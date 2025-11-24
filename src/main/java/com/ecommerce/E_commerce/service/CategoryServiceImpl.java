@@ -122,7 +122,6 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
         
-        // @SQLDelete annotation handles deletedAt and isActive automatically
         categoryRepository.delete(category);
     }
 

@@ -32,7 +32,6 @@ public interface AddressService {
     @PreAuthorize("hasRole('OWNER')")
     Page<AddressDTO> findAll(Pageable pageable);
     
-    // Helper method for security
     boolean isAddressOwner(Long addressId, String userEmail);
 }
 

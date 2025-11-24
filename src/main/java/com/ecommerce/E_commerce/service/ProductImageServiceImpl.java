@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -48,11 +49,15 @@ public class ProductImageServiceImpl implements ProductImageService {
     @Value("${app.max-images-per-product:10}")
     private int maxImagesPerProduct;
 
+    private final ImageUrlService imageUrlService;
+
     public ProductImageServiceImpl(ProductRepository productRepository,
                                    ProductImageRepository productImageRepository,
+                                   ImageUrlService imageUrlService,
                                    @Value("${app.upload-dir:uploads}") String uploadDir) throws IOException {
         this.productRepository = productRepository;
         this.productImageRepository = productImageRepository;
+        this.imageUrlService = imageUrlService;
         this.uploadRoot = Paths.get(uploadDir).toAbsolutePath().normalize();
         Files.createDirectories(this.uploadRoot.resolve("products"));
     }
@@ -82,16 +87,24 @@ public class ProductImageServiceImpl implements ProductImageService {
             throw new InvalidOperationException("Nazwa pliku jest wymagana");
         }
         
-        String sanitizedFilename = sanitizeFilename(originalFilename);
-        String extension = getFileExtension(sanitizedFilename);
-        
-        if (!isAllowedExtension(extension)) {
-            throw new InvalidOperationException("Niedozwolone rozszerzenie pliku: " + extension);
-        }
-        
         String contentType = file.getContentType() == null ? "" : file.getContentType();
         if (!isAllowedContentType(contentType)) {
             throw new InvalidOperationException("Niedozwolony typ pliku: " + contentType);
+        }
+        
+        String sanitizedFilename = sanitizeFilename(originalFilename);
+        String extension = getFileExtension(sanitizedFilename);
+        
+        if (extension.isEmpty() && !contentType.isEmpty()) {
+            extension = getExtensionFromContentType(contentType);
+        }
+        
+        if (extension.isEmpty()) {
+            throw new InvalidOperationException("Nie można określić rozszerzenia pliku. Upewnij się, że plik ma rozszerzenie (jpg, png, webp) lub poprawny Content-Type");
+        }
+        
+        if (!isAllowedExtension(extension)) {
+            throw new InvalidOperationException("Niedozwolone rozszerzenie pliku: " + extension);
         }
 
         long currentCount = productImageRepository.findByProductId(productId).size();
@@ -112,12 +125,15 @@ public class ProductImageServiceImpl implements ProductImageService {
 
         String url = "/uploads/products/" + productId + "/" + filename;
 
+        Instant now = Instant.now();
         ProductImage image = new ProductImage();
         image.setProduct(product);
         image.setUrl(url);
         image.setAltText(altText);
         image.setIsThumbnail(isThumbnail);
         image.setIsActive(true);
+        image.setCreatedAt(now);
+        image.setUpdatedAt(now);
 
         ProductImage saved = productImageRepository.save(image);
 
@@ -206,10 +222,7 @@ public class ProductImageServiceImpl implements ProductImageService {
         }
     }
     
-    /**
-     * Sanitizes filename to prevent path traversal attacks.
-     * Removes any path separators and dangerous characters.
-     */
+
     private String sanitizeFilename(String filename) {
         if (filename == null) {
             return "image";
@@ -217,7 +230,10 @@ public class ProductImageServiceImpl implements ProductImageService {
         
         String sanitized = StringUtils.cleanPath(filename);
         
-        sanitized = sanitized.replaceAll("[\\.\\./\\\\]", "");
+        // Usuwamy niebezpieczne sekwencje (../, ..\, etc.) ale zachowujemy kropki w nazwie pliku
+        sanitized = sanitized.replaceAll("\\.\\./", "");
+        sanitized = sanitized.replaceAll("\\.\\.\\\\", "");
+        sanitized = sanitized.replaceAll("[/\\\\]", "");
         
         if (sanitized.trim().isEmpty()) {
             return "image";
@@ -264,16 +280,38 @@ public class ProductImageServiceImpl implements ProductImageService {
         return allowed.stream().anyMatch(contentType::equalsIgnoreCase);
     }
     
+    /**
+     * Extracts file extension from Content-Type.
+     */
+    private String getExtensionFromContentType(String contentType) {
+        if (contentType == null || contentType.isEmpty()) {
+            return "";
+        }
+        
+        // Mapowanie Content-Type na rozszerzenie
+        if (contentType.equalsIgnoreCase("image/jpeg") || contentType.equalsIgnoreCase("image/jpg")) {
+            return "jpg";
+        } else if (contentType.equalsIgnoreCase("image/png")) {
+            return "png";
+        } else if (contentType.equalsIgnoreCase("image/webp")) {
+            return "webp";
+        }
+        
+        return "";
+    }
+    
     private Product verifyProduct(Long productId) {
         return productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
     }
 
     private ProductImageDTO toDTO(ProductImage image) {
+        String fullUrl = imageUrlService.buildFullUrl(image.getUrl());
+        
         return new ProductImageDTO(
                 image.getId(),
                 image.getProduct().getId(),
-                image.getUrl(),
+                fullUrl,
                 image.getAltText(),
                 image.getIsThumbnail(),
                 image.getCreatedAt(),

@@ -113,7 +113,7 @@ class OrderServiceImplTest {
         when(orderMapper.toOrder(createDTO)).thenReturn(testOrder);
         when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
         when(orderMapper.toOrderDTO(testOrder)).thenReturn(new OrderDTO(
-                1L, 1L, null, "NEW", new BigDecimal("199.98"), new ArrayList<>(), Instant.now(), Instant.now(), true
+                1L, 1L, null, "NEW", new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<>(), Instant.now(), Instant.now(), true
         ));
 
         // When
@@ -171,7 +171,7 @@ class OrderServiceImplTest {
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
         when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
         when(orderMapper.toOrderDTO(testOrder)).thenReturn(new OrderDTO(
-                1L, 1L, null, "CONFIRMED", new BigDecimal("199.98"), new ArrayList<>(), Instant.now(), Instant.now(), true
+                1L, 1L, null, "CONFIRMED", new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<>(), Instant.now(), Instant.now(), true
         ));
 
         // When
@@ -197,7 +197,7 @@ class OrderServiceImplTest {
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
         when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
         when(orderMapper.toOrderDTO(testOrder)).thenReturn(new OrderDTO(
-                1L, 1L, null, "CANCELLED", new BigDecimal("199.98"), new ArrayList<>(), Instant.now(), Instant.now(), true
+                1L, 1L, null, "CANCELLED", new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<>(), Instant.now(), Instant.now(), true
         ));
 
         // When
@@ -225,7 +225,7 @@ class OrderServiceImplTest {
     void getById_ShouldReturnOrder_WhenOrderExists() {
         // Given
         OrderDTO orderDTO = new OrderDTO(
-                1L, 1L, null, "NEW", new BigDecimal("199.98"), new ArrayList<>(), Instant.now(), Instant.now(), true
+                1L, 1L, null, "NEW", new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<>(), Instant.now(), Instant.now(), true
         );
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
         when(orderMapper.toOrderDTO(testOrder)).thenReturn(orderDTO);
@@ -257,7 +257,7 @@ class OrderServiceImplTest {
         Page<Order> orderPage = new PageImpl<>(List.of(testOrder));
         when(orderRepository.findByUserId(1L, pageable)).thenReturn(orderPage);
         when(orderMapper.toOrderDTO(testOrder)).thenReturn(new OrderDTO(
-                1L, 1L, null, "NEW", new BigDecimal("199.98"), new ArrayList<>(), Instant.now(), Instant.now(), true
+                1L, 1L, null, "NEW", new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<>(), Instant.now(), Instant.now(), true
         ));
 
         // When

@@ -354,7 +354,63 @@ void generate_ShouldCreateCorrectSku_WhenProductHasKeyAttributes() {
 }
 ```
 
-##  Paginacja i sortowanie
+## Wyszukiwanie Elasticsearch
+
+### Konfiguracja
+System wykorzystuje Hibernate Search z Elasticsearch do zaawansowanego wyszukiwania produktów. Wszystkie produkty są automatycznie indeksowane przy starcie aplikacji.
+
+### Endpoint wyszukiwania
+```java
+@RestController
+@RequestMapping("/api/search")
+public class SearchController {
+    
+    @PostMapping
+    public Page<ProductSearchDTO> search(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestBody(required = false) Map<String, String> attributes,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return searchService.search(query, minPrice, maxPrice, attributes, pageable);
+    }
+}
+```
+
+### Funkcjonalności
+- Fuzzy matching dla zapytań tekstowych (tolerancja 2 znaki)
+- Wyszukiwanie w polach `name` i `description`
+- Filtrowanie po zakresie cen
+- Filtrowanie po atrybutach produktów (nested queries)
+
+### Automatyczne indeksowanie
+```java
+@Component
+public class SearchIndexer implements ApplicationListener<ApplicationReadyEvent> {
+    
+    @Override
+    public void onApplicationEvent(ApplicationReadyEvent event) {
+        SearchSession searchSession = Search.session(em);
+        MassIndexer indexer = searchSession.massIndexer(Product.class)
+                .threadsToLoadObjects(4)
+                .batchSizeToLoadObjects(25);
+        indexer.startAndWait();
+    }
+}
+```
+
+### Konfiguracja analizy tekstu
+```java
+@Component("AnalysisConfigurer")
+public class SearchAnalisisConfig implements ElasticsearchAnalysisConfigurer {
+    @Override
+    public void configure(ElasticsearchAnalysisConfigurationContext context) {
+        context.analyzer("english").type("english");
+    }
+}
+```
+
+## Paginacja i sortowanie
 
 ### Implementacja w Repository
 ```java

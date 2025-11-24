@@ -16,17 +16,18 @@ INSERT INTO public.user_roles (user_id, role_id, created_at, deleted_at) VALUES
 (1, 1, '2025-10-11 17:10:58.762698', NULL)
 ON CONFLICT ON CONSTRAINT user_roles_pkey DO NOTHING;
 
--- Sequences positions (safe idempotent bumps)
-SELECT pg_catalog.setval('public.addresses_id_seq', 1, false);
-SELECT pg_catalog.setval('public.categories_id_seq', 1, false);
-SELECT pg_catalog.setval('public.category_attributes_id_seq', 1, false);
-SELECT pg_catalog.setval('public.newsletter_subscriptions_id_seq', 1, false);
-SELECT pg_catalog.setval('public.order_items_id_seq', 1, false);
-SELECT pg_catalog.setval('public.orders_id_seq', 1, false);
-SELECT pg_catalog.setval('public.pages_id_seq', 1, false);
-SELECT pg_catalog.setval('public.payments_id_seq', 1, false);
-SELECT pg_catalog.setval('public.product_attribute_values_id_seq', 1, false);
-SELECT pg_catalog.setval('public.product_images_id_seq', 1, false);
-SELECT pg_catalog.setval('public.products_id_seq', 1, false);
-SELECT pg_catalog.setval('public.roles_id_seq', 2, true);
-SELECT pg_catalog.setval('public.users_id_seq', 1, true);
+-- Sequences positions (synchronize with actual max IDs in tables)
+-- Use COALESCE to handle empty tables - set to 1 if table is empty, otherwise use MAX(id)
+SELECT pg_catalog.setval('public.addresses_id_seq', COALESCE((SELECT MAX(id) FROM addresses), 1), true);
+SELECT pg_catalog.setval('public.categories_id_seq', COALESCE((SELECT MAX(id) FROM categories), 1), true);
+SELECT pg_catalog.setval('public.category_attributes_id_seq', COALESCE((SELECT MAX(id) FROM category_attributes), 1), true);
+SELECT pg_catalog.setval('public.newsletter_subscriptions_id_seq', COALESCE((SELECT MAX(id) FROM newsletter_subscriptions), 1), true);
+SELECT pg_catalog.setval('public.order_items_id_seq', COALESCE((SELECT MAX(id) FROM order_items), 1), true);
+SELECT pg_catalog.setval('public.orders_id_seq', COALESCE((SELECT MAX(id) FROM orders), 1), true);
+SELECT pg_catalog.setval('public.pages_id_seq', COALESCE((SELECT MAX(id) FROM pages), 1), true);
+SELECT pg_catalog.setval('public.payments_id_seq', COALESCE((SELECT MAX(id) FROM payments), 1), true);
+SELECT pg_catalog.setval('public.product_attribute_values_id_seq', COALESCE((SELECT MAX(id) FROM product_attribute_values), 1), true);
+SELECT pg_catalog.setval('public.product_images_id_seq', COALESCE((SELECT MAX(id) FROM product_images), 1), true);
+SELECT pg_catalog.setval('public.products_id_seq', COALESCE((SELECT MAX(id) FROM products), 1), true);
+SELECT pg_catalog.setval('public.roles_id_seq', COALESCE((SELECT MAX(id) FROM roles), 1), true);
+SELECT pg_catalog.setval('public.users_id_seq', COALESCE((SELECT MAX(id) FROM users), 1), true);
