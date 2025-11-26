@@ -1,11 +1,13 @@
 package com.ecommerce.E_commerce.controller;
 
 import com.ecommerce.E_commerce.dto.product.ProductSearchDTO;
+import com.ecommerce.E_commerce.model.User;
 import org.springframework.data.domain.Page;
 import com.ecommerce.E_commerce.service.SearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -22,9 +24,10 @@ public class SearchController {
             @RequestParam(required = false) String query,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) Boolean isActive,
             @RequestBody(required = false) Map<String, String> attributes,
             @PageableDefault(size = 20) Pageable pageable)
     {
-        return searchService.search(query, minPrice, maxPrice, attributes, pageable );
+        return searchService.search(query, minPrice, maxPrice, isActive, attributes, pageable);
     }
 }

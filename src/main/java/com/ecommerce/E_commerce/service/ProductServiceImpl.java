@@ -123,9 +123,13 @@ public class ProductServiceImpl implements ProductService {
         product.setDeletedAt(Instant.now());
         product.setIsActive(false);
         product.setUpdatedAt(Instant.now());
-        
-        // Delete associated attribute values
-        productAttributeValueService.deleteByProduct(id);
+
+        if (product.getAttributeValues() != null) {
+            for (var pav : product.getAttributeValues()) {
+                pav.setActive(false);
+                pav.setDeletedAt(Instant.now());
+            }
+        }
         
         productRepository.save(product);
     }

@@ -126,7 +126,8 @@ class ProductControllerTest {
                 "Short desc",
                 "https://example.com/image.jpg",
                 "test-product",
-                "Electronics"
+                "Electronics",
+                true
         );
 
         Page<ProductSummaryDTO> page = new PageImpl<>(List.of(summary));
@@ -150,6 +151,7 @@ class ProductControllerTest {
                 "https://example.com/image.jpg",
                 "test-product",
                 "Electronics"
+                ,true
         );
 
         Page<ProductSummaryDTO> page = new PageImpl<>(List.of(summary));

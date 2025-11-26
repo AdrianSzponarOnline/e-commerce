@@ -9,6 +9,7 @@ public record ProductSummaryDTO(
         String shortDescription,
         String thumbnailUrl,
         String seoSlug,
-        String categoryName
+        String categoryName,
+        Boolean isActive
 ) {
 }

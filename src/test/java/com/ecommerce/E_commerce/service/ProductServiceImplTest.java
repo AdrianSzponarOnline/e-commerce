@@ -168,7 +168,8 @@ class ProductServiceImplTest {
                 "Test laptop",
                 "https://example.com/laptop.jpg",
                 "test-laptop",
-                "Electronics"
+                "Electronics",
+                true
         );
     }
 

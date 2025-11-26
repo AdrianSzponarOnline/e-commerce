@@ -133,6 +133,7 @@ public class Product {
     @NotNull
     @ColumnDefault("true")
     @Column(name = "is_active", nullable = false)
+    @GenericField
     private Boolean isActive = true;
 
     @PrePersist

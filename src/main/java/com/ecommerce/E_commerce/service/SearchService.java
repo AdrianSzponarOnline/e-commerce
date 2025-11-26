@@ -3,7 +3,6 @@ package com.ecommerce.E_commerce.service;
 import com.ecommerce.E_commerce.dto.product.ProductSearchDTO;
 import com.ecommerce.E_commerce.mapper.ProductMapper;
 import com.ecommerce.E_commerce.model.Product;
-import jakarta.persistence.EntityGraph;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.graph.GraphSemantic;
@@ -13,6 +12,7 @@ import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -30,12 +30,16 @@ public class SearchService {
             String query,
             BigDecimal minPrice,
             BigDecimal maxPrice,
+            Boolean isActive,
             Map<String, String> attributes,
             Pageable pageable
     ) {
+
         System.out.println("SEARCH REQUEST: query='" + query + "', filters=" + attributes);
 
         SearchSession searchSession = Search.session(em);
+
+        final Boolean finalIsActive = isActive;
 
         SearchResult<Product> result = searchSession.search(Product.class)
                 .where(f -> {
@@ -58,6 +62,10 @@ public class SearchService {
                         bool.filter(f.range().field("price").lessThan(maxPrice));
                         hasCondition = true;
                     }
+                    if (finalIsActive != null) {
+                        bool.filter(f.match().field("isActive").matching(finalIsActive));
+                        hasCondition = true;
+                    }
 
                     if (attributes != null && !attributes.isEmpty()) {
                         attributes.forEach((key, value) -> {
@@ -76,6 +84,22 @@ public class SearchService {
                     }
 
                     return bool;
+                })
+                .sort(f -> {
+                    if (pageable.getSort().isSorted()) {
+                        var composite = f.composite();
+                        for (Sort.Order order : pageable.getSort()) {
+                            var fieldSort = f.field(order.getProperty());
+                            if (order.isDescending()) {
+                                fieldSort.desc();
+                            } else {
+                                fieldSort.asc();
+                            }
+                            composite.add(fieldSort);
+                        }
+                        return composite;
+                    }
+                    return f.score();
                 })
                 .loading(o -> o.graph("Product.withDetails", GraphSemantic.LOAD))
                 .fetch((int) pageable.getOffset(), pageable.getPageSize());

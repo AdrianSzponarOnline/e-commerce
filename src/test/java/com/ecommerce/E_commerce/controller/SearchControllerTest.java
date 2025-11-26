@@ -46,6 +46,7 @@ class SearchControllerTest {
                 "https://example.com/image.jpg",
                 "test-product",
                 "Electronics",
+                true,
                 Map.of("Color", "Red")
         );
 
@@ -55,6 +56,7 @@ class SearchControllerTest {
                 anyString(),
                 any(BigDecimal.class),
                 any(BigDecimal.class),
+                any(),
                 any(),
                 any()
         )).thenReturn(page);
@@ -80,6 +82,7 @@ class SearchControllerTest {
                 "https://example.com/image.jpg",
                 "test-product",
                 "Electronics",
+                true,
                 Map.of("Color", "Red")
         );
 
@@ -87,6 +90,7 @@ class SearchControllerTest {
 
         Mockito.when(searchService.search(
                 anyString(),
+                isNull(),
                 isNull(),
                 isNull(),
                 any(Map.class),
