@@ -20,31 +20,22 @@ public interface PaymentService {
     @PreAuthorize("hasRole('OWNER')")
     void delete(Long id);
     
-    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and @paymentService.isPaymentOwner(#id, authentication.name))")
     PaymentDTO getById(Long id);
     
-    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and #orderId != null and @orderService.isOrderOwner(#orderId, authentication.name))")
     Page<PaymentDTO> findByOrderId(Long orderId, Pageable pageable);
     
-    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and #userId == authentication.principal.id)")
     Page<PaymentDTO> findByUserId(Long userId, Pageable pageable);
     
-    @PreAuthorize("hasRole('OWNER')")
     Page<PaymentDTO> findByStatus(String status, Pageable pageable);
     
-    @PreAuthorize("hasRole('OWNER')")
     Page<PaymentDTO> findAll(Pageable pageable);
     
-    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and #orderId != null and @orderService.isOrderOwner(#orderId, authentication.name))")
     Page<PaymentDTO> findByOrderIdAndStatus(Long orderId, String status, Pageable pageable);
     
-    @PreAuthorize("hasRole('OWNER')")
     Page<PaymentDTO> findByMultipleCriteria(Long orderId, String status, String method, Boolean isActive, Instant startDate, Instant endDate, Pageable pageable);
     
-    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and #orderId != null and @orderService.isOrderOwner(#orderId, authentication.name))")
     long countByOrderId(Long orderId);
     
-    @PreAuthorize("hasRole('OWNER')")
     long countByStatus(String status);
 
     PaymentDTO simulatePayment(Long paymentId, String scenario);

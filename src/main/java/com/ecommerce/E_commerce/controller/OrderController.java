@@ -3,6 +3,7 @@ package com.ecommerce.E_commerce.controller;
 import com.ecommerce.E_commerce.dto.order.OrderCreateDTO;
 import com.ecommerce.E_commerce.dto.order.OrderDTO;
 import com.ecommerce.E_commerce.dto.order.OrderUpdateDTO;
+import com.ecommerce.E_commerce.model.OrderStatus;
 import com.ecommerce.E_commerce.model.User;
 import com.ecommerce.E_commerce.service.OrderService;
 import jakarta.validation.Valid;
@@ -51,7 +52,7 @@ public class OrderController {
     }
     
     @PatchMapping("/{id}/cancel")
-    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and @orderService.isOrderOwner(#id, authentication.name))")
+    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and @orderServiceImpl.isOrderOwner(#id, authentication.name))")
     public ResponseEntity<OrderDTO> cancelOrder(@PathVariable Long id) {
         OrderDTO order = orderService.cancelOrder(id);
         return ResponseEntity.ok(order);
@@ -65,7 +66,7 @@ public class OrderController {
     }
     
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and @orderService.isOrderOwner(#id, authentication.name))")
+    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and @orderServiceImpl.isOrderOwner(#id, authentication.name))")
     public ResponseEntity<OrderDTO> getOrderById(@PathVariable Long id) {
         OrderDTO order = orderService.getById(id);
         return ResponseEntity.ok(order);
@@ -115,7 +116,7 @@ public class OrderController {
     @GetMapping("/status/{status}")
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<Page<OrderDTO>> getOrdersByStatus(
-            @PathVariable String status,
+            @PathVariable OrderStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -130,7 +131,7 @@ public class OrderController {
     @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and #userId == authentication.principal.id)")
     public ResponseEntity<Page<OrderDTO>> getOrdersByUserIdAndStatus(
             @PathVariable Long userId,
-            @PathVariable String status,
+            @PathVariable OrderStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -145,7 +146,7 @@ public class OrderController {
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<Page<OrderDTO>> filterOrders(
             @RequestParam(required = false) Long userId,
-            @RequestParam(required = false) String status,
+            @RequestParam(required = false) OrderStatus status,
             @RequestParam(required = false) Boolean isActive,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
@@ -163,10 +164,10 @@ public class OrderController {
     @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and #userId == authentication.principal.id)")
     public ResponseEntity<Long> getOrderCount(
             @RequestParam(required = false) Long userId,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) OrderStatus status) {
         long count;
         if (userId != null && status != null) {
-            count = orderService.countByStatus(status);
+            count = orderService.countByUserIdAndStatus(userId, status);
         } else if (userId != null) {
             count = orderService.countByUserId(userId);
         } else if (status != null) {

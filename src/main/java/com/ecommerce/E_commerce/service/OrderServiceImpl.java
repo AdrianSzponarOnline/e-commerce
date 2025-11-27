@@ -15,10 +15,6 @@ import com.ecommerce.E_commerce.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,9 +54,6 @@ public class OrderServiceImpl implements OrderService {
         Address address = addressRepository.findById(dto.addressId())
                 .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + dto.addressId()));
 
-        if (!address.getUser().getId().equals(userId)) {
-            throw new InvalidOperationException("Address does not belong to user");
-        }
 
         Order order = orderMapper.toOrder(dto);
         order.setUser(user);
@@ -114,8 +107,6 @@ public class OrderServiceImpl implements OrderService {
             throw new InvalidOperationException("Order is already cancelled");
         }
 
-        checkCancelPermission(order);
-
         OrderStatus oldStatus = order.getStatus();
         order.setStatus(OrderStatus.CANCELLED);
 
@@ -162,27 +153,7 @@ public class OrderServiceImpl implements OrderService {
         return status == OrderStatus.SHIPPED || status == OrderStatus.DELIVERED;
     }
 
-    private void checkCancelPermission(Order order) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) {
-            throw new AccessDeniedException("User not authenticated");
-        }
 
-        boolean isOwnerRole = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(auth -> auth.equals("ROLE_OWNER"));
-
-        if (!isOwnerRole) {
-            if (order.getStatus() != OrderStatus.NEW && order.getStatus() != OrderStatus.CONFIRMED) {
-                throw new AccessDeniedException("You can only cancel orders with status NEW or CONFIRMED.");
-            }
-
-            String currentUserEmail = authentication.getName();
-            if (!order.getUser().getEmail().equals(currentUserEmail)) {
-                throw new AccessDeniedException("You can only cancel your own orders");
-            }
-        }
-    }
 
     private Order getOrderOrThrow(Long id) {
         return orderRepository.findById(id)
@@ -203,9 +174,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<OrderDTO> findByStatus(String status, Pageable pageable) {
-        OrderStatus orderStatus = status != null ? OrderStatus.valueOf(status.toUpperCase()) : null;
-        return orderRepository.findByStatus(orderStatus, pageable).map(orderMapper::toOrderDTO);
+    public Page<OrderDTO> findByStatus(OrderStatus status, Pageable pageable) {
+        return orderRepository.findByStatus(status, pageable).map(orderMapper::toOrderDTO);
     }
 
     @Override
@@ -216,8 +186,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<OrderDTO> findByUserIdAndStatus(Long userId, String status, Pageable pageable) {
-        OrderStatus orderStatus = status != null ? OrderStatus.valueOf(status.toUpperCase()) : null;
+    public Page<OrderDTO> findByUserIdAndStatus(Long userId, OrderStatus orderStatus, Pageable pageable) {
         return orderRepository.findByUserIdAndStatus(userId, orderStatus, pageable).map(orderMapper::toOrderDTO);
     }
 
@@ -235,9 +204,21 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<OrderDTO> findByMultipleCriteria(Long userId, String status, Boolean isActive, Instant startDate, Instant endDate, Pageable pageable) {
-        OrderStatus orderStatus = status != null ? OrderStatus.valueOf(status.toUpperCase()) : null;
-        return orderRepository.findByMultipleCriteria(userId, orderStatus, isActive, startDate, endDate, pageable).map(orderMapper::toOrderDTO);
+    public Page<OrderDTO> findByMultipleCriteria(Long userId,
+                                                 OrderStatus status,
+                                                 Boolean isActive,
+                                                 Instant startDate,
+                                                 Instant endDate,
+                                                 Pageable pageable)
+    {
+        return orderRepository.findByMultipleCriteria(
+                userId,
+                status,
+                isActive,
+                startDate,
+                endDate,
+                pageable
+        ).map(orderMapper::toOrderDTO);
     }
 
     @Override
@@ -248,9 +229,13 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public long countByStatus(String status) {
-        OrderStatus orderStatus = status != null ? OrderStatus.valueOf(status.toUpperCase()) : null;
-        return orderRepository.countByStatus(orderStatus);
+    public long countByStatus(OrderStatus status) {
+        return orderRepository.countByStatus(status);
+    }
+
+    @Override
+    public long countByUserIdAndStatus(Long userId, OrderStatus status) {
+        return orderRepository.countByUserIdAndStatus(userId, status);
     }
 
     @Override

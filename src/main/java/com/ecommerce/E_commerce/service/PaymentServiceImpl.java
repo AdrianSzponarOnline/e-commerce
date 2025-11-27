@@ -12,10 +12,6 @@ import com.ecommerce.E_commerce.repository.PaymentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,8 +42,6 @@ public class PaymentServiceImpl implements PaymentService {
         Order order = orderRepository.findById(dto.orderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + dto.orderId()));
 
-        checkPaymentPermission(order);
-
         if (order.getStatus() != OrderStatus.NEW && order.getStatus() != OrderStatus.CONFIRMED) {
             throw new InvalidOperationException("Payment can only be created for orders with status NEW or CONFIRMED");
         }
@@ -74,8 +68,6 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentDTO update(Long id, PaymentUpdateDTO dto) {
         Payment payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found with id: " + id));
-
-        checkPaymentPermission(payment.getOrder());
 
         PaymentStatus oldStatus = payment.getStatus();
 
@@ -135,36 +127,15 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found with id: " + id));
 
-        checkPaymentPermission(payment.getOrder());
-
         paymentRepository.delete(payment);
     }
 
-    private void checkPaymentPermission(Order order) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) {
-            throw new AccessDeniedException("User not authenticated");
-        }
-
-        boolean isOwner = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(auth -> auth.equals("ROLE_OWNER"));
-
-        if (!isOwner) {
-            String userEmail = authentication.getName();
-            if (order.getUser() == null || !order.getUser().getEmail().equals(userEmail)) {
-                throw new AccessDeniedException("You can only access payments for your own orders");
-            }
-        }
-    }
 
     @Override
     @Transactional(readOnly = true)
     public PaymentDTO getById(Long id) {
         Payment payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found with id: " + id));
-
-        checkPaymentPermission(payment.getOrder());
 
         return paymentMapper.toPaymentDTO(payment);
     }
@@ -174,8 +145,6 @@ public class PaymentServiceImpl implements PaymentService {
     public Page<PaymentDTO> findByOrderId(Long orderId, Pageable pageable) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
-
-        checkPaymentPermission(order);
 
         Page<Payment> payments = paymentRepository.findByOrderId(orderId, pageable);
         return payments.map(paymentMapper::toPaymentDTO);
@@ -209,8 +178,6 @@ public class PaymentServiceImpl implements PaymentService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
-        checkPaymentPermission(order);
-
         PaymentStatus paymentStatus = status != null ? PaymentStatus.valueOf(status.toUpperCase()) : null;
         Page<Payment> payments = paymentRepository.findByOrderIdAndStatus(orderId, paymentStatus, pageable);
         return payments.map(paymentMapper::toPaymentDTO);
@@ -222,7 +189,6 @@ public class PaymentServiceImpl implements PaymentService {
         if (orderId != null) {
             Order order = orderRepository.findById(orderId)
                     .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
-            checkPaymentPermission(order);
         }
 
         PaymentStatus paymentStatus = status != null ? PaymentStatus.valueOf(status.toUpperCase()) : null;
@@ -236,8 +202,6 @@ public class PaymentServiceImpl implements PaymentService {
     public long countByOrderId(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
-
-        checkPaymentPermission(order);
 
         return paymentRepository.countByOrderId(orderId);
     }
@@ -256,7 +220,6 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
 
-        checkPaymentPermission(payment.getOrder());
 
         if (payment.getStatus() == PaymentStatus.COMPLETED) {
             throw new InvalidOperationException("Payment is already completed");
@@ -288,7 +251,6 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setNotes(notes);
         if (payment.getMethod() == null) payment.setMethod(PaymentMethod.CREDIT_CARD);
 
-        // To wywołanie uruchomi logikę magazynową
         if (oldStatus != newStatus) {
             handlePaymentStatusChange(payment, oldStatus, newStatus);
         }

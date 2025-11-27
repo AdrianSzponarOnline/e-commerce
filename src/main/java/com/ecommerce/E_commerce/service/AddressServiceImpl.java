@@ -19,6 +19,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,7 +41,7 @@ public class AddressServiceImpl implements AddressService {
     }
 
 
-    private boolean isOwner() {
+    public boolean isOwner() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {
             return false;
@@ -51,39 +52,10 @@ public class AddressServiceImpl implements AddressService {
     }
 
 
-    private Optional<User> getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) {
-            return Optional.empty();
-        }
-        String userEmail = authentication.getName();
-        return userRepository.findByEmail(userEmail);
-    }
-
-
-    private void checkAccess(Long resourceUserId, String errorMessage) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) {
-            throw new AccessDeniedException("User not authenticated");
-        }
-
-        if (!isOwner()) {
-            User currentUser = getCurrentUser()
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-            
-            if (!currentUser.getId().equals(resourceUserId)) {
-                throw new AccessDeniedException(errorMessage);
-            }
-        }
-    }
-
     @Override
     public AddressDTO create(AddressCreateDTO dto) {
         User user = userRepository.findById(dto.userId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + dto.userId()));
-
-        checkAccess(dto.userId(), "You can only create addresses for yourself");
-
 
         Address address = addressMapper.toAddress(dto);
         address.setUser(user);
@@ -96,15 +68,11 @@ public class AddressServiceImpl implements AddressService {
     public AddressDTO update(Long id, AddressUpdateDTO dto) {
         Address address = addressRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + id));
-        
-        if (address.getUser() == null) {
-            throw new ResourceNotFoundException("Address has no associated user");
-        }
-        checkAccess(address.getUser().getId(), "You can only update your own addresses");
 
         addressMapper.updateAddressFromDTO(dto, address);
 
         if (dto.isActive() != null) {
+            address.setUpdatedAt(Instant.now());
             address.setIsActive(dto.isActive());
         }
 
@@ -120,7 +88,6 @@ public class AddressServiceImpl implements AddressService {
         if (address.getUser() == null) {
             throw new ResourceNotFoundException("Address has no associated user");
         }
-        checkAccess(address.getUser().getId(), "You can only delete your own addresses");
 
         addressRepository.delete(address);
     }
@@ -130,20 +97,13 @@ public class AddressServiceImpl implements AddressService {
     public AddressDTO getById(Long id) {
         Address address = addressRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + id));
-        
-        if (address.getUser() == null) {
-            throw new ResourceNotFoundException("Address has no associated user");
-        }
-        checkAccess(address.getUser().getId(), "You can only view your own addresses");
-        
+
         return addressMapper.toAddressDTO(address);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<AddressDTO> getByUserId(Long userId) {
-        checkAccess(userId, "You can only view your own addresses");
-        
         List<Address> addresses = addressRepository.findByUserId(userId);
         return addresses.stream()
                 .map(addressMapper::toAddressDTO)
@@ -153,8 +113,6 @@ public class AddressServiceImpl implements AddressService {
     @Override
     @Transactional(readOnly = true)
     public List<AddressDTO> getActiveByUserId(Long userId) {
-        checkAccess(userId, "You can only view your own addresses");
-        
         List<Address> addresses = addressRepository.findByUserIdAndIsActive(userId, true);
         return addresses.stream()
                 .map(addressMapper::toAddressDTO)

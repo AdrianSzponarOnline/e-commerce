@@ -2,6 +2,7 @@ package com.ecommerce.E_commerce.repository;
 
 import com.ecommerce.E_commerce.model.Order;
 import com.ecommerce.E_commerce.model.OrderStatus;
+import org.aspectj.weaver.ast.Or;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -28,8 +29,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // Find active orders
     Page<Order> findByIsActive(Boolean isActive, Pageable pageable);
     Page<Order> findByUserIdAndIsActive(Long userId, Boolean isActive, Pageable pageable);
-    
-    // Count queries
+
     long countByUserId(Long userId);
     long countByStatus(OrderStatus status);
     long countByUserIdAndStatus(Long userId, OrderStatus status);

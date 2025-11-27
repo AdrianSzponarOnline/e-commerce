@@ -10,10 +10,7 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.search.engine.backend.types.ObjectStructure;
 import org.hibernate.search.engine.backend.types.Sortable;
-import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
-import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
-import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
-import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -52,12 +49,14 @@ public class Product {
     @ColumnDefault("nextval('products_id_seq'::regclass)")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
+    @GenericField(sortable = Sortable.YES)
     private Long id;
 
     @Size(max = 255)
     @NotNull
     @Column(name = "name", nullable = false)
     @FullTextField(analyzer = "standard")
+    @KeywordField(name = "name_sort", sortable = Sortable.YES, normalizer = "lowercase")
     private String name;
 
     @NotNull
@@ -86,6 +85,7 @@ public class Product {
     @NotNull
     @ColumnDefault("false")
     @Column(name = "is_featured", nullable = false)
+    @GenericField(sortable = Sortable.YES)
     private Boolean isFeatured = false;
 
     @NotNull
@@ -120,6 +120,7 @@ public class Product {
     @NotNull
     @ColumnDefault("now()")
     @Column(name = "created_at", nullable = false)
+    @GenericField(sortable = Sortable.YES)
     private Instant createdAt;
 
     @NotNull

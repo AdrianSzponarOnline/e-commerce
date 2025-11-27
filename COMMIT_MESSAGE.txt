@@ -1,0 +1,41 @@
+refactor: authorization refactoring and AI chat integration
+
+Main changes:
+
+**Authorization refactoring:**
+- Move @PreAuthorize from service interfaces to controllers
+- Change references in @PreAuthorize from interfaces to implementations (@addressServiceImpl, @orderServiceImpl, @paymentServiceImpl)
+- Remove manual permission checks (checkAccess, checkPaymentPermission, checkCancelPermission) from services
+- Add @PreAuthorize to simulatePayment endpoint
+
+**AI integration:**
+- Add ChatController with Spring AI and Vertex AI Gemini integration
+- Create AiConfig with searchProductsTool function for AI
+- Add ProductSearchRequest DTO with AI descriptions (JsonPropertyDescription)
+- Add getAllAttributeNames() method in AttributeService for AI
+- Add /api/ai/chat endpoint to SecurityConfig (permitAll)
+
+**Type safety - OrderStatus:**
+- Change status parameters from String to OrderStatus enum in OrderController and OrderService
+- Add countByUserIdAndStatus method in OrderService
+- Fix logic in getOrderCount (use countByUserIdAndStatus)
+
+**Elasticsearch:**
+- Add sortable fields in Product model (id, name_sort, isFeatured, createdAt)
+- Optimize imports in Product (use wildcard for Hibernate Search)
+
+**API simplification:**
+- Remove unnecessary categoryId parameter from CategoryAttributeController (update, getById, delete)
+- Remove @NotNull from CategoryAttributeUpdateDTO.isActive
+
+**Other improvements:**
+- Refactor PaymentController (use @RequiredArgsConstructor, add OrderService)
+- Add updatedAt setting in AddressServiceImpl.update
+- Change isOwner() from private to public in AddressServiceImpl
+- Remove unnecessary address ownership check in OrderServiceImpl
+- Code formatting improvements (remove empty lines, fix imports)
+- Add Sort import in AddressController
+
+**Breaking changes:**
+- CategoryAttribute endpoints now require only ID (without categoryId in path)
+- Status parameters in OrderController are now OrderStatus enum instead of String

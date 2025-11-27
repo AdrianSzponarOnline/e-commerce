@@ -4,11 +4,11 @@ import com.ecommerce.E_commerce.dto.payment.PaymentCreateDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentUpdateDTO;
 import com.ecommerce.E_commerce.model.User;
+import com.ecommerce.E_commerce.service.OrderService;
 import com.ecommerce.E_commerce.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
-import org.hibernate.annotations.Parameter;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,18 +24,16 @@ import java.time.Instant;
 
 @RestController
 @RequestMapping("/api/payments")
+@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class PaymentController {
     
     private final PaymentService paymentService;
-    
-    @Autowired
-    public PaymentController(PaymentService paymentService) {
-        this.paymentService = paymentService;
-    }
+    private final OrderService orderService;
+
     
     @PostMapping
-    @PreAuthorize("hasRole('USER') or hasRole('OWNER')")
+    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and @orderServiceImpl.isOrderOwner(#dto.orderId(), authentication.name))")
     public ResponseEntity<PaymentDTO> createPayment(@Valid @RequestBody PaymentCreateDTO dto) {
         PaymentDTO payment = paymentService.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(payment);
@@ -58,7 +56,7 @@ public class PaymentController {
     }
     
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and @paymentService.isPaymentOwner(#id, authentication.name))")
+    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and @paymentServiceImpl.isPaymentOwner(#id, authentication.name))")
     public ResponseEntity<PaymentDTO> getPaymentById(@PathVariable Long id) {
         PaymentDTO payment = paymentService.getById(id);
         return ResponseEntity.ok(payment);
@@ -106,7 +104,7 @@ public class PaymentController {
     }
     
     @GetMapping("/order/{orderId}")
-    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and #orderId != null and @orderService.isOrderOwner(#orderId, authentication.name))")
+    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and #orderId != null and @orderServiceImpl.isOrderOwner(#orderId, authentication.name))")
     public ResponseEntity<Page<PaymentDTO>> getPaymentsByOrderId(
             @PathVariable Long orderId,
             @RequestParam(defaultValue = "0") int page,
@@ -134,7 +132,7 @@ public class PaymentController {
     }
     
     @GetMapping("/order/{orderId}/status/{status}")
-    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and #orderId != null and @orderService.isOrderOwner(#orderId, authentication.name))")
+    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and #orderId != null and @orderServiceImpl.isOrderOwner(#orderId, authentication.name))")
     public ResponseEntity<Page<PaymentDTO>> getPaymentsByOrderIdAndStatus(
             @PathVariable Long orderId,
             @PathVariable String status,
@@ -168,7 +166,7 @@ public class PaymentController {
     }
     
     @GetMapping("/stats/count")
-    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and #orderId != null and @orderService.isOrderOwner(#orderId, authentication.name))")
+    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and #orderId != null and @orderServiceImpl.isOrderOwner(#orderId, authentication.name))")
     public ResponseEntity<Long> getPaymentCount(
             @RequestParam(required = false) Long orderId,
             @RequestParam(required = false) String status) {
@@ -188,6 +186,7 @@ public class PaymentController {
     @PostMapping("/{paymentId}/simulate")
     @Operation(summary = "Simulate payment gateway response",
             description = "Mocks a payment result. Scenarios: SUCCESS, FAIL, ERROR. Changes Order status automatically.")
+    @PreAuthorize("hasRole('OWNER') or hasRole('USER') and @paymentServiceImpl.isPaymentOwner(#paymentId,authentication.name)")
     public ResponseEntity<PaymentDTO> simulatePayment(
 
             @PathVariable Long paymentId,

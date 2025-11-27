@@ -7,6 +7,7 @@ import com.ecommerce.E_commerce.model.User;
 import com.ecommerce.E_commerce.service.AddressService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,7 +28,7 @@ public class AddressController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('OWNER') or hasRole('USER')")
+    @PreAuthorize("hasRole('OWNER') or (hasRole('USER'))")
     public ResponseEntity<AddressDTO> create(
             @Valid @RequestBody AddressCreateDTO dto,
             @AuthenticationPrincipal User user) {
@@ -46,7 +47,7 @@ public class AddressController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and @addressService.isAddressOwner(#id, authentication.name))")
+    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and @addressServiceImpl.isAddressOwner(#id, authentication.name))")
     public ResponseEntity<AddressDTO> update(
             @PathVariable Long id,
             @Valid @RequestBody AddressUpdateDTO dto) {
@@ -55,14 +56,14 @@ public class AddressController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and @addressService.isAddressOwner(#id, authentication.name))")
+    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and @addressServiceImpl.isAddressOwner(#id, authentication.name))")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         addressService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and @addressService.isAddressOwner(#id, authentication.name))")
+    @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and @addressServiceImpl.isAddressOwner(#id, authentication.name))")
     public ResponseEntity<AddressDTO> getById(@PathVariable Long id) {
         AddressDTO address = addressService.getById(id);
         return ResponseEntity.ok(address);
@@ -94,8 +95,8 @@ public class AddressController {
                         page,
                         size,
                         sortDir.equalsIgnoreCase("desc")
-                                ? org.springframework.data.domain.Sort.by(sortBy).descending()
-                                : org.springframework.data.domain.Sort.by(sortBy).ascending()
+                                ? Sort.by(sortBy).descending()
+                                : Sort.by(sortBy).ascending()
                 ));
         return ResponseEntity.ok(addresses);
     }

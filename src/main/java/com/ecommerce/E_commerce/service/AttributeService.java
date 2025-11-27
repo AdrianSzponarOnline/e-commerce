@@ -7,6 +7,8 @@ import com.ecommerce.E_commerce.model.Attribute;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+
 
 public interface AttributeService {
     public Attribute findOrCreateAttribute(AttributeCreateDTO dto);
@@ -17,4 +19,5 @@ public interface AttributeService {
     Page<AttributeDTO> getActiveAttributes(Pageable pageable);
     Page<AttributeDTO> getInactiveAttributes(Pageable pageable);
     void restoreAttribute(Long id);
+    List<String> getAllAttributeNames();
 }

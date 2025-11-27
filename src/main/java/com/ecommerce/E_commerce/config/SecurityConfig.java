@@ -59,7 +59,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(authorize -> {
                     authorize
-                            .requestMatchers(HttpMethod.POST, "/api/search").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/search", "/api/ai/chat").permitAll()
                             .requestMatchers(
                                     HttpMethod.GET,
                                     "/api/categories",

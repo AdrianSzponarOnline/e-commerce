@@ -39,15 +39,13 @@ public class CategoryAttributeController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('OWNER')")
-    public ResponseEntity<CategoryAttributeDTO> update(@PathVariable("categoryId") Long categoryId,
-                                                       @PathVariable("id") Long id,
+    public ResponseEntity<CategoryAttributeDTO> update(@PathVariable("id") Long id,
                                                        @Valid @RequestBody CategoryAttributeUpdateDTO body) {
         return ResponseEntity.ok(service.update(id, body));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CategoryAttributeDTO> getById(@PathVariable("categoryId") Long categoryId,
-                                                        @PathVariable("id") Long id) {
+    public ResponseEntity<CategoryAttributeDTO> getById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(service.getById(id));
     }
 
@@ -58,11 +56,8 @@ public class CategoryAttributeController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('OWNER')")
-    public ResponseEntity<Void> delete(@PathVariable("categoryId") Long categoryId,
-                                       @PathVariable("id") Long id) {
+    public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
         service.softDelete(id);
         return ResponseEntity.noContent().build();
     }
 }
-
-

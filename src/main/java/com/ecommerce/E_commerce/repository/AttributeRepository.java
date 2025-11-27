@@ -27,4 +27,7 @@ public interface AttributeRepository extends JpaRepository<Attribute, Long> {
            countQuery = "SELECT count(*) FROM attributes WHERE deleted_at IS NOT NULL", 
            nativeQuery = true)
     Page<Attribute> findAllDeleted(Pageable pageable);
+
+    @Query("SELECT DISTINCT a.name FROM Attribute a WHERE a.isActive = true")
+    List<String> findAllActiveAttributeNames();
 }
