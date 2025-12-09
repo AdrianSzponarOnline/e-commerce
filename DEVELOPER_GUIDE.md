@@ -135,6 +135,71 @@ public record ProductCreateDTO(
 ) {}
 ```
 
+### Aktywacja konta i reset hasła
+
+System obsługuje aktywację kont użytkowników oraz resetowanie hasła poprzez email. Wszystkie tokeny są przechowywane w tabeli `confirmation_tokens`.
+
+#### Aktywacja konta
+```java
+@Transactional
+public void activateAccount(String token) {
+    ConfirmationToken confirmationToken = getAndValidateToken(token);
+    
+    if (confirmationToken.getConfirmedAt() != null) {
+        throw new IllegalStateException("Email has already been activated");
+    }
+    
+    confirmationToken.setConfirmedAt(LocalDateTime.now());
+    User user = confirmationToken.getUser();
+    user.setEnabled(true);
+    userRepository.save(user);
+}
+```
+
+**Flow aktywacji:**
+1. Użytkownik rejestruje się → konto tworzone z `enabled: false`
+2. Generowany jest token aktywacyjny (ważny 15 minut)
+3. Email z linkiem aktywacyjnym jest wysyłany automatycznie
+4. Użytkownik klika link → endpoint `/api/auth/activate?token={token}`
+5. Konto jest aktywowane (`enabled: true`)
+
+#### Reset hasła
+```java
+@Transactional
+public void forgotPassword(String email) {
+    User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new ResourceNotFoundException("User with email not found."));
+    
+    String token = generateAndSaveToken(user, 30); // 30 minut ważności
+    String link = "http://localhost:5173/reset-password?token=" + token;
+    
+    emailService.sendSimpleMail(
+        email,
+        "Resetowanie hasła",
+        "Cześć " + user.getFirstName() + ",\n\n" +
+            "Otrzymaliśmy prośbę o zmianę hasła. Kliknij link poniżej:\n" + link
+    );
+}
+```
+
+**Flow resetowania hasła:**
+1. Użytkownik wysyła żądanie na `/api/auth/forgot-password` z emailem
+2. Generowany jest token resetujący (ważny 30 minut)
+3. Email z linkiem resetującym jest wysyłany
+4. Użytkownik klika link → endpoint `/api/auth/reset-password` z tokenem i nowym hasłem
+5. Hasło jest zmieniane i konto automatycznie aktywowane
+
+#### Konfiguracja email
+```properties
+spring.mail.host=sandbox.smtp.mailtrap.io
+spring.mail.port=587
+spring.mail.username=${MAIL_USERNAME}
+spring.mail.password=${MAIL_PASSWORD}
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+app.mail.from=sklep@ecommerce.com
+```
+
 ##  Model danych
 
 ### Główne encje
@@ -494,6 +559,20 @@ public List<ProductAttributeValueDTO> updateByProduct(Long productId, List<Produ
 ```
 
 ##  Migracje bazy danych
+
+### Dostępne migracje
+- `V1__init_schema.sql` - Podstawowa struktura bazy danych (tabele: users, roles, categories, products, addresses, orders, payments, itp.)
+- `V2__category_attribute_updates.sql` - Aktualizacje atrybutów kategorii
+- `V3__insert_craft_categories.sql` - Wstawienie kategorii rzemieślniczych (rzeźby, ceramika, biżuteria, itp.)
+- `V4__add_sku_unique_constraint.sql` - Unikalne ograniczenie dla SKU w tabeli products
+- `V5__seed_data.sql` - Dane początkowe (użytkownicy, role, podstawowe dane)
+- `V6__add_mock_users.sql` - Dodanie użytkowników testowych (testuser@example.com, owner@example.com)
+- `V7__insert_sample_products.sql` - Wstawienie przykładowych produktów z atrybutami
+- `V8__add_key_attribute_to_category_attributes.sql` - Dodanie kolumny `key_attribute` do tabeli category_attributes
+- `V9__create_inventory.sql` - Utworzenie tabeli inventory do zarządzania stanem magazynowym
+- `V10__refactor_attributes_schema.sql` - Refaktoryzacja schematu atrybutów (utworzenie tabeli attributes, migracja danych)
+- `V11__add_payment_columns.sql` - Dodanie kolumn `transaction_id` i `notes` do tabeli payments
+- `V12__create_confirmation_tokens.sql` - Utworzenie tabeli confirmation_tokens do aktywacji kont użytkowników
 
 ### Tworzenie migracji
 ```sql

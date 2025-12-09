@@ -3,6 +3,8 @@ package com.ecommerce.E_commerce.config;
 import com.ecommerce.E_commerce.dto.product.ProductSearchDTO;
 import com.ecommerce.E_commerce.dto.search.ProductSearchRequest;
 import com.ecommerce.E_commerce.service.SearchService;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,8 +19,12 @@ import java.util.function.Function;
 @Configuration
 public class AiConfig {
     @Bean
+    public ChatMemory chatMemory() {
+        return new InMemoryChatMemory();
+    }
+
+    @Bean
     @Description("Wyszukuje produkty. Użyj tego narzędzia, gdy użytkownik pyta o asortyment, chce coś znaleźć lub pyta o cenę.")
-    @ConditionalOnProperty(prefix = "spring.ai.vertex.ai.gemini", name = "enabled", havingValue = "true")
     public Function<ProductSearchRequest, ProductSearchResponse> searchProductsTool(SearchService searchService) {
         return request -> {
             System.out.println("Gemini wykonuje funkcję z:" + request);

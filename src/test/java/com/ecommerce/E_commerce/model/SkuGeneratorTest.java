@@ -202,7 +202,7 @@ class SkuGeneratorTest {
         attributeValue.setId(1L);
         attributeValue.setProduct(product);
         attributeValue.setAttribute(categoryAttribute.getAttribute());
-        attributeValue.setValue(value);
+        attributeValue.setAttributeValue(value);
         return attributeValue;
     }
 }

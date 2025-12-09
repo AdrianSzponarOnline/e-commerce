@@ -1,15 +1,14 @@
 package com.ecommerce.E_commerce.service;
 
 import com.ecommerce.E_commerce.dto.productimage.ProductImageDTO;
+import com.ecommerce.E_commerce.exception.InvalidOperationException;
 import com.ecommerce.E_commerce.model.Product;
 import com.ecommerce.E_commerce.model.ProductImage;
 import com.ecommerce.E_commerce.repository.ProductImageRepository;
 import com.ecommerce.E_commerce.repository.ProductRepository;
-import com.ecommerce.E_commerce.service.ImageUrlService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -77,7 +76,7 @@ class ProductImageServiceImplTest {
 
         ProductImageDTO dto = service.upload(5L, file, "alt", true);
 
-        // repo save called with proper data
+      
         ProductImage saved = imageCaptor.getValue();
         assertThat(saved.getProduct().getId()).isEqualTo(5L);
         assertThat(saved.getAltText()).isEqualTo("alt");
@@ -98,11 +97,11 @@ class ProductImageServiceImplTest {
         ProductImageServiceImpl service = buildService(productRepository, imageRepository);
 
         MockMultipartFile wrongType = new MockMultipartFile("file", "a.gif", "image/gif", new byte[]{1});
-        assertThrows(com.ecommerce.E_commerce.exception.InvalidOperationException.class, () -> service.upload(1L, wrongType, null, false));
+        assertThrows(InvalidOperationException.class, () -> service.upload(1L, wrongType, null, false));
 
         ReflectionTestUtils.setField(service, "maxUploadBytes", 1L);
         MockMultipartFile tooLarge = new MockMultipartFile("file", "a.jpg", "image/jpeg", new byte[]{1,2});
-        assertThrows(com.ecommerce.E_commerce.exception.InvalidOperationException.class, () -> service.upload(1L, tooLarge, null, false));
+        assertThrows(InvalidOperationException.class, () -> service.upload(1L, tooLarge, null, false));
     }
 
     @Test

@@ -7,8 +7,10 @@ import com.ecommerce.E_commerce.exception.RoleNotFountException;
 import com.ecommerce.E_commerce.model.ERole;
 import com.ecommerce.E_commerce.model.Role;
 import com.ecommerce.E_commerce.model.User;
+import com.ecommerce.E_commerce.repository.ConfirmationTokenRepository;
 import com.ecommerce.E_commerce.repository.RoleRepository;
 import com.ecommerce.E_commerce.repository.UserRepository;
+import com.ecommerce.E_commerce.service.EmailService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,7 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,6 +38,12 @@ class UserServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private EmailService emailService;
+
+    @Mock
+    private ConfirmationTokenRepository confirmationTokenRepository;
+
     private UserService userService;
 
     private User testUser;
@@ -43,7 +51,7 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepository, roleRepository, passwordEncoder);
+        userService = new UserService(userRepository, roleRepository, passwordEncoder, emailService, confirmationTokenRepository);
 
         userRole = new Role(ERole.ROLE_USER);
 

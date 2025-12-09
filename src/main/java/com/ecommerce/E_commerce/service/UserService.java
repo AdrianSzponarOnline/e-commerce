@@ -6,11 +6,15 @@ import com.ecommerce.E_commerce.dto.auth.UserUpdateDTO;
 import com.ecommerce.E_commerce.exception.EmailAlreadyExistsException;
 import com.ecommerce.E_commerce.exception.ResourceNotFoundException;
 import com.ecommerce.E_commerce.exception.RoleNotFountException;
+import com.ecommerce.E_commerce.model.ConfirmationToken;
 import com.ecommerce.E_commerce.model.ERole;
 import com.ecommerce.E_commerce.model.Role;
 import com.ecommerce.E_commerce.model.User;
+import com.ecommerce.E_commerce.repository.ConfirmationTokenRepository;
 import com.ecommerce.E_commerce.repository.RoleRepository;
 import com.ecommerce.E_commerce.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.checkerframework.checker.units.qual.C;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -21,21 +25,20 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+    private final ConfirmationTokenRepository confirmationTokenRepository;
 
-    @Autowired
-    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
+
 
     @Override
     @Transactional(readOnly = true)
@@ -60,8 +63,21 @@ public class UserService implements UserDetailsService {
         user.setLastName(request.lastName());
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setRoles(Set.of(role));
-        user.setEnabled(true); // Explicitly set user as active
+
+        user.setEnabled(false);
+
         User savedUser = userRepository.save(user);
+
+        String token = generateAndSaveToken(savedUser, 15);
+        String link = "http://localhost:5173/activate?token=" + token;
+
+        emailService.sendSimpleMail(
+                request.email(),
+                "Potwierdź swoje konto",
+                "Witaj " + request.firstName() + ",\n\n" +
+                        "Kliknij w poniższy link, aby aktywować konto:\n" + link
+        );
+
         return mapToDto(savedUser);
     }
 
@@ -91,10 +107,7 @@ public class UserService implements UserDetailsService {
     public UserDto findUserById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
-        
-        // Security check: User can only access their own data (unless OWNER)
         checkUserAccess(user);
-        
         return mapToDto(user);
     }
 
@@ -102,8 +115,7 @@ public class UserService implements UserDetailsService {
     public UserDto findUserByEmail(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User with email " + email + " not found"));
-        
-        // Security check: User can only access their own data (unless OWNER)
+
         checkUserAccess(user);
         
         return mapToDto(user);
@@ -127,8 +139,7 @@ public class UserService implements UserDetailsService {
     public UserDto updateUser(Long id, UserUpdateDTO dto) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
-        
-        // Security check: User can only update their own profile (unless OWNER)
+
         checkUserAccess(user);
         
         if (dto.firstName() != null) {
@@ -147,18 +158,14 @@ public class UserService implements UserDetailsService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
         
-        // Security check: User can only delete their own account (unless OWNER)
         checkUserAccess(user);
         
-        // Force logout / invalidate session (business logic)
         user.setEnabled(false);
         
-        // Soft Delete through JPA (@SQLDelete in entity will set deleted_at and is_active = false)
         userRepository.delete(user);
     }
 
-    // --- SECURITY & HELPER METHODS ---
-    
+
     private void checkUserAccess(User user) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {
@@ -174,5 +181,69 @@ public class UserService implements UserDetailsService {
                 throw new AccessDeniedException("You can only access your own user data");
             }
         }
+    }
+    @Transactional
+    public void activateAccount(String token) {
+        ConfirmationToken confirmationToken = getAndValidateToken(token);
+
+        if (confirmationToken.getConfirmedAt() != null) {
+            throw new IllegalStateException("Email has already been activated");
+        }
+
+        confirmationToken.setConfirmedAt(LocalDateTime.now());
+
+        User user = confirmationToken.getUser();
+        user.setEnabled(true);
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void forgotPassword(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User with email not found."));
+
+        String token = generateAndSaveToken(user, 30);
+
+        String link = "http://localhost:5173/reset-password?token=" + token;
+
+        emailService.sendSimpleMail(
+                email,
+                "Resetowanie hasła",
+                "Cześć " + user.getFirstName() + ",\n\n" +
+                        "Otrzymaliśmy prośbę o zmianę hasła. Kliknij link poniżej:\n" + link + "\n\n" +
+                        "Jeśli to nie Ty, zignoruj tę wiadomość."
+        );
+    }
+
+    @Transactional
+    public void resetPassword(String token, String newPassword) {
+        ConfirmationToken confirmToken = getAndValidateToken(token);
+
+
+        if (confirmToken.getConfirmedAt() != null) {
+            throw new IllegalStateException("Ten link resetujący został już wykorzystany.");
+        }
+
+        User user = confirmToken.getUser();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setEnabled(true);
+
+        confirmToken.setConfirmedAt(LocalDateTime.now());
+    }
+
+    private String generateAndSaveToken(User user, int expiryMinutes) {
+       ConfirmationToken confirmationToken = new ConfirmationToken(user, expiryMinutes);
+       confirmationTokenRepository.save(confirmationToken);
+       return confirmationToken.getToken();
+    }
+
+    private ConfirmationToken getAndValidateToken(String token) {
+        ConfirmationToken confirmationToken = confirmationTokenRepository.findByToken(token)
+                .orElseThrow(() -> new ResourceNotFoundException("Invalid token"));
+
+        if (confirmationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalStateException("Token expired");
+        }
+        return confirmationToken;
     }
 }

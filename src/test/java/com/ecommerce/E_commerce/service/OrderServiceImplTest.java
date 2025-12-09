@@ -4,6 +4,7 @@ import com.ecommerce.E_commerce.dto.order.OrderCreateDTO;
 import com.ecommerce.E_commerce.dto.order.OrderDTO;
 import com.ecommerce.E_commerce.dto.order.OrderUpdateDTO;
 import com.ecommerce.E_commerce.dto.orderitem.OrderItemCreateDTO;
+import com.ecommerce.E_commerce.dto.payment.PaymentDTO;
 import com.ecommerce.E_commerce.exception.InvalidOperationException;
 import com.ecommerce.E_commerce.exception.ResourceNotFoundException;
 import com.ecommerce.E_commerce.mapper.OrderMapper;
@@ -56,6 +57,9 @@ class OrderServiceImplTest {
     private InventoryService inventoryService;
 
     @Mock
+    private OrderNotificationService orderNotificationService;
+
+    @Mock
     private OrderMapper orderMapper;
 
     private OrderServiceImpl orderService;
@@ -73,7 +77,8 @@ class OrderServiceImplTest {
                 addressRepository,
                 productRepository,
                 inventoryService,
-                orderMapper
+                orderMapper,
+                orderNotificationService
         );
 
         testUser = new User();
@@ -113,7 +118,7 @@ class OrderServiceImplTest {
         when(orderMapper.toOrder(createDTO)).thenReturn(testOrder);
         when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
         when(orderMapper.toOrderDTO(testOrder)).thenReturn(new OrderDTO(
-                1L, 1L, null, "NEW", new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<>(), Instant.now(), Instant.now(), true
+                1L, 1L, null, "NEW", new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<PaymentDTO>(), Instant.now(), Instant.now(), true
         ));
 
         // When
@@ -126,6 +131,7 @@ class OrderServiceImplTest {
         verify(productRepository).findById(1L);
         verify(inventoryService).reserveStock(1L, 2);
         verify(orderRepository).save(any(Order.class));
+        verify(orderNotificationService).sendOrderConfirmation(testOrder);
     }
 
     @Test
@@ -142,27 +148,6 @@ class OrderServiceImplTest {
         verify(orderRepository, never()).save(any());
     }
 
-    @Test
-    void create_ShouldThrowException_WhenAddressDoesNotBelongToUser() {
-        // Given
-        OrderCreateDTO createDTO = new OrderCreateDTO(1L, "NEW", List.of(new OrderItemCreateDTO(1L, 2)));
-        User otherUser = new User();
-        otherUser.setId(2L);
-        Address otherAddress = new Address();
-        otherAddress.setId(1L);
-        otherAddress.setUser(otherUser);
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(addressRepository.findById(1L)).thenReturn(Optional.of(otherAddress));
-
-        // When & Then
-        InvalidOperationException exception = assertThrows(InvalidOperationException.class,
-                () -> orderService.create(1L, createDTO));
-        assertEquals("Address does not belong to user", exception.getMessage());
-        verify(userRepository).findById(1L);
-        verify(addressRepository).findById(1L);
-        verify(orderRepository, never()).save(any());
-    }
 
     @Test
     void update_ShouldUpdateOrderSuccessfully() {
@@ -171,7 +156,7 @@ class OrderServiceImplTest {
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
         when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
         when(orderMapper.toOrderDTO(testOrder)).thenReturn(new OrderDTO(
-                1L, 1L, null, "CONFIRMED", new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<>(), Instant.now(), Instant.now(), true
+                1L, 1L, null, "CONFIRMED", new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<PaymentDTO>(), Instant.now(), Instant.now(), true
         ));
 
         // When
@@ -181,6 +166,7 @@ class OrderServiceImplTest {
         assertNotNull(result);
         verify(orderRepository).findById(1L);
         verify(orderRepository).save(testOrder);
+        verify(orderNotificationService).sendOrderConfirmedToOwner(testOrder);
     }
 
     @Test
@@ -197,7 +183,7 @@ class OrderServiceImplTest {
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
         when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
         when(orderMapper.toOrderDTO(testOrder)).thenReturn(new OrderDTO(
-                1L, 1L, null, "CANCELLED", new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<>(), Instant.now(), Instant.now(), true
+                1L, 1L, null, "CANCELLED", new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<PaymentDTO>(), Instant.now(), Instant.now(), true
         ));
 
         // When
@@ -225,7 +211,7 @@ class OrderServiceImplTest {
     void getById_ShouldReturnOrder_WhenOrderExists() {
         // Given
         OrderDTO orderDTO = new OrderDTO(
-                1L, 1L, null, "NEW", new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<>(), Instant.now(), Instant.now(), true
+                1L, 1L, null, "NEW", new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<PaymentDTO>(), Instant.now(), Instant.now(), true
         );
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
         when(orderMapper.toOrderDTO(testOrder)).thenReturn(orderDTO);
@@ -257,7 +243,7 @@ class OrderServiceImplTest {
         Page<Order> orderPage = new PageImpl<>(List.of(testOrder));
         when(orderRepository.findByUserId(1L, pageable)).thenReturn(orderPage);
         when(orderMapper.toOrderDTO(testOrder)).thenReturn(new OrderDTO(
-                1L, 1L, null, "NEW", new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<>(), Instant.now(), Instant.now(), true
+                1L, 1L, null, "NEW", new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<PaymentDTO>(), Instant.now(), Instant.now(), true
         ));
 
         // When

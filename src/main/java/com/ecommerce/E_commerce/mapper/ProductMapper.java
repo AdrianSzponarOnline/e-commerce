@@ -67,10 +67,10 @@ public abstract class ProductMapper {
         }
 
         return attributeValues.stream()
-                .filter(val -> val.getAttribute() != null && val.getAttribute().getName() != null && val.getValue() != null)
+                .filter(val -> val.getAttribute() != null && val.getAttribute().getName() != null && val.getAttributeValue() != null)
                 .collect(Collectors.toMap(
                         val -> val.getAttribute().getName(),
-                        ProductAttributeValue::getValue,
+                        ProductAttributeValue::getAttributeValue,
                         (existing, replacement) -> existing));
     }
 }

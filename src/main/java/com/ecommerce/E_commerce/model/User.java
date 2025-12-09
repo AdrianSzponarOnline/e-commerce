@@ -32,6 +32,12 @@ public class User implements UserDetails {
     @Column(name = "password", nullable = false)
     private String password;
 
+    @Column(name = "created_at")
+    private Instant createdAt;
+
+    @Column(name = "updated_at")
+    private Instant updatedAt;
+
     @Column(name = "is_active", nullable = false)
     private boolean enabled = true;
 
@@ -45,6 +51,17 @@ public class User implements UserDetails {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles;
+
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = Instant.now();
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -94,6 +111,22 @@ public class User implements UserDetails {
     }
 
     public User() {
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     public void setRoles(Set<Role> roles) {

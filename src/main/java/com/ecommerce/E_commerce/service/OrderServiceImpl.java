@@ -12,7 +12,7 @@ import com.ecommerce.E_commerce.repository.AddressRepository;
 import com.ecommerce.E_commerce.repository.OrderRepository;
 import com.ecommerce.E_commerce.repository.ProductRepository;
 import com.ecommerce.E_commerce.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,6 +22,7 @@ import java.time.Instant;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
@@ -30,21 +31,8 @@ public class OrderServiceImpl implements OrderService {
     private final ProductRepository productRepository;
     private final InventoryService inventoryService;
     private final OrderMapper orderMapper;
+    private final OrderNotificationService orderNotificationService;
 
-    @Autowired
-    public OrderServiceImpl(OrderRepository orderRepository,
-                            UserRepository userRepository,
-                            AddressRepository addressRepository,
-                            ProductRepository productRepository,
-                            InventoryService inventoryService,
-                            OrderMapper orderMapper) {
-        this.orderRepository = orderRepository;
-        this.userRepository = userRepository;
-        this.addressRepository = addressRepository;
-        this.productRepository = productRepository;
-        this.inventoryService = inventoryService;
-        this.orderMapper = orderMapper;
-    }
 
     @Override
     public OrderDTO create(Long userId, OrderCreateDTO dto) {
@@ -74,6 +62,9 @@ public class OrderServiceImpl implements OrderService {
         }
 
         Order savedOrder = orderRepository.save(order);
+
+        orderNotificationService.sendOrderConfirmation(order);
+
         return orderMapper.toOrderDTO(savedOrder);
     }
 
@@ -88,6 +79,7 @@ public class OrderServiceImpl implements OrderService {
 
             if (oldStatus != newStatus) {
                 handleInventoryStatusChange(order, oldStatus, newStatus);
+                handleNotificationTrigger(order, oldStatus, newStatus);
             }
         }
 
@@ -154,7 +146,6 @@ public class OrderServiceImpl implements OrderService {
     }
 
 
-
     private Order getOrderOrThrow(Long id) {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
@@ -209,8 +200,7 @@ public class OrderServiceImpl implements OrderService {
                                                  Boolean isActive,
                                                  Instant startDate,
                                                  Instant endDate,
-                                                 Pageable pageable)
-    {
+                                                 Pageable pageable) {
         return orderRepository.findByMultipleCriteria(
                 userId,
                 status,
@@ -245,4 +235,15 @@ public class OrderServiceImpl implements OrderService {
                 .map(order -> order.getUser().getEmail().equals(userEmail))
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
     }
+
+
+    private void handleNotificationTrigger(Order order, OrderStatus oldStatus, OrderStatus newStatus) {
+        if (newStatus == OrderStatus.CONFIRMED && oldStatus != OrderStatus.CONFIRMED) {
+            orderNotificationService.sendOrderConfirmedToOwner(order);
+        }
+        if (newStatus == OrderStatus.SHIPPED && oldStatus != OrderStatus.SHIPPED) {
+            orderNotificationService.sendOrderShipped(order);
+        }
+    }
+
 }

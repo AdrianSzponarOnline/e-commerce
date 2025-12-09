@@ -1,9 +1,15 @@
 package com.ecommerce.E_commerce.integration;
 
+import com.ecommerce.E_commerce.config.JwtAuthFilter;
 import com.ecommerce.E_commerce.model.Address;
 import com.ecommerce.E_commerce.model.User;
 import com.ecommerce.E_commerce.repository.AddressRepository;
 import com.ecommerce.E_commerce.repository.UserRepository;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.transaction.Transactional;
+import lombok.With;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,13 +17,21 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -30,6 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @org.springframework.test.context.TestPropertySource(properties = {
         "app.upload-dir=/tmp/uploads-test"
 })
+@Transactional
 class AddressIntegrationTest {
 
     @Autowired
@@ -38,16 +53,26 @@ class AddressIntegrationTest {
     @Autowired
     private AddressRepository addressRepository;
 
+    @MockBean
+    private JwtAuthFilter jwtAuthFilter;
+
     @Autowired
     private UserRepository userRepository;
 
-    @MockBean
-    private com.ecommerce.E_commerce.config.JwtAuthFilter jwtAuthFilter;
-
+    private Authentication auth;
     private User testUser;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception{
+        doAnswer(invocation -> {
+            ServletRequest request = invocation.getArgument(0);
+            ServletResponse response = invocation.getArgument(1);
+            FilterChain chain = invocation.getArgument(2);
+
+            chain.doFilter(request, response);
+            return null;
+        }).when(jwtAuthFilter).doFilter(any(), any(), any());
+
         addressRepository.deleteAll();
         userRepository.deleteAll();
 
@@ -56,6 +81,12 @@ class AddressIntegrationTest {
         testUser.setPassword("$2a$10$test");
         testUser.setEnabled(true);
         testUser = userRepository.save(testUser);
+
+        this.auth = new UsernamePasswordAuthenticationToken(
+                testUser,
+                null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER"))
+        );
     }
 
     @Test
@@ -75,6 +106,7 @@ class AddressIntegrationTest {
                 """.formatted(testUser.getId());
 
         String response = mockMvc.perform(post("/api/addresses")
+                        .with(authentication(auth))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createJson))
                 .andExpect(status().isCreated())
@@ -82,21 +114,19 @@ class AddressIntegrationTest {
                 .andExpect(jsonPath("$.city").value("Warsaw"))
                 .andReturn().getResponse().getContentAsString();
 
-        // Extract ID (simple parse for test)
         Long addressId = Long.parseLong(response.split("\"id\":")[1].split(",")[0].trim());
 
-        // Get by ID
-        mockMvc.perform(get("/api/addresses/" + addressId))
+        mockMvc.perform(get("/api/addresses/" + addressId)
+                        .with(authentication(auth)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.city").value("Warsaw"));
 
-        // Get by user ID
-        mockMvc.perform(get("/api/addresses/user/" + testUser.getId()))
+        mockMvc.perform(get("/api/addresses/user/" + testUser.getId())
+                        .with(authentication(auth)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].city").value("Warsaw"));
 
-        // Update
         String updateJson = """
                 {
                     "city": "Krakow",
@@ -106,16 +136,16 @@ class AddressIntegrationTest {
 
         mockMvc.perform(put("/api/addresses/" + addressId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(updateJson))
+                        .content(updateJson)
+                        .with(authentication(auth)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.city").value("Krakow"));
 
-        // Verify in DB
         Address updated = addressRepository.findById(addressId).orElseThrow();
         assertThat(updated.getCity()).isEqualTo("Krakow");
 
-        // Delete (soft delete)
-        mockMvc.perform(delete("/api/addresses/" + addressId))
+        mockMvc.perform(delete("/api/addresses/" + addressId)
+                        .with(authentication(auth)))
                 .andExpect(status().isNoContent());
 
         // Verify soft delete
@@ -151,7 +181,8 @@ class AddressIntegrationTest {
         addressRepository.save(inactive);
 
         // Get active addresses
-        mockMvc.perform(get("/api/addresses/user/" + testUser.getId() + "/active"))
+        mockMvc.perform(get("/api/addresses/user/" + testUser.getId() + "/active")
+                        .with(authentication(auth)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$.length()").value(1))

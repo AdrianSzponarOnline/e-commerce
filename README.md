@@ -7,6 +7,8 @@ Kompleksowy system e-commerce zbudowany w Spring Boot z obsługą produktów, ka
 
 ### Zaimplementowane
 - **Autoryzacja i uwierzytelnianie** - JWT tokeny, role użytkowników
+- **Aktywacja konta przez email** - Automatyczna wysyłka maila z linkiem aktywacyjnym przy rejestracji
+- **Reset hasła przez email** - Wysyłka maila z linkiem resetującym hasło
 - **Zarządzanie kategoriami** - Hierarchiczne kategorie z atrybutami
 - **Zarządzanie produktami** - Pełne CRUD z dynamicznymi atrybutami
 - **System atrybutów** - Dynamiczne atrybuty produktów (rozmiar, kolor, etc.)
@@ -108,6 +110,7 @@ com.ecommerce.E_commerce/
 1. Skopiuj `application-example.properties` do `application.properties`
 2. Skonfiguruj połączenie z bazą danych
 3. Ustaw klucz JWT
+4. Skonfiguruj serwer SMTP do wysyłki emaili (aktywacja konta, reset hasła)
 
 ```properties
 # Database
@@ -116,8 +119,17 @@ spring.datasource.username=your_username
 spring.datasource.password=your_password
 
 # JWT
-jwt.secret=your-secret-key
-jwt.expiration=86400000
+security.jwt.secret-key=your-secret-key
+security.jwt.expiration-time=3600000
+
+# Email (Mailtrap lub inny SMTP)
+spring.mail.host=sandbox.smtp.mailtrap.io
+spring.mail.port=587
+spring.mail.username=your_mailtrap_username
+spring.mail.password=your_mailtrap_password
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+app.mail.from=sklep@ecommerce.com
 ```
 
 ### Uruchamianie
@@ -135,7 +147,7 @@ mvn spring-boot:run -Dspring.profiles.active=test
 ##  API Documentation
 
 ### Główne API
-- **Auth API:** `/api/auth` - Logowanie, rejestracja
+- **Auth API:** `/api/auth` - Logowanie, rejestracja, aktywacja konta, reset hasła
 - **Categories API:** `/api/categories` - Zarządzanie kategoriami
 - **Category Attributes API:** `/api/categories/{categoryId}/attributes` - Atrybuty kategorii
 - **Products API:** `/api/products` - Zarządzanie produktami
@@ -163,9 +175,11 @@ mvn spring-boot:run -Dspring.profiles.active=test
 - **CategoryAttributeServiceImplTest:** 4 testy
 - **CategoryAttributeControllerTest:** 1 test
 - **CategoryDtoValidationTest:** 1 test
+- **AddressDtoValidationTest:** 10 testów
+- **UserServiceTest:** 6 testów
 - **ECommerceApplicationTests:** 1 test
 
-**Łącznie:** 130 testów
+**Łącznie:** 146 testów
 
 ### Uruchamianie testów
 ```bash
@@ -182,10 +196,18 @@ mvn test jacoco:report
 ## Baza danych
 
 ### Migracje
-- `V1__baseline.sql` - Podstawowa struktura bazy danych
+- `V1__init_schema.sql` - Podstawowa struktura bazy danych (tabele: users, roles, categories, products, addresses, orders, payments, itp.)
 - `V2__category_attribute_updates.sql` - Aktualizacje atrybutów kategorii
-- `V3__insert_craft_categories.sql` - Wstawienie kategorii rzemieślniczych
-- `V4__add_sku_unique_constraint.sql` - Unikalne ograniczenie dla SKU
+- `V3__insert_craft_categories.sql` - Wstawienie kategorii rzemieślniczych (rzeźby, ceramika, biżuteria, itp.)
+- `V4__add_sku_unique_constraint.sql` - Unikalne ograniczenie dla SKU w tabeli products
+- `V5__seed_data.sql` - Dane początkowe (użytkownicy, role, podstawowe dane)
+- `V6__add_mock_users.sql` - Dodanie użytkowników testowych (testuser@example.com, owner@example.com)
+- `V7__insert_sample_products.sql` - Wstawienie przykładowych produktów z atrybutami
+- `V8__add_key_attribute_to_category_attributes.sql` - Dodanie kolumny `key_attribute` do tabeli category_attributes
+- `V9__create_inventory.sql` - Utworzenie tabeli inventory do zarządzania stanem magazynowym
+- `V10__refactor_attributes_schema.sql` - Refaktoryzacja schematu atrybutów (utworzenie tabeli attributes, migracja danych)
+- `V11__add_payment_columns.sql` - Dodanie kolumn `transaction_id` i `notes` do tabeli payments
+- `V12__create_confirmation_tokens.sql` - Utworzenie tabeli confirmation_tokens do aktywacji kont użytkowników
 
 ##  Obrazy produktów
 
@@ -276,13 +298,27 @@ curl -X GET "http://localhost:8080/api/product-attribute-values/product/1"
 - `test` - Testy (H2 in-memory)
 - `example` - Przykładowa konfiguracja
 
+### Konfiguracja email
+System wymaga skonfigurowanego serwera SMTP do wysyłki emaili z aktywacją konta i resetowaniem hasła. W przykładzie użyto Mailtrap (sandbox do testów).
+
+**Wymagane właściwości:**
+- `spring.mail.host` - Host serwera SMTP
+- `spring.mail.port` - Port serwera SMTP (zwykle 587 dla TLS)
+- `spring.mail.username` - Nazwa użytkownika SMTP
+- `spring.mail.password` - Hasło SMTP
+- `app.mail.from` - Adres email nadawcy
+
 ### Zmienne środowiskowe
 ```bash
 export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/ecommerce
 export SPRING_DATASOURCE_USERNAME=your_username
 export SPRING_DATASOURCE_PASSWORD=your_password
-export JWT_SECRET=your-secret-key
-export JWT_EXPIRATION=86400000
+export JWT_SECRET_KEY=your-secret-key
+export MAIL_HOST=sandbox.smtp.mailtrap.io
+export MAIL_PORT=587
+export MAIL_USERNAME=your_mailtrap_username
+export MAIL_PASSWORD=your_mailtrap_password
+export MAIL_FROM=sklep@ecommerce.com
 ```
 
 ##  Changelog
@@ -304,6 +340,20 @@ export JWT_EXPIRATION=86400000
 - Endpoint `/api/search` z obsługą fuzzy matching i filtrowania
 - Automatyczne indeksowanie produktów przy starcie aplikacji
 - Walidacja XSS w DTOs
+
+### v1.2.1 (2024-12-05)
+- Dodano walidację `@NotNull` dla pola `userId` w `AddressCreateDTO`
+- Naprawiono testy jednostkowe - dodano brakujące zależności w `UserServiceTest`
+- Rozszerzono testy walidacji DTO - dodano `AddressDtoValidationTest` z 10 testami
+- Ujednolicono konfigurację properties
+
+### v1.3.0 (2024-12-05)
+- System aktywacji kont użytkowników przez email
+- System resetowania hasła przez email
+- Automatyczna wysyłka maili z linkami aktywacyjnymi i resetującymi
+- Tokeny aktywacyjne i resetujące z określonym czasem ważności (15 min aktywacja, 30 min reset)
+- Tabela `confirmation_tokens` do przechowywania tokenów
+- Integracja z serwerem SMTP (Mailtrap) do wysyłki emaili
 
 ### v1.0.0 (2024-01-01)
 -  Implementacja systemu autoryzacji JWT

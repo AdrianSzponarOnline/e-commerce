@@ -8,6 +8,7 @@ import com.ecommerce.E_commerce.dto.product.ProductUpdateDTO;
 import com.ecommerce.E_commerce.exception.ResourceNotFoundException;
 import com.ecommerce.E_commerce.mapper.ProductMapper;
 import com.ecommerce.E_commerce.model.Category;
+import com.ecommerce.E_commerce.model.Inventory;
 import com.ecommerce.E_commerce.model.Product;
 import com.ecommerce.E_commerce.repository.AttributeRepository;
 import com.ecommerce.E_commerce.repository.CategoryRepository;
@@ -54,6 +55,9 @@ class ProductServiceImplTest {
     @Mock
     private ImageUrlService imageUrlService;
 
+    @Mock
+    private InventoryService inventoryService;
+
     private ProductServiceImpl productService;
 
     private Product testProduct;
@@ -71,7 +75,8 @@ class ProductServiceImplTest {
                 attributeRepository,
                 productMapper,
                 productAttributeValueService,
-                imageUrlService
+                imageUrlService,
+                inventoryService
         );
 
         // Setup test data
@@ -182,6 +187,7 @@ class ProductServiceImplTest {
         when(productMapper.toProduct(testCreateDTO)).thenReturn(testProduct);
         when(productRepository.save(any(Product.class))).thenReturn(testProduct);
         when(productMapper.toProductDTO(testProduct)).thenReturn(testProductDTO);
+        when(inventoryService.create(any())).thenReturn(null);
 
         // When
         ProductDTO result = productService.create(testCreateDTO);
@@ -193,6 +199,7 @@ class ProductServiceImplTest {
         verify(productMapper).toProduct(testCreateDTO);
         verify(productRepository).save(any(Product.class));
         verify(productMapper).toProductDTO(testProduct);
+        verify(inventoryService).create(any());
     }
 
     @Test
@@ -555,6 +562,7 @@ class ProductServiceImplTest {
         when(productMapper.toProduct(dtoWithNulls)).thenReturn(productWithDefaults);
         when(productRepository.save(any(Product.class))).thenReturn(productWithDefaults);
         when(productMapper.toProductDTO(productWithDefaults)).thenReturn(testProductDTO);
+        when(inventoryService.create(any())).thenReturn(null);
 
         // When
         ProductDTO result = productService.create(dtoWithNulls);
@@ -562,6 +570,7 @@ class ProductServiceImplTest {
         // Then
         assertNotNull(result);
         verify(productRepository).save(any(Product.class));
+        verify(inventoryService).create(any());
     }
 
     @Test

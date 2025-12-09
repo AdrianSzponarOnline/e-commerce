@@ -73,7 +73,90 @@ Kompletna dokumentacja API dla systemu e-commerce z obsługą produktów, katego
 }
 ```
 
-### 1.3 Pobieranie aktualnego użytkownika
+**Uwagi:**
+- Konto jest tworzone z statusem `enabled: false` (nieaktywne)
+- Automatycznie wysyłany jest email z linkiem aktywacyjnym
+- Link aktywacyjny jest ważny przez 15 minut
+- Link ma format: `http://localhost:5173/activate?token={token}`
+- Użytkownik musi aktywować konto przed zalogowaniem
+
+### 1.3 Aktywacja konta
+**Endpoint:** `POST /api/auth/activate`  
+**Autoryzacja:** Public
+
+**Query Parameters:**
+- `token` (String, required) - Token aktywacyjny otrzymany w emailu
+
+**Response:**
+```
+Konto aktywowane pomyślnie
+```
+
+**Status codes:**
+- `200 OK` - Konto zostało aktywowane
+- `400 Bad Request` - Token już wykorzystany lub wygasł
+- `404 Not Found` - Nieprawidłowy token
+
+**Uwagi:**
+- Token może być użyty tylko raz
+- Po aktywacji konto jest automatycznie włączone (`enabled: true`)
+- Token wygasa po 15 minutach od utworzenia
+
+### 1.4 Zapomniane hasło
+**Endpoint:** `POST /api/auth/forgot-password`  
+**Autoryzacja:** Public
+
+**Request Body:**
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Response:**
+```
+Link resetujący wysłany (jeśli email istnieje)
+```
+
+**Status codes:**
+- `200 OK` - Zawsze zwracany (dla bezpieczeństwa, nawet jeśli email nie istnieje)
+- `400 Bad Request` - Błędne dane wejściowe
+
+**Uwagi:**
+- Jeśli email istnieje w systemie, wysyłany jest email z linkiem resetującym hasło
+- Link resetujący jest ważny przez 30 minut
+- Link ma format: `http://localhost:5173/reset-password?token={token}`
+- Dla bezpieczeństwa zawsze zwracany jest ten sam komunikat (nawet jeśli email nie istnieje)
+
+### 1.5 Reset hasła
+**Endpoint:** `POST /api/auth/reset-password`  
+**Autoryzacja:** Public
+
+**Request Body:**
+```json
+{
+  "token": "abc123...",
+  "newPassword": "newPassword123"
+}
+```
+
+**Response:**
+```
+Hasło zmienione pomyślnie
+```
+
+**Status codes:**
+- `200 OK` - Hasło zostało zmienione
+- `400 Bad Request` - Token już wykorzystany, wygasł lub hasło nie spełnia wymagań
+- `404 Not Found` - Nieprawidłowy token
+
+**Uwagi:**
+- Token może być użyty tylko raz
+- Po zmianie hasła konto jest automatycznie aktywowane (`enabled: true`)
+- Token wygasa po 30 minutach od utworzenia
+- Hasło jest automatycznie hashowane przed zapisem
+
+### 1.6 Pobieranie aktualnego użytkownika
 **Endpoint:** `GET /api/auth/me`  
 **Autoryzacja:** Authenticated
 
@@ -1057,13 +1140,21 @@ mvn test jacoco:report
 
 ## 12. Migracje bazy danych
 
-### 11.1 Dostępne migracje
-- `V1__baseline.sql` - Podstawowa struktura bazy danych
+### 12.1 Dostępne migracje
+- `V1__init_schema.sql` - Podstawowa struktura bazy danych (tabele: users, roles, categories, products, addresses, orders, payments, itp.)
 - `V2__category_attribute_updates.sql` - Aktualizacje atrybutów kategorii
-- `V3__insert_craft_categories.sql` - Wstawienie kategorii rzemieślniczych
-- `V4__add_sku_unique_constraint.sql` - Unikalne ograniczenie dla SKU
+- `V3__insert_craft_categories.sql` - Wstawienie kategorii rzemieślniczych (rzeźby, ceramika, biżuteria, itp.)
+- `V4__add_sku_unique_constraint.sql` - Unikalne ograniczenie dla SKU w tabeli products
+- `V5__seed_data.sql` - Dane początkowe (użytkownicy, role, podstawowe dane)
+- `V6__add_mock_users.sql` - Dodanie użytkowników testowych (testuser@example.com, owner@example.com)
+- `V7__insert_sample_products.sql` - Wstawienie przykładowych produktów z atrybutami
+- `V8__add_key_attribute_to_category_attributes.sql` - Dodanie kolumny `key_attribute` do tabeli category_attributes
+- `V9__create_inventory.sql` - Utworzenie tabeli inventory do zarządzania stanem magazynowym
+- `V10__refactor_attributes_schema.sql` - Refaktoryzacja schematu atrybutów (utworzenie tabeli attributes, migracja danych)
+- `V11__add_payment_columns.sql` - Dodanie kolumn `transaction_id` i `notes` do tabeli payments
+- `V12__create_confirmation_tokens.sql` - Utworzenie tabeli confirmation_tokens do aktywacji kont użytkowników
 
-### 11.2 Uruchamianie migracji
+### 12.2 Uruchamianie migracji
 ```bash
 # Automatycznie przy starcie aplikacji
 mvn spring-boot:run

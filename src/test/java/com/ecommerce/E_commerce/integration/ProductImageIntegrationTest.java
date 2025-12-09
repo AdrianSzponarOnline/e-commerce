@@ -33,7 +33,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 @AutoConfigureMockMvc
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@org.springframework.test.context.ActiveProfiles("test")
 class ProductImageIntegrationTest {
 
     @Autowired
@@ -46,7 +45,7 @@ class ProductImageIntegrationTest {
     private ProductRepository productRepository;
 
     @MockBean
-    private JwtAuthFilter jwtAuthFilter; // bypass JWT during tests
+    private JwtAuthFilter jwtAuthFilter;
 
     private static Path uploadDir;
 

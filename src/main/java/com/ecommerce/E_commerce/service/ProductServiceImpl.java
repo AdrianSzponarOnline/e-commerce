@@ -1,5 +1,6 @@
 package com.ecommerce.E_commerce.service;
 
+import com.ecommerce.E_commerce.dto.inventory.InventoryCreateDTO;
 import com.ecommerce.E_commerce.dto.product.ProductCreateDTO;
 import com.ecommerce.E_commerce.dto.product.ProductDTO;
 import com.ecommerce.E_commerce.dto.product.ProductSummaryDTO;
@@ -37,6 +38,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMapper productMapper;
     private final ProductAttributeValueService productAttributeValueService;
     private final ImageUrlService imageUrlService;
+    private final InventoryService inventoryService;
 
     @Autowired
     public ProductServiceImpl(ProductRepository productRepository,
@@ -44,13 +46,15 @@ public class ProductServiceImpl implements ProductService {
                               AttributeRepository attributeRepository,
                               ProductMapper productMapper,
                               ProductAttributeValueService productAttributeValueService,
-                              ImageUrlService imageUrlService) {
+                              ImageUrlService imageUrlService,
+                              InventoryService inventoryService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.attributeRepository = attributeRepository;
         this.productMapper = productMapper;
         this.productAttributeValueService = productAttributeValueService;
         this.imageUrlService = imageUrlService;
+        this.inventoryService = inventoryService;
     }
 
     @Override
@@ -79,6 +83,17 @@ public class ProductServiceImpl implements ProductService {
                     .collect(Collectors.toList());
             
             productAttributeValueService.createBulk(attributeValueDTOs);
+        }
+        
+
+        try {
+            inventoryService.create(new InventoryCreateDTO(
+                    savedProduct.getId(),
+                    0,  // availableQuantity
+                    0,  // reservedQuantity
+                    0   // minimumStockLevel
+            ));
+        } catch (com.ecommerce.E_commerce.exception.DuplicateResourceException e) {
         }
         
         return productMapper.toProductDTO(savedProduct);

@@ -38,7 +38,7 @@ public class SkuGenerator {
         String keyAttributes = product.getAttributeValues().stream()
                 .filter(value -> keyAttributeDefinitions.contains(value.getAttribute()))
                 .sorted(Comparator.comparing(value -> value.getAttribute().getName()))
-                .map(ProductAttributeValue::getValue)
+                .map(ProductAttributeValue::getAttributeValue)
                 .map(value -> abbreviate(value, 2))
                 .collect(Collectors.joining());
 

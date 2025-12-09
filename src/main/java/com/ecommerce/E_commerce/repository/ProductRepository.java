@@ -103,7 +103,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
            "  SELECT 1 FROM ProductAttributeValue pav2 " +
            "  WHERE pav2.product.id = p.id " +
            "  AND pav2.attribute.name = :attributeName " +
-           "  AND LOWER(pav2.value) = LOWER(:attributeValue) " +
+           "  AND LOWER(pav2.attributeValue) = LOWER(:attributeValue) " +
            "  AND pav2.isActive = true" +
            ")")
     @EntityGraph(value = "Product.withDetails")
@@ -120,7 +120,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
            "AND pav.isActive = true " +
            "AND (:categoryId IS NULL OR p.category.id = :categoryId) " +
            "AND pav.attribute.id = :attributeId " +
-           "AND LOWER(pav.value) = LOWER(:attributeValue)")
+           "AND LOWER(pav.attributeValue) = LOWER(:attributeValue)")
     @EntityGraph(value = "Product.withDetails")
     Page<Product> findByAttributeIdAndValue(
             @Param("categoryId") Long categoryId,

@@ -86,7 +86,7 @@ class ProductAttributeValueServiceImplTest {
         testProductAttributeValue.setId(1L);
         testProductAttributeValue.setProduct(testProduct);
         testProductAttributeValue.setAttribute(testAttribute);
-        testProductAttributeValue.setValue("15.6 inches");
+        testProductAttributeValue.setAttributeValue("15.6 inches");
         testProductAttributeValue.setCreatedAt(Instant.now());
         testProductAttributeValue.setUpdatedAt(Instant.now());
         testProductAttributeValue.setDeletedAt(null);
@@ -420,7 +420,7 @@ class ProductAttributeValueServiceImplTest {
         // Given
         Pageable pageable = PageRequest.of(0, 10);
         Page<ProductAttributeValue> productAttributeValuePage = new PageImpl<>(Arrays.asList(testProductAttributeValue));
-        when(productAttributeValueRepository.findByValueContainingIgnoreCase("15.6", pageable)).thenReturn(productAttributeValuePage);
+        when(productAttributeValueRepository.findByAttributeValueContainingIgnoreCase("15.6", pageable)).thenReturn(productAttributeValuePage);
         when(productAttributeValueMapper.toProductAttributeValueDTO(testProductAttributeValue)).thenReturn(testProductAttributeValueDTO);
 
         // When
@@ -430,7 +430,7 @@ class ProductAttributeValueServiceImplTest {
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
         assertEquals(testProductAttributeValueDTO, result.getContent().get(0));
-        verify(productAttributeValueRepository).findByValueContainingIgnoreCase("15.6", pageable);
+        verify(productAttributeValueRepository).findByAttributeValueContainingIgnoreCase("15.6", pageable);
         verify(productAttributeValueMapper).toProductAttributeValueDTO(testProductAttributeValue);
     }
 
@@ -441,7 +441,7 @@ class ProductAttributeValueServiceImplTest {
         // Given
         Pageable pageable = PageRequest.of(0, 10);
         Page<ProductAttributeValue> productAttributeValuePage = new PageImpl<>(Arrays.asList(testProductAttributeValue));
-        when(productAttributeValueRepository.findByValueContainingIgnoreCase("15.6", pageable)).thenReturn(productAttributeValuePage);
+        when(productAttributeValueRepository.findByAttributeValueContainingIgnoreCase("15.6", pageable)).thenReturn(productAttributeValuePage);
         when(productAttributeValueMapper.toProductAttributeValueDTO(testProductAttributeValue)).thenReturn(testProductAttributeValueDTO);
 
         // When
@@ -451,7 +451,7 @@ class ProductAttributeValueServiceImplTest {
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
         assertEquals(testProductAttributeValueDTO, result.getContent().get(0));
-        verify(productAttributeValueRepository).findByValueContainingIgnoreCase("15.6", pageable);
+        verify(productAttributeValueRepository).findByAttributeValueContainingIgnoreCase("15.6", pageable);
         verify(productAttributeValueMapper).toProductAttributeValueDTO(testProductAttributeValue);
     }
 

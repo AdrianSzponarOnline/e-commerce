@@ -149,7 +149,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
     @Override
     @Transactional(readOnly = true)
     public Page<ProductAttributeValueDTO> findByValue(String value, Pageable pageable) {
-        Page<ProductAttributeValue> productAttributeValues = productAttributeValueRepository.findByValueContainingIgnoreCase(value, pageable);
+        Page<ProductAttributeValue> productAttributeValues = productAttributeValueRepository.findByAttributeValueContainingIgnoreCase(value, pageable);
         return productAttributeValues.map(productAttributeValueMapper::toProductAttributeValueDTO);
     }
 
@@ -290,7 +290,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
                 ProductAttributeValue newValue = new ProductAttributeValue();
                 newValue.setProduct(product);
                 newValue.setAttribute(attribute);
-                newValue.setValue(dto.value());
+                newValue.setAttributeValue(dto.value());
                 newValue.setActive(dto.isActive() != null ? dto.isActive() : true);
                 
                 toCreate.add(newValue);

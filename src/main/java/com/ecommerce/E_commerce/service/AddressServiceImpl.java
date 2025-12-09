@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @Transactional
@@ -70,11 +69,7 @@ public class AddressServiceImpl implements AddressService {
                 .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + id));
 
         addressMapper.updateAddressFromDTO(dto, address);
-
-        if (dto.isActive() != null) {
-            address.setUpdatedAt(Instant.now());
-            address.setIsActive(dto.isActive());
-        }
+        address.setUpdatedAt(Instant.now());
 
         Address savedAddress = addressRepository.save(address);
         return addressMapper.toAddressDTO(savedAddress);

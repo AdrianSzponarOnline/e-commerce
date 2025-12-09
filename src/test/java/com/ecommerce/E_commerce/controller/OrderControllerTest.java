@@ -2,8 +2,8 @@ package com.ecommerce.E_commerce.controller;
 
 import com.ecommerce.E_commerce.dto.order.OrderCreateDTO;
 import com.ecommerce.E_commerce.dto.order.OrderDTO;
-import com.ecommerce.E_commerce.dto.order.OrderUpdateDTO;
 import com.ecommerce.E_commerce.dto.orderitem.OrderItemCreateDTO;
+import com.ecommerce.E_commerce.dto.payment.PaymentDTO;
 import com.ecommerce.E_commerce.model.ERole;
 import com.ecommerce.E_commerce.model.Role;
 import com.ecommerce.E_commerce.model.User;
@@ -12,11 +12,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest; // Usunięto excludeAutoConfiguration
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest; 
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import; // Opcjonalnie, jeśli masz własny SecurityConfig
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -58,7 +55,7 @@ class OrderControllerTest {
 
         OrderDTO orderDTO = new OrderDTO(
                 1L, 1L, null, "NEW", new BigDecimal("199.98"),
-                List.of(), List.of(), Instant.now(), Instant.now(), true
+                List.of(), List.<PaymentDTO>of(), Instant.now(), Instant.now(), true
         );
 
 

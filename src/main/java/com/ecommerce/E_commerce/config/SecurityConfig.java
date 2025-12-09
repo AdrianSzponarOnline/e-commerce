@@ -23,7 +23,6 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@org.springframework.context.annotation.Profile("!test")
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
@@ -48,8 +47,8 @@ public class SecurityConfig {
                 .anyMatch(p -> p.equalsIgnoreCase("dev") || p.equalsIgnoreCase("test"));
 
         http
-                .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
+                .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
@@ -59,7 +58,13 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(authorize -> {
                     authorize
-                            .requestMatchers(HttpMethod.POST, "/api/search", "/api/ai/chat").permitAll()
+                            .requestMatchers(
+                                    HttpMethod.POST,
+                                    "/api/search",
+                                    "/api/ai/chat",
+                                    "/api/auth/activate",
+                                    "/api/auth/forgot-password",
+                                    "/api/auth/reset-password").permitAll()
                             .requestMatchers(
                                     HttpMethod.GET,
                                     "/api/categories",

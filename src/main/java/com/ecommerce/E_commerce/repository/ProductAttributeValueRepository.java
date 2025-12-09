@@ -25,8 +25,8 @@ public interface ProductAttributeValueRepository extends JpaRepository<ProductAt
     List<ProductAttributeValue> findByAttributeIdAndIsActive(Long attributeId, Boolean isActive);
     
     // Find by value
-    List<ProductAttributeValue> findByValueContainingIgnoreCase(String value);
-    Page<ProductAttributeValue> findByValueContainingIgnoreCase(String value, Pageable pageable);
+    List<ProductAttributeValue> findByAttributeValueContainingIgnoreCase(String value);
+    Page<ProductAttributeValue> findByAttributeValueContainingIgnoreCase(String value, Pageable pageable);
     
     // Find by product and attribute
     Optional<ProductAttributeValue> findByProductIdAndAttributeId(Long productId, Long attributeId);
@@ -63,7 +63,7 @@ public interface ProductAttributeValueRepository extends JpaRepository<ProductAt
     @Query("SELECT pav FROM ProductAttributeValue pav WHERE " +
            "(:productId IS NULL OR pav.product.id = :productId) AND " +
            "(:attributeId IS NULL OR pav.attribute.id = :attributeId) AND " +
-           "(:value IS NULL OR LOWER(pav.value) LIKE LOWER(CONCAT('%', :value, '%'))) AND " +
+           "(:value IS NULL OR LOWER(pav.attributeValue) LIKE LOWER(CONCAT('%', :value, '%'))) AND " +
            "(:isActive IS NULL OR pav.isActive = :isActive)")
     Page<ProductAttributeValue> findByMultipleCriteria(
             @Param("productId") Long productId,
@@ -88,7 +88,7 @@ public interface ProductAttributeValueRepository extends JpaRepository<ProductAt
             @Param("attributeName") String attributeName
     );
     
-    @Query("SELECT DISTINCT pav.value FROM ProductAttributeValue pav WHERE " +
+    @Query("SELECT DISTINCT pav.attributeValue FROM ProductAttributeValue pav WHERE " +
            "pav.attribute.id = :attributeId AND " +
            "pav.isActive = true")
     List<String> findDistinctValuesByAttribute(@Param("attributeId") Long attributeId);
