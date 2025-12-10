@@ -5,6 +5,8 @@ import com.ecommerce.E_commerce.dto.productattributevalue.ProductAttributeValueD
 import com.ecommerce.E_commerce.dto.productattributevalue.ProductAttributeValueUpdateDTO;
 import com.ecommerce.E_commerce.service.ProductAttributeValueService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,6 +24,7 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class ProductAttributeValueController {
 
+    private static final Logger logger = LoggerFactory.getLogger(ProductAttributeValueController.class);
     private final ProductAttributeValueService productAttributeValueService;
 
     @Autowired
@@ -33,21 +36,27 @@ public class ProductAttributeValueController {
     @PostMapping
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<ProductAttributeValueDTO> createProductAttributeValue(@Valid @RequestBody ProductAttributeValueCreateDTO dto) {
+        logger.info("POST /api/product-attribute-values - Creating product attribute value: productId={}, attributeId={}", dto.productId(), dto.attributeId());
         ProductAttributeValueDTO productAttributeValue = productAttributeValueService.create(dto);
+        logger.info("POST /api/product-attribute-values - Product attribute value created successfully: id={}", productAttributeValue.id());
         return ResponseEntity.status(HttpStatus.CREATED).body(productAttributeValue);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<ProductAttributeValueDTO> updateProductAttributeValue(@PathVariable Long id, @Valid @RequestBody ProductAttributeValueUpdateDTO dto) {
+        logger.info("PUT /api/product-attribute-values/{} - Updating product attribute value", id);
         ProductAttributeValueDTO productAttributeValue = productAttributeValueService.update(id, dto);
+        logger.info("PUT /api/product-attribute-values/{} - Product attribute value updated successfully", id);
         return ResponseEntity.ok(productAttributeValue);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<Void> deleteProductAttributeValue(@PathVariable Long id) {
+        logger.info("DELETE /api/product-attribute-values/{} - Deleting product attribute value", id);
         productAttributeValueService.delete(id);
+        logger.info("DELETE /api/product-attribute-values/{} - Product attribute value deleted successfully", id);
         return ResponseEntity.noContent().build();
     }
 
@@ -216,7 +225,9 @@ public class ProductAttributeValueController {
     @PostMapping("/bulk")
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<List<ProductAttributeValueDTO>> createBulkProductAttributeValues(@Valid @RequestBody List<ProductAttributeValueCreateDTO> dtos) {
+        logger.info("POST /api/product-attribute-values/bulk - Creating bulk product attribute values: count={}", dtos.size());
         List<ProductAttributeValueDTO> productAttributeValues = productAttributeValueService.createBulk(dtos);
+        logger.info("POST /api/product-attribute-values/bulk - Bulk product attribute values created successfully: count={}", productAttributeValues.size());
         return ResponseEntity.status(HttpStatus.CREATED).body(productAttributeValues);
     }
 
@@ -225,14 +236,18 @@ public class ProductAttributeValueController {
     public ResponseEntity<List<ProductAttributeValueDTO>> updateProductAttributeValuesByProduct(
             @PathVariable Long productId, 
             @Valid @RequestBody List<ProductAttributeValueUpdateDTO> dtos) {
+        logger.info("PUT /api/product-attribute-values/product/{}/bulk - Updating bulk product attribute values: count={}", productId, dtos.size());
         List<ProductAttributeValueDTO> productAttributeValues = productAttributeValueService.updateByProduct(productId, dtos);
+        logger.info("PUT /api/product-attribute-values/product/{}/bulk - Bulk product attribute values updated successfully: count={}", productId, productAttributeValues.size());
         return ResponseEntity.ok(productAttributeValues);
     }
 
     @DeleteMapping("/product/{productId}")
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<Void> deleteProductAttributeValuesByProduct(@PathVariable Long productId) {
+        logger.info("DELETE /api/product-attribute-values/product/{} - Deleting all product attribute values for product", productId);
         productAttributeValueService.deleteByProduct(productId);
+        logger.info("DELETE /api/product-attribute-values/product/{} - All product attribute values deleted successfully", productId);
         return ResponseEntity.noContent().build();
     }
 

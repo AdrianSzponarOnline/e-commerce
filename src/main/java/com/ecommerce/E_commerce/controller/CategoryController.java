@@ -5,6 +5,8 @@ import com.ecommerce.E_commerce.dto.category.CategoryDTO;
 import com.ecommerce.E_commerce.dto.category.CategoryUpdateDTO;
 import com.ecommerce.E_commerce.service.CategoryService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/categories")
 public class CategoryController {
+    
+    private static final Logger logger = LoggerFactory.getLogger(CategoryController.class);
     private final CategoryService categoryService;
 
     @Autowired
@@ -26,14 +30,19 @@ public class CategoryController {
     @PostMapping
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<CategoryDTO> create(@Valid @RequestBody CategoryCreateDTO body) {
+        logger.info("POST /api/categories - Creating category: name={}, parentId={}", body.name(), body.parentId());
         CategoryDTO created = categoryService.create(body);
+        logger.info("POST /api/categories - Category created successfully: categoryId={}, name={}", created.id(), created.name());
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<CategoryDTO> update(@PathVariable("id") Long id, @Valid @RequestBody CategoryUpdateDTO body) {
-        return ResponseEntity.ok(categoryService.update(id, body));
+        logger.info("PUT /api/categories/{} - Updating category", id);
+        CategoryDTO updated = categoryService.update(id, body);
+        logger.info("PUT /api/categories/{} - Category updated successfully: name={}", id, updated.name());
+        return ResponseEntity.ok(updated);
     }
 
     @GetMapping("/{id}")
@@ -66,7 +75,9 @@ public class CategoryController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
+        logger.info("DELETE /api/categories/{} - Deleting category", id);
         categoryService.delete(id);
+        logger.info("DELETE /api/categories/{} - Category deleted successfully", id);
         return ResponseEntity.noContent().build();
     }
 }

@@ -14,6 +14,8 @@ import com.ecommerce.E_commerce.model.SkuGenerator;
 import com.ecommerce.E_commerce.repository.AttributeRepository;
 import com.ecommerce.E_commerce.repository.CategoryRepository;
 import com.ecommerce.E_commerce.repository.ProductRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -31,7 +33,7 @@ import java.util.stream.Collectors;
 @Transactional
 public class ProductServiceImpl implements ProductService {
 
-
+    private static final Logger logger = LoggerFactory.getLogger(ProductServiceImpl.class);
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final AttributeRepository attributeRepository;
@@ -59,6 +61,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDTO create(ProductCreateDTO dto) {
+        logger.info("Creating product: name={}, categoryId={}", dto.name(), dto.categoryId());
         Category category = categoryRepository.findById(dto.categoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + dto.categoryId()));
         
@@ -72,8 +75,10 @@ public class ProductServiceImpl implements ProductService {
         product.setSku(SkuGenerator.generate(product));
         
         Product savedProduct = productRepository.save(product);
+        logger.info("Product created successfully: productId={}, name={}, sku={}", savedProduct.getId(), savedProduct.getName(), savedProduct.getSku());
         
         if (dto.attributeValues() != null && !dto.attributeValues().isEmpty()) {
+            logger.debug("Creating attribute values for product: productId={}, attributesCount={}", savedProduct.getId(), dto.attributeValues().size());
             List<ProductAttributeValueCreateDTO> attributeValueDTOs = dto.attributeValues().stream()
                     .map(attr -> new ProductAttributeValueCreateDTO(
                             savedProduct.getId(),
@@ -87,13 +92,16 @@ public class ProductServiceImpl implements ProductService {
         
 
         try {
+            logger.debug("Creating inventory for new product: productId={}", savedProduct.getId());
             inventoryService.create(new InventoryCreateDTO(
                     savedProduct.getId(),
                     0,  // availableQuantity
                     0,  // reservedQuantity
                     0   // minimumStockLevel
             ));
+            logger.debug("Inventory created successfully for product: productId={}", savedProduct.getId());
         } catch (com.ecommerce.E_commerce.exception.DuplicateResourceException e) {
+            logger.debug("Inventory already exists for product: productId={}", savedProduct.getId());
         }
         
         return productMapper.toProductDTO(savedProduct);

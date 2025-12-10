@@ -15,6 +15,8 @@ import com.ecommerce.E_commerce.repository.RoleRepository;
 import com.ecommerce.E_commerce.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.checkerframework.checker.units.qual.C;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -32,6 +34,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class UserService implements UserDetailsService {
+    
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
@@ -55,6 +59,7 @@ public class UserService implements UserDetailsService {
 
     @Transactional
     public UserDto createUser(RegisterRequestDTO request) {
+        logger.info("Creating new user: email={}", request.email());
         checkEmail(request.email());
         Role role = roleRepository.findByRole(ERole.ROLE_USER).orElseThrow(() -> new RoleNotFountException("ROLE_USER not found"));
         User user = new User();
@@ -67,10 +72,12 @@ public class UserService implements UserDetailsService {
         user.setEnabled(false);
 
         User savedUser = userRepository.save(user);
+        logger.info("User created successfully: userId={}, email={}", savedUser.getId(), savedUser.getEmail());
 
         String token = generateAndSaveToken(savedUser, 15);
         String link = "http://localhost:5173/activate?token=" + token;
 
+        logger.debug("Sending activation email: userId={}, email={}", savedUser.getId(), request.email());
         emailService.sendSimpleMail(
                 request.email(),
                 "Potwierdź swoje konto",
@@ -184,9 +191,11 @@ public class UserService implements UserDetailsService {
     }
     @Transactional
     public void activateAccount(String token) {
+        logger.info("Activating account with token");
         ConfirmationToken confirmationToken = getAndValidateToken(token);
 
         if (confirmationToken.getConfirmedAt() != null) {
+            logger.warn("Attempted to activate already activated account");
             throw new IllegalStateException("Email has already been activated");
         }
 
@@ -195,10 +204,12 @@ public class UserService implements UserDetailsService {
         User user = confirmationToken.getUser();
         user.setEnabled(true);
         userRepository.save(user);
+        logger.info("Account activated successfully: userId={}, email={}", user.getId(), user.getEmail());
     }
 
     @Transactional
     public void forgotPassword(String email) {
+        logger.info("Processing forgot password request: email={}", email);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User with email not found."));
 
@@ -206,6 +217,7 @@ public class UserService implements UserDetailsService {
 
         String link = "http://localhost:5173/reset-password?token=" + token;
 
+        logger.debug("Sending password reset email: userId={}, email={}", user.getId(), email);
         emailService.sendSimpleMail(
                 email,
                 "Resetowanie hasła",
@@ -213,14 +225,17 @@ public class UserService implements UserDetailsService {
                         "Otrzymaliśmy prośbę o zmianę hasła. Kliknij link poniżej:\n" + link + "\n\n" +
                         "Jeśli to nie Ty, zignoruj tę wiadomość."
         );
+        logger.info("Password reset email sent: email={}", email);
     }
 
     @Transactional
     public void resetPassword(String token, String newPassword) {
+        logger.info("Processing password reset with token");
         ConfirmationToken confirmToken = getAndValidateToken(token);
 
 
         if (confirmToken.getConfirmedAt() != null) {
+            logger.warn("Attempted to use already used reset token");
             throw new IllegalStateException("Ten link resetujący został już wykorzystany.");
         }
 
@@ -229,6 +244,7 @@ public class UserService implements UserDetailsService {
         user.setEnabled(true);
 
         confirmToken.setConfirmedAt(LocalDateTime.now());
+        logger.info("Password reset successfully: userId={}, email={}", user.getId(), user.getEmail());
     }
 
     private String generateAndSaveToken(User user, int expiryMinutes) {

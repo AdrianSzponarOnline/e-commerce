@@ -6,6 +6,8 @@ import com.ecommerce.E_commerce.dto.product.ProductSummaryDTO;
 import com.ecommerce.E_commerce.dto.product.ProductUpdateDTO;
 import com.ecommerce.E_commerce.service.ProductService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "*")
 public class ProductController {
 
+    private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
     private final ProductService productService;
 
     @Autowired
@@ -28,21 +31,27 @@ public class ProductController {
     @PostMapping
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<ProductDTO> createProduct(@Valid @RequestBody ProductCreateDTO dto) {
+        logger.info("POST /api/products - Creating product: name={}, categoryId={}", dto.name(), dto.categoryId());
         ProductDTO product = productService.create(dto);
+        logger.info("POST /api/products - Product created successfully: productId={}, name={}, sku={}", product.id(), product.name(), product.sku());
         return ResponseEntity.status(HttpStatus.CREATED).body(product);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<ProductDTO> updateProduct(@PathVariable Long id, @Valid @RequestBody ProductUpdateDTO dto) {
+        logger.info("PUT /api/products/{} - Updating product", id);
         ProductDTO product = productService.update(id, dto);
+        logger.info("PUT /api/products/{} - Product updated successfully: name={}", id, product.name());
         return ResponseEntity.ok(product);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        logger.info("DELETE /api/products/{} - Deleting product", id);
         productService.delete(id);
+        logger.info("DELETE /api/products/{} - Product deleted successfully", id);
         return ResponseEntity.noContent().build();
     }
 

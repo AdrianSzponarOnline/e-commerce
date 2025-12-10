@@ -9,6 +9,8 @@ import com.ecommerce.E_commerce.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +30,7 @@ import java.time.Instant;
 @CrossOrigin(origins = "*")
 public class PaymentController {
     
+    private static final Logger logger = LoggerFactory.getLogger(PaymentController.class);
     private final PaymentService paymentService;
     private final OrderService orderService;
 
@@ -35,7 +38,9 @@ public class PaymentController {
     @PostMapping
     @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and @orderServiceImpl.isOrderOwner(#dto.orderId(), authentication.name))")
     public ResponseEntity<PaymentDTO> createPayment(@Valid @RequestBody PaymentCreateDTO dto) {
+        logger.info("POST /api/payments - Creating payment: orderId={}, amount={}, method={}", dto.orderId(), dto.amount(), dto.method());
         PaymentDTO payment = paymentService.create(dto);
+        logger.info("POST /api/payments - Payment created successfully: paymentId={}, orderId={}, status={}", payment.id(), dto.orderId(), payment.status());
         return ResponseEntity.status(HttpStatus.CREATED).body(payment);
     }
     
@@ -44,14 +49,18 @@ public class PaymentController {
     public ResponseEntity<PaymentDTO> updatePayment(
             @PathVariable Long id,
             @Valid @RequestBody PaymentUpdateDTO dto) {
+        logger.info("PUT /api/payments/{} - Updating payment, newStatus={}", id, dto.status());
         PaymentDTO payment = paymentService.update(id, dto);
+        logger.info("PUT /api/payments/{} - Payment updated successfully, status={}", id, payment.status());
         return ResponseEntity.ok(payment);
     }
     
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<Void> deletePayment(@PathVariable Long id) {
+        logger.info("DELETE /api/payments/{} - Deleting payment", id);
         paymentService.delete(id);
+        logger.info("DELETE /api/payments/{} - Payment deleted successfully", id);
         return ResponseEntity.noContent().build();
     }
     
@@ -193,13 +202,16 @@ public class PaymentController {
 
             @RequestParam(defaultValue = "SUCCESS") String scenario
     ) {
+        logger.info("POST /api/payments/{}/simulate - Simulating payment with scenario: {}", paymentId, scenario);
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            logger.warn("POST /api/payments/{}/simulate - Thread interrupted", paymentId);
         }
 
         PaymentDTO result = paymentService.simulatePayment(paymentId, scenario);
+        logger.info("POST /api/payments/{}/simulate - Payment simulation completed: status={}", paymentId, result.status());
         return ResponseEntity.ok(result);
     }
 }

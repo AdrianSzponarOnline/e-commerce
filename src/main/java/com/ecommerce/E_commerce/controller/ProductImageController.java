@@ -2,6 +2,8 @@ package com.ecommerce.E_commerce.controller;
 
 import com.ecommerce.E_commerce.dto.productimage.ProductImageDTO;
 import com.ecommerce.E_commerce.service.ProductImageService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +17,7 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class ProductImageController {
 
+    private static final Logger logger = LoggerFactory.getLogger(ProductImageController.class);
     private final ProductImageService productImageService;
 
     public ProductImageController(ProductImageService productImageService) {
@@ -34,7 +37,9 @@ public class ProductImageController {
             @RequestParam(value = "altText", required = false) String altText,
             @RequestParam(value = "isThumbnail", required = false) Boolean isThumbnail) {
 
+        logger.info("POST /api/products/{}/images - Uploading image: fileName={}, isThumbnail={}", productId, file.getOriginalFilename(), isThumbnail);
         ProductImageDTO dto = productImageService.upload(productId, file, altText, Boolean.TRUE.equals(isThumbnail));
+        logger.info("POST /api/products/{}/images - Image uploaded successfully: imageId={}", productId, dto.id());
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
@@ -44,7 +49,9 @@ public class ProductImageController {
             @PathVariable("productId") Long productId,
             @PathVariable("imageId") Long imageId) {
 
+        logger.info("DELETE /api/products/{}/images/{} - Deleting image", productId, imageId);
         productImageService.delete(productId, imageId);
+        logger.info("DELETE /api/products/{}/images/{} - Image deleted successfully", productId, imageId);
         return ResponseEntity.noContent().build();
     }
 
@@ -54,6 +61,9 @@ public class ProductImageController {
             @PathVariable("productId") Long productId,
             @PathVariable("imageId") Long imageId) {
 
-        return ResponseEntity.ok(productImageService.setThumbnail(productId, imageId));
+        logger.info("POST /api/products/{}/images/{}/thumbnail - Setting thumbnail", productId, imageId);
+        ProductImageDTO dto = productImageService.setThumbnail(productId, imageId);
+        logger.info("POST /api/products/{}/images/{}/thumbnail - Thumbnail set successfully", productId, imageId);
+        return ResponseEntity.ok(dto);
     }
 }

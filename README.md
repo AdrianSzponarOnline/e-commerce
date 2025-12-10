@@ -24,6 +24,7 @@ Kompleksowy system e-commerce zbudowany w Spring Boot z obsługą produktów, ka
 - **System adresów** - Zarządzanie adresami użytkowników z zabezpieczeniami
 - **System magazynu** - Zarządzanie stanem magazynowym z pesymistyczną blokadą
 - **Domain-Driven Design** - Logika biznesowa enkapsulowana w encjach
+- **Logowanie SLF4J** - Kompleksowe logowanie operacji biznesowych i błędów
 
 ### W trakcie rozwoju
 - Newsletter
@@ -36,6 +37,7 @@ Kompleksowy system e-commerce zbudowany w Spring Boot z obsługą produktów, ka
 - **Wyszukiwanie:** Elasticsearch (Hibernate Search)
 - **Mapowanie:** MapStruct
 - **Migracje:** Flyway
+- **Logowanie:** SLF4J z logback
 - **Testy:** JUnit 5, Mockito
 - **Build:** Maven
 
@@ -308,6 +310,22 @@ System wymaga skonfigurowanego serwera SMTP do wysyłki emaili z aktywacją kont
 - `spring.mail.password` - Hasło SMTP
 - `app.mail.from` - Adres email nadawcy
 
+### Konfiguracja logowania
+System używa SLF4J z implementacją Logback. Logowanie jest skonfigurowane automatycznie, ale można dostosować poziomy logowania w `application.properties`:
+
+```properties
+# Poziom logowania dla całej aplikacji
+logging.level.root=INFO
+logging.level.com.ecommerce.E_commerce=INFO
+
+# Szczegółowe logowanie (tylko w środowisku deweloperskim)
+logging.level.com.ecommerce.E_commerce.service=DEBUG
+logging.level.org.springframework.security=DEBUG
+logging.level.org.hibernate.SQL=DEBUG
+```
+
+Więcej informacji o strategii logowania znajdziesz w `DEVELOPER_GUIDE.md`.
+
 ### Zmienne środowiskowe
 ```bash
 export SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/ecommerce
@@ -323,7 +341,15 @@ export MAIL_FROM=sklep@ecommerce.com
 
 ##  Changelog
 
-### v1.1.0 (2024-01-XX)
+### v1.4.0 
+- **Dodano kompleksowe logowanie SLF4J**
+  - Logowanie operacji biznesowych w kontrolerach i serwisach
+  - Centralne logowanie błędów w GlobalExceptionHandler
+  - Eliminacja duplikacji logów (błędy logowane tylko raz)
+  - Zastąpienie System.err.println logowaniem SLF4J
+  - Strategia logowania: kontrolery logują sukcesy, GlobalExceptionHandler loguje błędy
+
+### v1.1.0 
 - System zamówień (Order, OrderItem) z pełnym flow
 - System płatności z różnymi metodami i statusami
 - System adresów użytkowników z zabezpieczeniami
@@ -334,20 +360,20 @@ export MAIL_FROM=sklep@ecommerce.com
 - Poprawki bezpieczeństwa - walidacja właściciela zasobów
 - Enum dla statusów zamówień i płatności (zamiast magic strings)
 
-### v1.2.0 (2024-01-XX)
+### v1.2.0 
 - Integracja Elasticsearch (Hibernate Search) dla wyszukiwania produktów
 - Usunięcie wyszukiwania z bazy danych na rzecz Elasticsearch
 - Endpoint `/api/search` z obsługą fuzzy matching i filtrowania
 - Automatyczne indeksowanie produktów przy starcie aplikacji
 - Walidacja XSS w DTOs
 
-### v1.2.1 (2024-12-05)
+### v1.2.1 
 - Dodano walidację `@NotNull` dla pola `userId` w `AddressCreateDTO`
 - Naprawiono testy jednostkowe - dodano brakujące zależności w `UserServiceTest`
 - Rozszerzono testy walidacji DTO - dodano `AddressDtoValidationTest` z 10 testami
 - Ujednolicono konfigurację properties
 
-### v1.3.0 (2024-12-05)
+### v1.3.0
 - System aktywacji kont użytkowników przez email
 - System resetowania hasła przez email
 - Automatyczna wysyłka maili z linkami aktywacyjnymi i resetującymi
@@ -355,7 +381,7 @@ export MAIL_FROM=sklep@ecommerce.com
 - Tabela `confirmation_tokens` do przechowywania tokenów
 - Integracja z serwerem SMTP (Mailtrap) do wysyłki emaili
 
-### v1.0.0 (2024-01-01)
+### v1.0.0 
 -  Implementacja systemu autoryzacji JWT
 -  Zarządzanie kategoriami i atrybutami kategorii
 -  Kompleksowy system produktów z dynamicznymi atrybutami
@@ -410,4 +436,3 @@ export MAIL_FROM=sklep@ecommerce.com
 - `CANCELLED` - anulowane (zwolnienie magazynu)
 - `REFUNDED` - zwrócone
 
-*Dokumentacja wygenerowana automatycznie - ostatnia aktualizacja: 2024-01-XX*

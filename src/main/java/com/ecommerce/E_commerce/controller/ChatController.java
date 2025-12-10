@@ -2,6 +2,8 @@ package com.ecommerce.E_commerce.controller;
 
 import com.ecommerce.E_commerce.service.AttributeService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -21,6 +23,7 @@ import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvis
 @CrossOrigin(origins = "*")
 public class ChatController {
 
+    private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
     private final ChatClient.Builder builder;
     private final AttributeService attributeService;
     private final ChatMemory chatMemory;
@@ -45,6 +48,7 @@ public class ChatController {
     @EventListener(ApplicationReadyEvent.class)
     public void initializeChatClient() {
         try {
+            logger.info("Initializing ChatClient with attributes");
             List<String> attributes = attributeService.getAllAttributeNames();
             String attributesString = String.join(", ", attributes);
             String systemPrompt = """
@@ -92,8 +96,9 @@ public class ChatController {
                     .defaultSystem(systemPrompt)
                     .defaultAdvisors(new MessageChatMemoryAdvisor(chatMemory))
                     .build();
+            logger.info("ChatClient initialized successfully with {} attributes", attributes.size());
         } catch (Exception e) {
-            System.err.println("Błąd inicjalizacji ChatClient: " + e.getMessage());
+            logger.error("Failed to initialize ChatClient with attributes, using fallback", e);
             this.chatClient = builder
                     .defaultFunctions("searchProductsTool")
                     .defaultOptions(
@@ -108,11 +113,13 @@ public class ChatController {
 
     @PostMapping("/chat")
     public String chat(@RequestBody ChatRequest request) {
+        logger.debug("POST /api/ai/chat - Processing chat request: conversationId={}", request.conversationId());
         if (chatClient == null) {
+            logger.warn("ChatClient not initialized, attempting initialization");
             initializeChatClient();
         }
 
-        return chatClient.prompt()
+        String response = chatClient.prompt()
                 .user(request.message())
                 .advisors(a -> a
                         .param(CHAT_MEMORY_CONVERSATION_ID_KEY, request.conversationId())
@@ -120,6 +127,8 @@ public class ChatController {
                 )
                 .call()
                 .content();
+        logger.debug("POST /api/ai/chat - Chat response generated: conversationId={}", request.conversationId());
+        return response;
     }
 
     public record ChatRequest(String message, String conversationId) {

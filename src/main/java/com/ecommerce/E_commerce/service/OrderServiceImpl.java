@@ -13,6 +13,8 @@ import com.ecommerce.E_commerce.repository.OrderRepository;
 import com.ecommerce.E_commerce.repository.ProductRepository;
 import com.ecommerce.E_commerce.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,7 @@ import java.time.Instant;
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
+    private static final Logger logger = LoggerFactory.getLogger(OrderServiceImpl.class);
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final AddressRepository addressRepository;
@@ -36,6 +39,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderDTO create(Long userId, OrderCreateDTO dto) {
+        logger.info("Creating order for userId={}, itemsCount={}", userId, dto.items() != null ? dto.items().size() : 0);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
@@ -53,15 +57,18 @@ public class OrderServiceImpl implements OrderService {
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + itemDto.productId()));
 
             if (Boolean.FALSE.equals(product.getIsActive())) {
+                logger.warn("Attempted to add inactive product to order: productId={}, userId={}", itemDto.productId(), userId);
                 throw new InvalidOperationException("Product with id " + itemDto.productId() + " is not active");
             }
 
+            logger.debug("Reserving stock: productId={}, quantity={}", itemDto.productId(), itemDto.quantity());
             inventoryService.reserveStock(itemDto.productId(), itemDto.quantity());
 
             order.addItem(product, itemDto.quantity());
         }
 
         Order savedOrder = orderRepository.save(order);
+        logger.info("Order created successfully: orderId={}, userId={}, total={}, status={}", savedOrder.getId(), userId, savedOrder.getTotalAmount(), savedOrder.getStatus());
 
         orderNotificationService.sendOrderConfirmation(order);
 
@@ -70,6 +77,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderDTO update(Long id, OrderUpdateDTO dto) {
+        logger.info("Updating order: orderId={}, newStatus={}", id, dto.status());
         Order order = getOrderOrThrow(id);
         OrderStatus oldStatus = order.getStatus();
 
@@ -78,6 +86,7 @@ public class OrderServiceImpl implements OrderService {
             order.setStatus(newStatus);
 
             if (oldStatus != newStatus) {
+                logger.info("Order status changed: orderId={}, oldStatus={}, newStatus={}", id, oldStatus, newStatus);
                 handleInventoryStatusChange(order, oldStatus, newStatus);
                 handleNotificationTrigger(order, oldStatus, newStatus);
             }
@@ -88,14 +97,17 @@ public class OrderServiceImpl implements OrderService {
         }
 
         Order updatedOrder = orderRepository.save(order);
+        logger.info("Order updated successfully: orderId={}, status={}", id, updatedOrder.getStatus());
         return orderMapper.toOrderDTO(updatedOrder);
     }
 
     @Override
     public OrderDTO cancelOrder(Long id) {
+        logger.info("Cancelling order: orderId={}", id);
         Order order = getOrderOrThrow(id);
 
         if (order.getStatus() == OrderStatus.CANCELLED) {
+            logger.warn("Attempted to cancel already cancelled order: orderId={}", id);
             throw new InvalidOperationException("Order is already cancelled");
         }
 
@@ -105,6 +117,7 @@ public class OrderServiceImpl implements OrderService {
         handleInventoryStatusChange(order, oldStatus, OrderStatus.CANCELLED);
 
         Order cancelledOrder = orderRepository.save(order);
+        logger.info("Order cancelled successfully: orderId={}", id);
         return orderMapper.toOrderDTO(cancelledOrder);
     }
 

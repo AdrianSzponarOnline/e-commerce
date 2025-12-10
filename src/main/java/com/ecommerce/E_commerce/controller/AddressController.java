@@ -6,6 +6,8 @@ import com.ecommerce.E_commerce.dto.address.AddressUpdateDTO;
 import com.ecommerce.E_commerce.model.User;
 import com.ecommerce.E_commerce.service.AddressService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -21,6 +23,7 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class AddressController {
 
+    private static final Logger logger = LoggerFactory.getLogger(AddressController.class);
     private final AddressService addressService;
 
     public AddressController(AddressService addressService) {
@@ -32,6 +35,7 @@ public class AddressController {
     public ResponseEntity<AddressDTO> create(
             @Valid @RequestBody AddressCreateDTO dto,
             @AuthenticationPrincipal User user) {
+        logger.info("POST /api/addresses - Creating address for userId={}", user.getId());
         AddressCreateDTO dtoWithUserId = new AddressCreateDTO(
                 user.getId(),
                 dto.line1(),
@@ -43,6 +47,7 @@ public class AddressController {
                 dto.isActive()
         );
         AddressDTO address = addressService.create(dtoWithUserId);
+        logger.info("POST /api/addresses - Address created successfully: addressId={}, userId={}", address.id(), user.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(address);
     }
 
@@ -51,14 +56,18 @@ public class AddressController {
     public ResponseEntity<AddressDTO> update(
             @PathVariable Long id,
             @Valid @RequestBody AddressUpdateDTO dto) {
+        logger.info("PUT /api/addresses/{} - Updating address", id);
         AddressDTO address = addressService.update(id, dto);
+        logger.info("PUT /api/addresses/{} - Address updated successfully", id);
         return ResponseEntity.ok(address);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and @addressServiceImpl.isAddressOwner(#id, authentication.name))")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
+        logger.info("DELETE /api/addresses/{} - Deleting address", id);
         addressService.delete(id);
+        logger.info("DELETE /api/addresses/{} - Address deleted successfully", id);
         return ResponseEntity.noContent().build();
     }
 

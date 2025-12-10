@@ -9,6 +9,8 @@ import com.ecommerce.E_commerce.mapper.PaymentMapper;
 import com.ecommerce.E_commerce.model.*;
 import com.ecommerce.E_commerce.repository.OrderRepository;
 import com.ecommerce.E_commerce.repository.PaymentRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +24,7 @@ import java.util.UUID;
 @Transactional
 public class PaymentServiceImpl implements PaymentService {
 
+    private static final Logger logger = LoggerFactory.getLogger(PaymentServiceImpl.class);
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final PaymentMapper paymentMapper;
@@ -39,14 +42,17 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public PaymentDTO create(PaymentCreateDTO dto) {
+        logger.info("Creating payment: orderId={}, amount={}, method={}", dto.orderId(), dto.amount(), dto.method());
         Order order = orderRepository.findById(dto.orderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + dto.orderId()));
 
         if (order.getStatus() != OrderStatus.NEW && order.getStatus() != OrderStatus.CONFIRMED) {
+            logger.warn("Attempted to create payment for order with invalid status: orderId={}, status={}", dto.orderId(), order.getStatus());
             throw new InvalidOperationException("Payment can only be created for orders with status NEW or CONFIRMED");
         }
 
         if (dto.amount().compareTo(order.getTotalAmount()) != 0) {
+            logger.warn("Payment amount mismatch: orderId={}, paymentAmount={}, orderTotal={}", dto.orderId(), dto.amount(), order.getTotalAmount());
             throw new InvalidOperationException(
                     String.format("Payment amount %.2f does not match order total %.2f",
                             dto.amount(), order.getTotalAmount()));
@@ -61,11 +67,13 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setNotes(dto.notes());
 
         Payment savedPayment = paymentRepository.save(payment);
+        logger.info("Payment created successfully: paymentId={}, orderId={}, status={}", savedPayment.getId(), dto.orderId(), savedPayment.getStatus());
         return paymentMapper.toPaymentDTO(savedPayment);
     }
 
     @Override
     public PaymentDTO update(Long id, PaymentUpdateDTO dto) {
+        logger.info("Updating payment: paymentId={}, newStatus={}", id, dto.status());
         Payment payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found with id: " + id));
 
@@ -80,10 +88,12 @@ public class PaymentServiceImpl implements PaymentService {
         PaymentStatus newStatus = payment.getStatus();
 
         if (oldStatus != newStatus) {
+            logger.info("Payment status changed: paymentId={}, oldStatus={}, newStatus={}", id, oldStatus, newStatus);
             handlePaymentStatusChange(payment, oldStatus, newStatus);
         }
 
         Payment updatedPayment = paymentRepository.save(payment);
+        logger.info("Payment updated successfully: paymentId={}, status={}", id, updatedPayment.getStatus());
         return paymentMapper.toPaymentDTO(updatedPayment);
     }
 
@@ -112,9 +122,10 @@ public class PaymentServiceImpl implements PaymentService {
 
                 for (OrderItem item : order.getItems()) {
                     try {
+                        logger.debug("Releasing stock for failed payment: productId={}, quantity={}", item.getProduct().getId(), item.getQuantity());
                         inventoryService.releaseStock(item.getProduct().getId(), item.getQuantity());
                     } catch (Exception e) {
-                        System.err.println("Failed to release stock for product: " + item.getProduct().getId());
+                        logger.error("Failed to release stock for product: productId={}", item.getProduct().getId(), e);
                     }
                 }
             }

@@ -3,6 +3,8 @@ package com.ecommerce.E_commerce.service;
 import com.ecommerce.E_commerce.model.*;
 import com.ecommerce.E_commerce.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +14,7 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class OrderNotificationService {
 
+    private static final Logger logger = LoggerFactory.getLogger(OrderNotificationService.class);
     private final EmailService emailService;
     private final UserRepository userRepository;
 
@@ -19,6 +22,7 @@ public class OrderNotificationService {
     public void sendOrderConfirmation(Order order) {
         try {
             User user = order.getUser();
+            logger.info("Sending order confirmation email: orderId={}, userEmail={}", order.getId(), user.getEmail());
             String content = String.format(
                     """
                     Witaj %s,
@@ -51,9 +55,10 @@ public class OrderNotificationService {
             );
 
             emailService.sendSimpleMail(user.getEmail(), "Potwierdzenie zamówienia #" + order.getId(), content);
+            logger.info("Order confirmation email sent successfully: orderId={}, userEmail={}", order.getId(), user.getEmail());
 
         } catch (Exception e) {
-            System.err.println("Błąd wysyłki maila (Confirmation) dla ID " + order.getId() + ": " + e.getMessage());
+            logger.error("Failed to send order confirmation email: orderId={}", order.getId(), e);
         }
     }
 
@@ -61,6 +66,7 @@ public class OrderNotificationService {
     public void sendOrderShipped(Order order) {
         try {
             User user = order.getUser();
+            logger.info("Sending order shipped email: orderId={}, userEmail={}", order.getId(), user.getEmail());
             String content = String.format(
                     """
                     Witaj %s,
@@ -85,9 +91,10 @@ public class OrderNotificationService {
             );
 
             emailService.sendSimpleMail(user.getEmail(), "Zamówienie #" + order.getId() + " zostało wysłane", content);
+            logger.info("Order shipped email sent successfully: orderId={}, userEmail={}", order.getId(), user.getEmail());
 
         } catch (Exception e) {
-            System.err.println("Błąd wysyłki maila (Shipped) dla ID " + order.getId() + ": " + e.getMessage());
+            logger.error("Failed to send order shipped email: orderId={}", order.getId(), e);
         }
     }
 
@@ -96,6 +103,7 @@ public class OrderNotificationService {
         userRepository.findByRoleName(ERole.ROLE_OWNER).ifPresent(owner -> {
             try {
                 User client = order.getUser();
+                logger.info("Sending order confirmation to owner: orderId={}, ownerEmail={}", order.getId(), owner.getEmail());
                 String content = String.format(
                         """
                         Nowe zamówienie w systemie!
@@ -126,9 +134,10 @@ public class OrderNotificationService {
                 );
 
                 emailService.sendSimpleMail(owner.getEmail(), "ADMIN: Nowe zamówienie #" + order.getId(), content);
+                logger.info("Order confirmation email sent to owner successfully: orderId={}, ownerEmail={}", order.getId(), owner.getEmail());
 
             } catch (Exception e) {
-                System.err.println("Błąd wysyłki maila do właściciela dla ID " + order.getId() + ": " + e.getMessage());
+                logger.error("Failed to send order confirmation email to owner: orderId={}", order.getId(), e);
             }
         });
     }

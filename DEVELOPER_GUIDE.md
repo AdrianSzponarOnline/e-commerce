@@ -628,37 +628,160 @@ mvn flyway:undo
 
 ##  Debugging i logowanie
 
+### Strategia logowania
+
+System używa **SLF4J** z implementacją **Logback** do kompleksowego logowania operacji biznesowych i błędów.
+
+#### Architektura logowania
+
+**Kontrolery:**
+- Logują tylko **sukcesy** (INFO/DEBUG)
+- Nie zawierają bloków try-catch - błędy są obsługiwane przez `GlobalExceptionHandler`
+- Przykład: `logger.info("POST /api/orders - Order created successfully: orderId={}", order.id())`
+
+**GlobalExceptionHandler:**
+- Centralne miejsce logowania wszystkich błędów
+- Błędy biznesowe (ResourceNotFoundException, BadCredentialsException) → `WARN` bez stack trace
+- Niespodziewane błędy (Exception) → `ERROR` z pełnym stack trace
+- Eliminuje duplikację logów
+
+**Serwisy:**
+- Logują operacje biznesowe (INFO)
+- Logują ostrzeżenia przy nieprawidłowych operacjach (WARN)
+- Szczegóły operacji (DEBUG) dla diagnostyki
+
+#### Poziomy logowania
+
+- **TRACE** - Szczegóły wewnętrzne (rzadko używane)
+- **DEBUG** - Szczegóły operacji, diagnostyka
+- **INFO** - Kluczowe operacje biznesowe (tworzenie zamówień, produktów, płatności)
+- **WARN** - Ostrzeżenia, nieprawidłowe operacje, błędy biznesowe
+- **ERROR** - Błędy wymagające uwagi, niespodziewane wyjątki
+
 ### Konfiguracja logowania
+
 ```properties
 # application.properties
-logging.level.com.ecommerce.E_commerce=DEBUG
+
+# Poziom logowania dla całej aplikacji
+logging.level.root=INFO
+
+# Poziom logowania dla pakietu aplikacji
+logging.level.com.ecommerce.E_commerce=INFO
+
+# Szczegółowe logowanie dla wybranych komponentów
+logging.level.com.ecommerce.E_commerce.service=DEBUG
+logging.level.com.ecommerce.E_commerce.controller=INFO
+
+# Logowanie Spring Security (tylko w środowisku deweloperskim)
 logging.level.org.springframework.security=DEBUG
+
+# Logowanie Hibernate SQL (tylko w środowisku deweloperskim)
 logging.level.org.hibernate.SQL=DEBUG
 logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
+
+# Format logów
+logging.pattern.console=%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n
+logging.pattern.file=%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n
 ```
 
 ### Użycie logów w kodzie
+
+#### Kontrolery - logowanie sukcesów
+
 ```java
-@Slf4j
-@Service
-public class ProductServiceImpl implements ProductService {
+@RestController
+@RequestMapping("/api/orders")
+public class OrderController {
     
-    @Override
-    public ProductDTO create(ProductCreateDTO dto) {
-        log.info("Creating product with name: {}", dto.name());
-        
-        try {
-            Product product = productMapper.toProduct(dto);
-            Product savedProduct = productRepository.save(product);
-            
-            log.info("Product created successfully with ID: {}", savedProduct.getId());
-            return productMapper.toProductDTO(savedProduct);
-        } catch (Exception e) {
-            log.error("Error creating product: {}", e.getMessage(), e);
-            throw e;
-        }
+    private static final Logger logger = LoggerFactory.getLogger(OrderController.class);
+    
+    @PostMapping
+    public ResponseEntity<OrderDTO> createOrder(@Valid @RequestBody OrderCreateDTO dto) {
+        logger.info("POST /api/orders - Creating order for userId={}", user.getId());
+        OrderDTO order = orderService.create(user.getId(), dto);
+        logger.info("POST /api/orders - Order created successfully: orderId={}, total={}", order.id(), order.totalAmount());
+        return ResponseEntity.status(HttpStatus.CREATED).body(order);
+        // Błędy są automatycznie logowane przez GlobalExceptionHandler
     }
 }
+```
+
+#### Serwisy - logowanie operacji biznesowych
+
+```java
+@Service
+@Transactional
+public class OrderServiceImpl implements OrderService {
+    
+    private static final Logger logger = LoggerFactory.getLogger(OrderServiceImpl.class);
+    
+    @Override
+    public OrderDTO create(Long userId, OrderCreateDTO dto) {
+        logger.info("Creating order for userId={}, itemsCount={}", userId, dto.items().size());
+        
+        // ... logika biznesowa ...
+        
+        Order savedOrder = orderRepository.save(order);
+        logger.info("Order created successfully: orderId={}, userId={}, total={}", 
+                   savedOrder.getId(), userId, savedOrder.getTotalAmount());
+        
+        return orderMapper.toOrderDTO(savedOrder);
+    }
+}
+```
+
+#### GlobalExceptionHandler - logowanie błędów
+
+```java
+@ControllerAdvice
+public class GlobalExceptionHandler {
+    
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<Object> handleResourceNotFoundException(ResourceNotFoundException e) {
+        logger.warn("Resource not found: {}", e.getMessage());
+        return buildErrorResponse(HttpStatus.NOT_FOUND, "Not Found", e.getMessage());
+    }
+    
+    @ExceptionHandler({BadCredentialsException.class, AuthenticationException.class})
+    public ResponseEntity<Object> handleAuthenticationException(Exception e) {
+        logger.warn("Authentication failed: {}", e.getMessage());
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Authentication Failed", "Invalid username or password");
+    }
+    
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Object> handleGlobalException(Exception e) {
+        logger.error("Unexpected error occurred", e);
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "An unexpected error occurred.");
+    }
+}
+```
+
+### Najlepsze praktyki
+
+1. **Kontrolery logują tylko sukcesy** - Błędy są obsługiwane przez `GlobalExceptionHandler`
+2. **Brak duplikacji** - Każdy błąd logowany tylko raz
+3. **Odpowiednie poziomy** - WARN dla błędów biznesowych, ERROR dla awarii systemu
+4. **Kontekst w logach** - Zawsze dodawaj istotne parametry (userId, orderId, productId)
+5. **Strukturalne logowanie** - Używaj placeholderów `{}` zamiast konkatenacji stringów
+
+### Przykłady logów
+
+```
+2024-01-15 10:30:45 [http-nio-8080-exec-1] INFO  OrderController - POST /api/orders - Creating order for userId=123
+2024-01-15 10:30:45 [http-nio-8080-exec-1] INFO  OrderServiceImpl - Creating order for userId=123, itemsCount=3
+2024-01-15 10:30:45 [http-nio-8080-exec-1] INFO  OrderServiceImpl - Order created successfully: orderId=456, userId=123, total=299.99
+2024-01-15 10:30:45 [http-nio-8080-exec-1] INFO  OrderController - POST /api/orders - Order created successfully: orderId=456, total=299.99
+
+2024-01-15 10:31:20 [http-nio-8080-exec-2] WARN  GlobalExceptionHandler - Resource not found: Product not found with id: 999
+2024-01-15 10:31:20 [http-nio-8080-exec-2] WARN  GlobalExceptionHandler - Authentication failed: Bad credentials
+
+2024-01-15 10:32:10 [http-nio-8080-exec-3] ERROR GlobalExceptionHandler - Unexpected error occurred
+java.sql.SQLException: Connection timeout
+    at com.ecommerce.E_commerce.repository.ProductRepository.findById(ProductRepository.java:45)
+    ...
 ```
 
 ##  Performance Optimization
