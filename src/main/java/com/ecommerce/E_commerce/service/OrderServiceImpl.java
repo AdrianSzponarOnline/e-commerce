@@ -52,6 +52,7 @@ public class OrderServiceImpl implements OrderService {
         order.setAddress(address);
         order.setStatus(dto.status() != null ? OrderStatus.valueOf(dto.status().toUpperCase()) : OrderStatus.NEW);
 
+        assert dto.items() != null;
         for (OrderItemCreateDTO itemDto : dto.items()) {
             Product product = productRepository.findById(itemDto.productId())
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + itemDto.productId()));
@@ -70,7 +71,7 @@ public class OrderServiceImpl implements OrderService {
         Order savedOrder = orderRepository.save(order);
         logger.info("Order created successfully: orderId={}, userId={}, total={}, status={}", savedOrder.getId(), userId, savedOrder.getTotalAmount(), savedOrder.getStatus());
 
-        orderNotificationService.sendOrderConfirmation(order);
+        orderNotificationService.sendOrderConfirmation(order.getId());
 
         return orderMapper.toOrderDTO(savedOrder);
     }
@@ -252,10 +253,10 @@ public class OrderServiceImpl implements OrderService {
 
     private void handleNotificationTrigger(Order order, OrderStatus oldStatus, OrderStatus newStatus) {
         if (newStatus == OrderStatus.CONFIRMED && oldStatus != OrderStatus.CONFIRMED) {
-            orderNotificationService.sendOrderConfirmedToOwner(order);
+            orderNotificationService.sendOrderConfirmedToOwner(order.getId());
         }
         if (newStatus == OrderStatus.SHIPPED && oldStatus != OrderStatus.SHIPPED) {
-            orderNotificationService.sendOrderShipped(order);
+            orderNotificationService.sendOrderShipped(order.getId());
         }
     }
 

@@ -10,7 +10,7 @@ public record ProductAttributeValueUpdateDTO(
         
         @Size(max = 1000, message = "Value must not exceed 1000 characters")
         @Pattern(regexp = "^[^<>]*$", message = "Value must not contain HTML or script characters")
-        String value,
+        String attributeValue,
         
         Boolean isActive
 ) {

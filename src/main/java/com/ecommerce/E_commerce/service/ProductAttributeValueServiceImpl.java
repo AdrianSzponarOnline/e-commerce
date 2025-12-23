@@ -46,7 +46,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
         }
         
       
-        validateAttributeValue(dto.value(), attribute.getType(), attribute.getName());
+        validateAttributeValue(dto.attibuteValue(), attribute.getType(), attribute.getName());
         
         ProductAttributeValue productAttributeValue = productAttributeValueMapper.toProductAttributeValue(dto);
         productAttributeValue.setProduct(product);
@@ -61,9 +61,9 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
         ProductAttributeValue productAttributeValue = productAttributeValueRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product attribute value not found with id: " + id));
         
-        if (dto.value() != null) {
+        if (dto.attributeValue() != null) {
             Attribute attribute = productAttributeValue.getAttribute();
-            validateAttributeValue(dto.value(), attribute.getType(), attribute.getName());
+            validateAttributeValue(dto.attributeValue(), attribute.getType(), attribute.getName());
         }
         
         productAttributeValueMapper.updateProductAttributeValueFromDTO(dto, productAttributeValue);
@@ -200,7 +200,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
                 throw new DuplicateResourceException("Product attribute value already exists for product id: " + dto.productId() + " and attribute id: " + dto.attributeId());
             }
             
-            validateAttributeValue(dto.value(), attribute.getType(), attribute.getName());
+            validateAttributeValue(dto.attibuteValue(), attribute.getType(), attribute.getName());
         }
         
         
@@ -255,9 +255,9 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
             
             if (existingValue != null) {
              
-                if (dto.value() != null) {
+                if (dto.attributeValue() != null) {
                     Attribute attribute = existingValue.getAttribute();
-                    validateAttributeValue(dto.value(), attribute.getType(), attribute.getName());
+                    validateAttributeValue(dto.attributeValue(), attribute.getType(), attribute.getName());
                 }
                 
                 productAttributeValueMapper.updateProductAttributeValueFromDTO(dto, existingValue);
@@ -283,14 +283,14 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
                     throw new DuplicateResourceException("Product attribute value already exists for this product and attribute");
                 }
                 
-                if (dto.value() != null) {
-                    validateAttributeValue(dto.value(), attribute.getType(), attribute.getName());
+                if (dto.attributeValue() != null) {
+                    validateAttributeValue(dto.attributeValue(), attribute.getType(), attribute.getName());
                 }
                 
                 ProductAttributeValue newValue = new ProductAttributeValue();
                 newValue.setProduct(product);
                 newValue.setAttribute(attribute);
-                newValue.setAttributeValue(dto.value());
+                newValue.setAttributeValue(dto.attributeValue());
                 newValue.setActive(dto.isActive() != null ? dto.isActive() : true);
                 
                 toCreate.add(newValue);

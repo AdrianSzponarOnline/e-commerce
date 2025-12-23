@@ -1,5 +1,6 @@
 package com.ecommerce.E_commerce.controller;
 import com.ecommerce.E_commerce.dto.auth.*;
+import com.ecommerce.E_commerce.model.User;
 import com.ecommerce.E_commerce.service.AuthService;
 import com.ecommerce.E_commerce.service.UserService;
 import jakarta.validation.Valid;
@@ -8,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -32,6 +35,16 @@ public class AuthController {
         AuthResponseDTO response = authService.authenticate(request);
         logger.info("POST /api/auth/login - Login successful for email: {}", request.email());
         return ResponseEntity.ok(response);
+    }
+    @PreAuthorize("hasRole('OWNER') or (hasRole('USER'))")
+    @PutMapping("/update")
+    public ResponseEntity<UserDto>  update(
+            @Valid @RequestBody UserUpdateDTO request,
+            @AuthenticationPrincipal User user) {
+        logger.info("PUT /api/auth/update - Attempting to update user: {}", user.getId());
+        UserDto updatedUser = userService.updateUser(user.getId(), request);
+        logger.info("PUT /api/auth/update - User successfully updated for id: {}", user.getId());
+        return ResponseEntity.ok(updatedUser);
     }
 
     @GetMapping("/me")

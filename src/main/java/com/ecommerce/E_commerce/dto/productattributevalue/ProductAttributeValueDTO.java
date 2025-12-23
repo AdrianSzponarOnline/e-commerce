@@ -5,6 +5,6 @@ public record ProductAttributeValueDTO(
        String attributeName,
        String attributeType,
        Boolean isKeyAttribute,
-       String value
+       String attributeValue
 ) {
 }

@@ -83,7 +83,7 @@ public class ProductServiceImpl implements ProductService {
                     .map(attr -> new ProductAttributeValueCreateDTO(
                             savedProduct.getId(),
                             attr.attributeId(),
-                            attr.value()
+                            attr.attibuteValue()
                     ))
                     .collect(Collectors.toList());
             
