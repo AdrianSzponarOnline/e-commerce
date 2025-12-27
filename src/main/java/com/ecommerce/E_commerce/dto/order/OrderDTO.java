@@ -11,6 +11,8 @@ import java.util.List;
 public record OrderDTO(
         Long id,
         Long userId,
+        String firstName,
+        String lastName,
         AddressDTO address,
         String status,
         BigDecimal totalAmount,

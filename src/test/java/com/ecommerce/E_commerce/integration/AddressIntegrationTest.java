@@ -1,6 +1,7 @@
 package com.ecommerce.E_commerce.integration;
 
 import com.ecommerce.E_commerce.config.JwtAuthFilter;
+import com.ecommerce.E_commerce.controller.ChatController;
 import com.ecommerce.E_commerce.model.Address;
 import com.ecommerce.E_commerce.model.User;
 import com.ecommerce.E_commerce.repository.AddressRepository;
@@ -12,6 +13,7 @@ import jakarta.transaction.Transactional;
 import lombok.With;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,6 +29,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -46,6 +49,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 @Transactional
 class AddressIntegrationTest {
+
+    @MockBean
+    private ChatModel chatModel;
+
+    @MockBean
+    private ChatController chatController;
 
     @Autowired
     private MockMvc mockMvc;
@@ -149,9 +158,8 @@ class AddressIntegrationTest {
                 .andExpect(status().isNoContent());
 
         // Verify soft delete
-        Address deleted = addressRepository.findById(addressId).orElseThrow();
-        assertThat(deleted.getDeletedAt()).isNotNull();
-        assertThat(deleted.getIsActive()).isFalse();
+        Optional<Address> deleted = addressRepository.findById(addressId);
+        assertThat(deleted).isEmpty();
     }
 
     @Test

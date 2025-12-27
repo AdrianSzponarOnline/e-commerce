@@ -1,0 +1,1 @@
+ALTER TABLE product_attribute_values RENAME COLUMN value TO attribute_value;

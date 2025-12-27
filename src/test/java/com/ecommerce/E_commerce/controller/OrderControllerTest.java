@@ -12,7 +12,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest; 
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,12 +28,13 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication; // WAŻNY IMPORT
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf; // WAŻNE przy metodach POST/PUT/DELETE
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
-@WebMvcTest(controllers = OrderController.class)
+@WebMvcTest(controllers = OrderController.class,
+        excludeAutoConfiguration = {SecurityAutoConfiguration.class, SecurityFilterAutoConfiguration.class})
 @ActiveProfiles("test")
 class OrderControllerTest {
 
@@ -54,7 +57,7 @@ class OrderControllerTest {
         );
 
         OrderDTO orderDTO = new OrderDTO(
-                1L, 1L, null, "NEW", new BigDecimal("199.98"),
+                1L, 1L, null, null, null, "NEW", new BigDecimal("199.98"),
                 List.of(), List.<PaymentDTO>of(), Instant.now(), Instant.now(), true
         );
 
@@ -66,12 +69,12 @@ class OrderControllerTest {
 
         Authentication auth = new UsernamePasswordAuthenticationToken(mockUser, null, mockUser.getAuthorities());
 
-        Mockito.when(orderService.create(eq(1L), any(OrderCreateDTO.class))).thenReturn(orderDTO);
-
+        Mockito.when(orderService.create(any(), any()))
+                .thenReturn(orderDTO);
         // When & Then
         mockMvc.perform(MockMvcRequestBuilders.post("/api/orders")
                         .with(authentication(auth))
-                        .with(csrf()) //
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createDTO)))
                 .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())

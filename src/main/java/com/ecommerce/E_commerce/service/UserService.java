@@ -4,6 +4,7 @@ import com.ecommerce.E_commerce.dto.auth.RegisterRequestDTO;
 import com.ecommerce.E_commerce.dto.auth.UserDto;
 import com.ecommerce.E_commerce.dto.auth.UserUpdateDTO;
 import com.ecommerce.E_commerce.exception.EmailAlreadyExistsException;
+import com.ecommerce.E_commerce.exception.InvalidOperationException;
 import com.ecommerce.E_commerce.exception.ResourceNotFoundException;
 import com.ecommerce.E_commerce.exception.RoleNotFountException;
 import com.ecommerce.E_commerce.model.ConfirmationToken;
@@ -261,5 +262,30 @@ public class UserService implements UserDetailsService {
             throw new IllegalStateException("Token expired");
         }
         return confirmationToken;
+    }
+
+    @Transactional
+    public void resendActivationLink(String email){
+        logger.info("Resending activation link for email: {}", email);
+
+        User user = userRepository.findByEmail(email).orElseThrow(() ->
+                new ResourceNotFoundException("User with email " + email + " not found."));
+
+        if(user.isEnabled()){
+            logger.warn("Account already active for email: {}", email);
+            throw new InvalidOperationException("Account is already activated");
+        }
+        String token = generateAndSaveToken(user, 15);
+        String link = "http://localhost:5173/activate?token=" + token;
+
+        logger.debug("Sending new activation mail to: {}", email);
+
+        emailService.sendSimpleMail(
+                user.getEmail(),
+                "Nowy link aktywacyjny",
+                "Witaj, " + user.getFirstName() + ". \n\n" +
+                        "Poprosiłeś o nowy link aktywacyjny. Kliknij poniżej, aby aktywować konto: \n" + link + "\n\n" +
+                        "Link jest ważny przez 15 minut."
+        );
     }
 }

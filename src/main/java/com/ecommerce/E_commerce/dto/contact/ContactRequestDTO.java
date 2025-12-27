@@ -3,7 +3,7 @@ package com.ecommerce.E_commerce.dto.contact;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
-public record ContactRecordDTO(
+public record ContactRequestDTO(
         @NotBlank(message = "Name is required.")
         String name,
 

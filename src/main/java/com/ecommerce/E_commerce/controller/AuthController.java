@@ -69,6 +69,13 @@ public class AuthController {
         logger.info("POST /api/auth/activate - Account activated successfully");
         return ResponseEntity.ok("Konto aktywowane pomyślnie");
     }
+    @PostMapping("/resend-activation")
+    public ResponseEntity<String> resendActivation(@Valid @RequestBody ResendActivationRequestDTO request){
+        logger.info("POST /api/auth/resend-activation - Request for {}", request.email());
+        userService.resendActivationLink(request.email());
+        logger.info("POST /api/auth/resend-activation - New link sent succesfully");
+        return ResponseEntity.ok("Nowy link aktywacyjny został wysłany");
+    }
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequestDTO request) {
         logger.info("POST /api/auth/forgot-password - Password reset requested for email: {}", request.email());

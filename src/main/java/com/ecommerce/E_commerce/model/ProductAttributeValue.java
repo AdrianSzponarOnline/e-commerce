@@ -30,7 +30,7 @@ public class ProductAttributeValue {
     private Long id;
 
 
-    @Column(name = "value", columnDefinition = "TEXT")
+    @Column(name = "attribute_value", columnDefinition = "TEXT")
     @FullTextField(name = "value", analyzer = "standard")
     private String attributeValue;
 

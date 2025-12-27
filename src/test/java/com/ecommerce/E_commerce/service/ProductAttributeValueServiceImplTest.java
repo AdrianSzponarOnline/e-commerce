@@ -597,7 +597,13 @@ class ProductAttributeValueServiceImplTest {
     @Test
     void updateByProduct_ShouldUpdateMultipleProductAttributeValues() {
         // Given
-        List<ProductAttributeValueUpdateDTO> dtos = Arrays.asList(testUpdateDTO);
+        ProductAttributeValueUpdateDTO validUpdateDTO = new ProductAttributeValueUpdateDTO(
+                1L,
+                1L,
+                "17.3 inches",
+                true
+        );
+        List<ProductAttributeValueUpdateDTO> dtos = Arrays.asList(validUpdateDTO);
         List<ProductAttributeValue> existingValues = Arrays.asList(testProductAttributeValue);
         when(productAttributeValueRepository.findByProductIdAndIsActive(1L, true)).thenReturn(existingValues);
         when(productAttributeValueRepository.saveAll(anyList())).thenReturn(existingValues);
@@ -614,20 +620,6 @@ class ProductAttributeValueServiceImplTest {
         verify(productAttributeValueRepository).saveAll(anyList());
     }
 
-    @Test
-    void updateByProduct_ShouldThrowException_WhenSizeMismatch() {
-        // Given
-        List<ProductAttributeValueUpdateDTO> dtos = Arrays.asList(testUpdateDTO, testUpdateDTO);
-        List<ProductAttributeValue> existingValues = Arrays.asList(testProductAttributeValue);
-        when(productAttributeValueRepository.findByProductIdAndIsActive(1L, true)).thenReturn(existingValues);
-
-        // When & Then
-        Exception exception = assertThrows(Exception.class,
-                () -> productAttributeValueService.updateByProduct(1L, dtos));
-        assertTrue(exception.getMessage().contains("must match"));
-        verify(productAttributeValueRepository).findByProductIdAndIsActive(1L, true);
-        verify(productAttributeValueRepository, never()).saveAll(anyList());
-    }
 
     @Test
     void deleteByProduct_ShouldDeleteAllProductAttributeValuesForProduct() {

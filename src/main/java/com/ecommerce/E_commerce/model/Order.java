@@ -22,6 +22,8 @@ import java.util.List;
 @SQLDelete(sql = "UPDATE orders SET deleted_at = NOW(), is_active = false WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
 public class Order {
+    private static final BigDecimal SHIPPING_COST = new BigDecimal("20.00");
+    private static final BigDecimal FREE_SHIPPING_THRESHOLD = new BigDecimal("300.00");
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @ColumnDefault("nextval('orders_id_seq'::regclass)")
@@ -129,9 +131,16 @@ public class Order {
      * This method ensures the totalAmount is always in sync with the items.
      */
     public void recalculateTotalAmount() {
-        this.totalAmount = this.items.stream()
+        BigDecimal itemsTotal = this.items.stream()
                 .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if(itemsTotal.compareTo(BigDecimal.ZERO) > 0 &&
+           itemsTotal.compareTo(FREE_SHIPPING_THRESHOLD) <= 0) {
+            this.totalAmount = itemsTotal.add(SHIPPING_COST);
+        } else {
+            this.totalAmount = itemsTotal;
+        }
     }
     
     /**

@@ -88,7 +88,6 @@ class AddressServiceImplTest {
                 Instant.now(), Instant.now(), null, true);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(testUser));
         when(addressMapper.toAddress(dto)).thenReturn(address);
         when(addressRepository.save(any(Address.class))).thenReturn(testAddress);
         when(addressMapper.toAddressDTO(testAddress)).thenReturn(expectedDTO);
@@ -113,7 +112,6 @@ class AddressServiceImplTest {
         Address address = new Address();
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(testUser));
         when(addressMapper.toAddress(dto)).thenReturn(address);
         when(addressRepository.save(any(Address.class))).thenAnswer(invocation -> {
             Address saved = invocation.getArgument(0);
@@ -158,7 +156,6 @@ class AddressServiceImplTest {
                 Instant.now(), Instant.now(), null, false);
 
         when(addressRepository.findById(1L)).thenReturn(Optional.of(testAddress));
-        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(testUser));
         when(addressRepository.save(any(Address.class))).thenReturn(testAddress);
         when(addressMapper.toAddressDTO(any(Address.class))).thenReturn(expectedDTO);
 
@@ -188,7 +185,6 @@ class AddressServiceImplTest {
     void delete_ShouldSetDeletedAtAndIsActive_WhenSuccessful() {
         // Given
         when(addressRepository.findById(1L)).thenReturn(Optional.of(testAddress));
-        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(testUser));
 
         // When
         addressService.delete(1L);
@@ -214,7 +210,6 @@ class AddressServiceImplTest {
                 Instant.now(), Instant.now(), null, true);
 
         when(addressRepository.findById(1L)).thenReturn(Optional.of(testAddress));
-        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(testUser));
         when(addressMapper.toAddressDTO(testAddress)).thenReturn(expectedDTO);
 
         // When
@@ -244,7 +239,6 @@ class AddressServiceImplTest {
         address2.setLine1("789 Other St");
 
         when(addressRepository.findByUserId(1L)).thenReturn(List.of(testAddress, address2));
-        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(testUser));
         when(addressMapper.toAddressDTO(testAddress)).thenReturn(
                 new AddressDTO(1L, 1L, "123 Main St", null, "Warsaw", null, "00-001", "Poland",
                         Instant.now(), Instant.now(), null, true)
@@ -271,7 +265,6 @@ class AddressServiceImplTest {
         inactiveAddress.setIsActive(false);
 
         when(addressRepository.findByUserIdAndIsActive(1L, true)).thenReturn(List.of(testAddress));
-        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(testUser));
         when(addressMapper.toAddressDTO(testAddress)).thenReturn(
                 new AddressDTO(1L, 1L, "123 Main St", null, "Warsaw", null, "00-001", "Poland",
                         Instant.now(), Instant.now(), null, true)

@@ -7,12 +7,13 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.Hibernate;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 @Getter
 @Setter
 @Embeddable
-public class UserRoleId implements java.io.Serializable {
+public class UserRoleId implements Serializable {
     private static final long serialVersionUID = -6990787920391506076L;
     @NotNull
     @Column(name = "user_id", nullable = false)

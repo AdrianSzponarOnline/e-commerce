@@ -11,6 +11,8 @@ import org.springframework.security.authentication.InsufficientAuthenticationExc
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -102,9 +104,27 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleGlobalException(Exception e) {
-        // Tutaj logujemy ERROR z pełnym stack trace, bo to niespodziewany błąd
         logger.error("Unexpected error occurred", e);
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "An unexpected error occurred. Please contact support.");
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Object> handleNoResourceFound(NoResourceFoundException ex) {
+        return new ResponseEntity<>("The requested resource was not found.", HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Object> handleTypeMismatch(MethodArgumentTypeMismatchException ex) { // <--- MUST be this specific type
+        String name = ex.getName();
+        Class<?> requiredType = ex.getRequiredType();
+        String typeName = (requiredType != null) ? requiredType.getSimpleName() : "unknown";
+        Object value = ex.getValue();
+
+        String message = String.format("The parameter '%s' of value '%s' could not be converted to type '%s'",
+                name, value, typeName);
+
+        // Return your error object (or a simple string for now)
+        return new ResponseEntity<>(message, HttpStatus.BAD_REQUEST);
     }
 
     private ResponseEntity<Object> buildErrorResponse(HttpStatus status, String error, String message) {

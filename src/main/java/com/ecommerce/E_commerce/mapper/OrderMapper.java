@@ -15,6 +15,8 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 public interface OrderMapper {
 
     @Mapping(target = "userId", source = "user.id")
+    @Mapping(target = "firstName", source = "user.firstName")
+    @Mapping(target = "lastName", source = "user.lastName")
     @Mapping(target = "address", source = "address")
     @Mapping(target = "items", source = "items")
     @Mapping(target = "payments", source = "payments")

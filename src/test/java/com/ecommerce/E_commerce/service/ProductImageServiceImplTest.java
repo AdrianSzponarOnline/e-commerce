@@ -70,6 +70,13 @@ class ProductImageServiceImplTest {
             img.setId(11L);
             return img;
         });
+        doAnswer(inv -> {
+
+            if (!imageCaptor.getAllValues().isEmpty()) {
+                return Optional.of(imageCaptor.getValue());
+            }
+            return Optional.empty();
+        }).when(imageRepository).findById(11L);
 
         ProductImageServiceImpl service = buildService(productRepository, imageRepository);
         MockMultipartFile file = new MockMultipartFile("file", "a.jpg", "image/jpeg", new byte[]{1,2,3});

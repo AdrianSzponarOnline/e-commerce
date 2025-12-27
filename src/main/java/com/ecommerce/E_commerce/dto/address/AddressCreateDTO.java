@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record AddressCreateDTO(
+        @NotNull(message = "User ID is required")
         Long userId,
 
         @NotBlank(message = "Address line 1 is required")

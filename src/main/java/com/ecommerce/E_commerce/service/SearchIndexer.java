@@ -8,12 +8,14 @@ import org.hibernate.search.mapper.orm.massindexing.MassIndexer;
 import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Component
 @RequiredArgsConstructor
+@Profile("!test")
 public class SearchIndexer implements ApplicationListener<ApplicationReadyEvent> {
     private final EntityManager em;
     private final PlatformTransactionManager transactionManager;

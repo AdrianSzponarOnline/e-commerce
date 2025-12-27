@@ -61,7 +61,7 @@ class ProductAttributeValueControllerTest {
                         .content(objectMapper.writeValueAsString(createDTO)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.value").value("Red"));
+                .andExpect(jsonPath("$.attributeValue").value("Red"));
     }
 
     @Test
@@ -79,7 +79,7 @@ class ProductAttributeValueControllerTest {
         mockMvc.perform(MockMvcRequestBuilders.get("/api/product-attribute-values/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.value").value("Red"));
+                .andExpect(jsonPath("$.attributeValue").value("Red"));
     }
 
     @Test
@@ -140,7 +140,7 @@ class ProductAttributeValueControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateDTO)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.value").value("Blue"));
+                .andExpect(jsonPath("$.attributeValue").value("Blue"));
     }
 
     @Test

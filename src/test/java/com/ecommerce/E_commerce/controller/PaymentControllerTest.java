@@ -3,6 +3,7 @@ package com.ecommerce.E_commerce.controller;
 import com.ecommerce.E_commerce.dto.payment.PaymentCreateDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentUpdateDTO;
+import com.ecommerce.E_commerce.service.OrderService;
 import com.ecommerce.E_commerce.service.PaymentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -39,6 +40,9 @@ class PaymentControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @MockBean
+    private OrderService orderService;
 
     @Test
     void createPayment_ShouldReturnCreatedPayment() throws Exception {
