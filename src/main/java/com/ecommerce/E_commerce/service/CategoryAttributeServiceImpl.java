@@ -13,6 +13,8 @@ import com.ecommerce.E_commerce.repository.AttributeRepository;
 import com.ecommerce.E_commerce.repository.CategoryAttributeRepository;
 import com.ecommerce.E_commerce.repository.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +40,7 @@ public class CategoryAttributeServiceImpl implements CategoryAttributeService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "category_attributes", allEntries = true)
     public CategoryAttributeDTO create(CategoryAttributeCreateDTO dto) {
         Category category = categoryRepository.findById(dto.categoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + dto.categoryId()));
@@ -59,6 +62,7 @@ public class CategoryAttributeServiceImpl implements CategoryAttributeService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "category_attributes", allEntries = true)
     public CategoryAttributeDTO update(Long id, CategoryAttributeUpdateDTO dto) {
         CategoryAttribute entity = categoryAttributeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category attribute not found: " + id));
@@ -76,6 +80,7 @@ public class CategoryAttributeServiceImpl implements CategoryAttributeService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "category_attributes", key = "#id")
     public CategoryAttributeDTO getById(Long id) {
         CategoryAttribute entity = categoryAttributeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category attribute not found: " + id));
@@ -84,6 +89,7 @@ public class CategoryAttributeServiceImpl implements CategoryAttributeService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "category_attributes", key = "#categoryId")
     public List<CategoryAttributeDTO> listByCategory(Long categoryId) {
         return categoryAttributeRepository.findAllByCategory_Id(categoryId)
                 .stream().map(mapper::toDTO).toList();
@@ -91,6 +97,7 @@ public class CategoryAttributeServiceImpl implements CategoryAttributeService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "category_attributes", allEntries = true)
     public void softDelete(Long id) {
         CategoryAttribute entity = categoryAttributeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category attribute not found: " + id));

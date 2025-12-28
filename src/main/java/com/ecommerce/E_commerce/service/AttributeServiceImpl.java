@@ -11,6 +11,8 @@ import com.ecommerce.E_commerce.model.CategoryAttributeType;
 import com.ecommerce.E_commerce.repository.AttributeRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -39,6 +41,7 @@ public class AttributeServiceImpl implements AttributeService {
     }
 
     @Override
+    @CacheEvict(value = "attributes", allEntries = true)
     public AttributeDTO createAttribute(AttributeCreateDTO dto) {
         validateUniqueness(dto.name(), dto.type());
         Attribute newAttribute = attributeMapper.toEntity(dto);
@@ -48,6 +51,7 @@ public class AttributeServiceImpl implements AttributeService {
 
 
     @Override
+    @CacheEvict(value = "attributes", allEntries = true)
     public AttributeDTO update(Long id, AttributeUpdateDTO dto) {
         Attribute existingAttribute = attributeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Attribute not found with id: " + id));
@@ -64,6 +68,7 @@ public class AttributeServiceImpl implements AttributeService {
     }
     @Override
     @Transactional
+    @CacheEvict(value = "attributes", allEntries = true)
     public void deleteAttribute(Long id) {
         Attribute attributeToDelete = attributeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Attribute not found with id: " + id));
@@ -72,6 +77,7 @@ public class AttributeServiceImpl implements AttributeService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "attributes", allEntries = true)
     public void restoreAttribute(Long id) {
         Attribute attributeToRestore = attributeRepository.findDeletedById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Deleted attribute not found with id: " + id));
@@ -83,11 +89,13 @@ public class AttributeServiceImpl implements AttributeService {
     }
 
     @Override
+    @Cacheable(value = "attributes", key = "'names'")
     public List<String> getAllAttributeNames() {
         return attributeRepository.findAllActiveAttributeNames();
     }
 
     @Override
+    @Cacheable(value = "attributes", key = "#id")
     public AttributeDTO getAttributeById(Long id) {
         Attribute attribute = attributeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Attribute not found with id: " + id));
@@ -95,6 +103,7 @@ public class AttributeServiceImpl implements AttributeService {
     }
 
     @Override
+    @Cacheable(value = "attributes",key = "'active_page_' + #pageable.pageNumber")
     public Page<AttributeDTO> getActiveAttributes(Pageable pageable) {
         Page<Attribute> attributePage = attributeRepository.findByIsActiveTrue(pageable);
         return attributePage.map(attributeMapper::toDTO);

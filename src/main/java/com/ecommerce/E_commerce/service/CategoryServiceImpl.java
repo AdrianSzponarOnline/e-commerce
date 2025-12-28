@@ -10,6 +10,8 @@ import com.ecommerce.E_commerce.mapper.CategoryMapper;
 import com.ecommerce.E_commerce.model.Category;
 import com.ecommerce.E_commerce.repository.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +33,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "categories", allEntries = true)
     public CategoryDTO create(CategoryCreateDTO dto) {
         if (categoryRepository.existsBySeoSlug(dto.seoSlug())) {
             throw new SeoSlugAlreadyExistsException(dto.seoSlug());
@@ -47,6 +50,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "categories", allEntries = true)
     public CategoryDTO update(Long id, CategoryUpdateDTO dto) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
@@ -71,6 +75,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "categories", key = "#id")
     public CategoryDTO getById(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
@@ -79,6 +84,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "categories", key = "#seoSlug")
     public CategoryDTO getBySeoSlug(String seoSlug) {
         Category category = categoryRepository.findBySeoSlug(seoSlug)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found by seoSlug: " + seoSlug));
@@ -87,6 +93,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "categories", key = "'all_tree'")
     public List<CategoryDTO> listAll() {
         List<Category> allCategories = categoryRepository.findAll();
 
@@ -99,6 +106,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "categories", key = "'active_tree'")
     public List<CategoryDTO> listActive() {
         List<Category> activeCategories = categoryRepository.findAllByIsActiveTrue();
         List<CategoryDTO> flat = activeCategories.stream()
@@ -109,6 +117,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "categories", key = "'parent_' + #parentId")
     public List<CategoryDTO> listByParent(Long parentId) {
         List<CategoryDTO> flat = categoryRepository.findAllByParent_Id(parentId).stream()
                 .map(categoryMapper::toCategoryDTOFlat)
@@ -118,6 +127,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "categories", allEntries = true)
     public void delete(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));

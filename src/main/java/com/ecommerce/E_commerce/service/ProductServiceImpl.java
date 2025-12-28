@@ -17,6 +17,8 @@ import com.ecommerce.E_commerce.repository.ProductRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -60,6 +62,8 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
+    @CacheEvict(value = "products", allEntries = true)
     public ProductDTO create(ProductCreateDTO dto) {
         logger.info("Creating product: name={}, categoryId={}", dto.name(), dto.categoryId());
         Category category = categoryRepository.findById(dto.categoryId())
@@ -108,6 +112,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @CacheEvict(value = "products", allEntries = true)
     public ProductDTO update(Long id, ProductUpdateDTO dto) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
@@ -139,6 +144,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @CacheEvict(value = "products", allEntries = true)
     public void delete(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
@@ -159,6 +165,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "products", key = "#id")
     public ProductDTO getById(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
@@ -167,6 +174,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "products", key = "#seoSlug")
     public ProductDTO getBySeoSlug(String seoSlug) {
         Product product = productRepository.findBySeoSlug(seoSlug)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with seo slug: " + seoSlug));
@@ -175,6 +183,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "products", key = "#sku")
     public ProductDTO getBySku(String sku) {
         Product product = productRepository.findBySku(sku)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with SKU: " + sku));
@@ -201,6 +210,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "product_lists", key = "'featured_' + #isFeatured + '_' + #pageable.toString()")
     public Page<ProductSummaryDTO> findByFeatured(Boolean isFeatured, Pageable pageable) {
         return productRepository.findByIsFeatured(isFeatured, pageable).map(productMapper::toProductSummaryDTO);
     }
@@ -256,6 +266,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "product_lists", key = "'featured_' + #isFeatured + '_' + #pageable.toString()")
     public Page<ProductSummaryDTO> findByFeatured(Boolean isFeatured, int page, int size, String sortBy, String sortDir) {
         return findByFeatured(isFeatured, buildPageable(page, size, sortBy, sortDir));
     }

@@ -8,6 +8,8 @@ import com.ecommerce.E_commerce.model.ProductImage;
 import com.ecommerce.E_commerce.repository.ProductImageRepository;
 import com.ecommerce.E_commerce.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -64,12 +66,14 @@ public class ProductImageServiceImpl implements ProductImageService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "product_images", key = "#productId")
     public List<ProductImageDTO> listByProduct(Long productId) {
         verifyProduct(productId);
         return productImageRepository.findByProductId(productId).stream().map(this::toDTO).toList();
     }
 
     @Override
+    @CacheEvict(value = "product_images", key = "#productId")
     public ProductImageDTO upload(Long productId, MultipartFile file, String altText, boolean isThumbnail) {
         Product product = verifyProduct(productId);
         
@@ -145,6 +149,7 @@ public class ProductImageServiceImpl implements ProductImageService {
     }
 
     @Override
+    @CacheEvict(value = "product_images", key = "#productId")
     public void delete(Long productId, Long imageId) {
         Product product = verifyProduct(productId);
         

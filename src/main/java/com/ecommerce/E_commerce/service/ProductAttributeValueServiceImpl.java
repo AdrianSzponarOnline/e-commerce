@@ -15,6 +15,8 @@ import com.ecommerce.E_commerce.repository.AttributeRepository;
 import com.ecommerce.E_commerce.repository.ProductAttributeValueRepository;
 import com.ecommerce.E_commerce.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
     private final ProductAttributeValueMapper productAttributeValueMapper;
 
     @Override
+    @CacheEvict(value = "product_attributes", allEntries = true)
     public ProductAttributeValueDTO create(ProductAttributeValueCreateDTO dto) {
         Product product = productRepository.findById(dto.productId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + dto.productId()));
@@ -57,6 +60,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
     }
 
     @Override
+    @CacheEvict(value = "product_attributes", allEntries = true)
     public ProductAttributeValueDTO update(Long id, ProductAttributeValueUpdateDTO dto) {
         ProductAttributeValue productAttributeValue = productAttributeValueRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product attribute value not found with id: " + id));
@@ -69,7 +73,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
         productAttributeValueMapper.updateProductAttributeValueFromDTO(dto, productAttributeValue);
         
         if (dto.isActive() != null) {
-            productAttributeValue.setActive(dto.isActive().booleanValue());
+            productAttributeValue.setActive(dto.isActive());
         }
         
         ProductAttributeValue savedProductAttributeValue = productAttributeValueRepository.save(productAttributeValue);
@@ -77,6 +81,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
     }
 
     @Override
+    @CacheEvict(value = "product_attributes", allEntries = true)
     public void delete(Long id) {
         ProductAttributeValue productAttributeValue = productAttributeValueRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product attribute value not found with id: " + id));
@@ -94,6 +99,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "product_attributes", key = "#productId")
     public List<ProductAttributeValueDTO> getByProductId(Long productId) {
         List<ProductAttributeValue> productAttributeValues = productAttributeValueRepository.findByProductIdAndIsActive(productId, true);
         return productAttributeValues.stream()
@@ -188,6 +194,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
     }
 
     @Override
+    @CacheEvict(value = "product_attributes", allEntries = true)
     public List<ProductAttributeValueDTO> createBulk(List<ProductAttributeValueCreateDTO> dtos) {
         for (ProductAttributeValueCreateDTO dto : dtos) {
             Product product = productRepository.findById(dto.productId())
@@ -226,6 +233,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
     }
 
     @Override
+    @CacheEvict(value = "product_attributes", allEntries = true)
     public List<ProductAttributeValueDTO> updateByProduct(Long productId, List<ProductAttributeValueUpdateDTO> dtos) {
         List<ProductAttributeValue> existingValues = productAttributeValueRepository.findByProductIdAndIsActive(productId, true);
         
@@ -263,7 +271,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
                 productAttributeValueMapper.updateProductAttributeValueFromDTO(dto, existingValue);
                 
                 if (dto.isActive() != null) {
-                    existingValue.setActive(dto.isActive().booleanValue());
+                    existingValue.setActive(dto.isActive());
                 }
                 
                 toUpdate.add(existingValue);
@@ -311,6 +319,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
     }
 
     @Override
+    @CacheEvict(value = "product_attributes", allEntries = true)
     public void deleteByProduct(Long productId) {
         List<ProductAttributeValue> productAttributeValues = productAttributeValueRepository.findByProductIdAndIsActive(productId, true);
         
@@ -337,12 +346,14 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "product_attributes", key = "'distinct_' + #attributeId")
     public List<String> getDistinctValuesByAttribute(Long attributeId) {
         return productAttributeValueRepository.findDistinctValuesByAttribute(attributeId);
     }
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "product_attributes", key = "'key_' + #productId")
     public List<ProductAttributeValueDTO> getKeyAttributesByProduct(Long productId) {
         List<ProductAttributeValue> productAttributeValues = productAttributeValueRepository.findKeyAttributesByProduct(productId);
         return productAttributeValues.stream()

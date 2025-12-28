@@ -83,7 +83,7 @@ public class OrderServiceImpl implements OrderService {
         OrderStatus oldStatus = order.getStatus();
 
         if (dto.status() != null) {
-            OrderStatus newStatus = OrderStatus.valueOf(dto.status().toUpperCase());
+            OrderStatus newStatus = dto.status();
             order.setStatus(newStatus);
 
             if (oldStatus != newStatus) {
