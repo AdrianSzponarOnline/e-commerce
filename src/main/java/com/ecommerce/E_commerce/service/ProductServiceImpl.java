@@ -11,7 +11,6 @@ import com.ecommerce.E_commerce.mapper.ProductMapper;
 import com.ecommerce.E_commerce.model.Category;
 import com.ecommerce.E_commerce.model.Product;
 import com.ecommerce.E_commerce.model.SkuGenerator;
-import com.ecommerce.E_commerce.repository.AttributeRepository;
 import com.ecommerce.E_commerce.repository.CategoryRepository;
 import com.ecommerce.E_commerce.repository.ProductRepository;
 import org.slf4j.Logger;
@@ -38,7 +37,6 @@ public class ProductServiceImpl implements ProductService {
     private static final Logger logger = LoggerFactory.getLogger(ProductServiceImpl.class);
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
-    private final AttributeRepository attributeRepository;
     private final ProductMapper productMapper;
     private final ProductAttributeValueService productAttributeValueService;
     private final ImageUrlService imageUrlService;
@@ -47,14 +45,12 @@ public class ProductServiceImpl implements ProductService {
     @Autowired
     public ProductServiceImpl(ProductRepository productRepository,
                               CategoryRepository categoryRepository,
-                              AttributeRepository attributeRepository,
                               ProductMapper productMapper,
                               ProductAttributeValueService productAttributeValueService,
                               ImageUrlService imageUrlService,
                               InventoryService inventoryService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
-        this.attributeRepository = attributeRepository;
         this.productMapper = productMapper;
         this.productAttributeValueService = productAttributeValueService;
         this.imageUrlService = imageUrlService;
@@ -87,7 +83,7 @@ public class ProductServiceImpl implements ProductService {
                     .map(attr -> new ProductAttributeValueCreateDTO(
                             savedProduct.getId(),
                             attr.attributeId(),
-                            attr.attibuteValue()
+                            attr.attributeValue()
                     ))
                     .collect(Collectors.toList());
             
@@ -107,8 +103,11 @@ public class ProductServiceImpl implements ProductService {
         } catch (com.ecommerce.E_commerce.exception.DuplicateResourceException e) {
             logger.debug("Inventory already exists for product: productId={}", savedProduct.getId());
         }
-        
-        return productMapper.toProductDTO(savedProduct);
+
+        Product refreshedProduct = productRepository.findById(savedProduct.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + savedProduct.getId()));
+
+        return productMapper.toProductDTO(refreshedProduct);
     }
 
     @Override

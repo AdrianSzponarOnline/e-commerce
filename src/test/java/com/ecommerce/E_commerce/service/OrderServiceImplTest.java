@@ -152,7 +152,7 @@ class OrderServiceImplTest {
     @Test
     void update_ShouldUpdateOrderSuccessfully() {
         // Given
-        OrderUpdateDTO updateDTO = new OrderUpdateDTO("CONFIRMED", null);
+        OrderUpdateDTO updateDTO = new OrderUpdateDTO(OrderStatus.CONFIRMED, null);
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
         when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
         when(orderMapper.toOrderDTO(testOrder)).thenReturn(new OrderDTO(

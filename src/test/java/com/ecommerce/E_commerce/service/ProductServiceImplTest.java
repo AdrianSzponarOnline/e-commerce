@@ -8,12 +8,10 @@ import com.ecommerce.E_commerce.dto.product.ProductUpdateDTO;
 import com.ecommerce.E_commerce.exception.ResourceNotFoundException;
 import com.ecommerce.E_commerce.mapper.ProductMapper;
 import com.ecommerce.E_commerce.model.Category;
-import com.ecommerce.E_commerce.model.Inventory;
 import com.ecommerce.E_commerce.model.Product;
 import com.ecommerce.E_commerce.repository.AttributeRepository;
 import com.ecommerce.E_commerce.repository.CategoryRepository;
 import com.ecommerce.E_commerce.repository.ProductRepository;
-import com.ecommerce.E_commerce.service.ImageUrlService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -72,7 +70,6 @@ class ProductServiceImplTest {
         productService = new ProductServiceImpl(
                 productRepository,
                 categoryRepository,
-                attributeRepository,
                 productMapper,
                 productAttributeValueService,
                 imageUrlService,

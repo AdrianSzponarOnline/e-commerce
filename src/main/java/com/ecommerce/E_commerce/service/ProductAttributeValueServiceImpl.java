@@ -14,6 +14,8 @@ import com.ecommerce.E_commerce.model.ProductAttributeValue;
 import com.ecommerce.E_commerce.repository.AttributeRepository;
 import com.ecommerce.E_commerce.repository.ProductAttributeValueRepository;
 import com.ecommerce.E_commerce.repository.ProductRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -35,6 +37,8 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
     private final AttributeRepository attributeRepository;
     private final ProductAttributeValueMapper productAttributeValueMapper;
 
+    private static final Logger logger = LoggerFactory.getLogger(ProductAttributeValueServiceImpl.class);
+
     @Override
     @CacheEvict(value = "product_attributes", allEntries = true)
     public ProductAttributeValueDTO create(ProductAttributeValueCreateDTO dto) {
@@ -49,7 +53,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
         }
         
       
-        validateAttributeValue(dto.attibuteValue(), attribute.getType(), attribute.getName());
+        validateAttributeValue(dto.attributeValue(), attribute.getType(), attribute.getName());
         
         ProductAttributeValue productAttributeValue = productAttributeValueMapper.toProductAttributeValue(dto);
         productAttributeValue.setProduct(product);
@@ -207,7 +211,7 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
                 throw new DuplicateResourceException("Product attribute value already exists for product id: " + dto.productId() + " and attribute id: " + dto.attributeId());
             }
             
-            validateAttributeValue(dto.attibuteValue(), attribute.getType(), attribute.getName());
+            validateAttributeValue(dto.attributeValue(), attribute.getType(), attribute.getName());
         }
         
         
@@ -219,6 +223,11 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
                             .orElseThrow(() -> new ResourceNotFoundException("Attribute not found with id: " + dto.attributeId()));
                     
                     ProductAttributeValue productAttributeValue = productAttributeValueMapper.toProductAttributeValue(dto);
+
+                    logger.info("DEBUG MAPPER: DTO value='{}' -> Entity value='{}'",
+                            dto.attributeValue(),
+                            productAttributeValue.getAttributeValue());
+
                     productAttributeValue.setProduct(product);
                     productAttributeValue.setAttribute(attribute);
                     return productAttributeValue;

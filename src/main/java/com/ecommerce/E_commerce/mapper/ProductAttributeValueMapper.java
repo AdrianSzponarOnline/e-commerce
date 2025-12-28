@@ -41,7 +41,6 @@ public abstract class ProductAttributeValueMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "product", ignore = true) // Will be set by service
-    @Mapping(target = "attributeValue", ignore = true) // Will be set by service
     @Mapping(target = "createdAt", ignore = true) // Will be set by entity
     @Mapping(target = "updatedAt", ignore = true) // Will be set by entity
     @Mapping(target = "deletedAt", ignore = true) // Will be set by service
@@ -49,8 +48,7 @@ public abstract class ProductAttributeValueMapper {
     public abstract ProductAttributeValue toProductAttributeValue(ProductAttributeValueCreateDTO dto);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "product", ignore = true) // Never update
-    @Mapping(target = "attributeValue", ignore = true) // Never update
+    @Mapping(target = "product", ignore = true)
     @Mapping(target = "createdAt", ignore = true) // Never update
     @Mapping(target = "updatedAt", ignore = true) // Will be set by entity
     @Mapping(target = "deletedAt", ignore = true) // Will be handled by service
