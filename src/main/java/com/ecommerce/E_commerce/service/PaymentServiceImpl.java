@@ -100,16 +100,20 @@ public class PaymentServiceImpl implements PaymentService {
 
     private void handlePaymentStatusChange(Payment payment, PaymentStatus oldStatus, PaymentStatus newStatus) {
         Order order = payment.getOrder();
+        logger.info("Handling payment status change: paymentId={}, orderId={}, oldStatus={}, newStatus={}", 
+                   payment.getId(), order.getId(), oldStatus, newStatus);
 
         if (order.getStatus() == OrderStatus.SHIPPED || order.getStatus() == OrderStatus.DELIVERED) {
+            logger.debug("Skipping status change for already shipped/delivered order: orderId={}, orderStatus={}", 
+                        order.getId(), order.getStatus());
             return;
         }
 
         if (newStatus == PaymentStatus.COMPLETED && oldStatus != PaymentStatus.COMPLETED) {
             if (order.getStatus() == OrderStatus.NEW) {
+                logger.info("Payment completed, confirming order: paymentId={}, orderId={}", payment.getId(), order.getId());
                 order.setStatus(OrderStatus.CONFIRMED);
                 orderRepository.save(order);
-
             }
         }
 
@@ -117,6 +121,8 @@ public class PaymentServiceImpl implements PaymentService {
                 oldStatus == PaymentStatus.PENDING) {
 
             if (order.getStatus() == OrderStatus.NEW) {
+                logger.warn("Payment failed/cancelled, cancelling order: paymentId={}, orderId={}, reason={}", 
+                           payment.getId(), order.getId(), newStatus);
                 order.setStatus(OrderStatus.CANCELLED);
                 orderRepository.save(order);
 
@@ -135,10 +141,12 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public void delete(Long id) {
+        logger.info("Deleting payment: paymentId={}", id);
         Payment payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found with id: " + id));
 
         paymentRepository.delete(payment);
+        logger.info("Payment deleted successfully: paymentId={}", id);
     }
 
 

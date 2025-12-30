@@ -12,6 +12,8 @@ import com.ecommerce.E_commerce.model.CategoryAttribute;
 import com.ecommerce.E_commerce.repository.AttributeRepository;
 import com.ecommerce.E_commerce.repository.CategoryAttributeRepository;
 import com.ecommerce.E_commerce.repository.CategoryRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -22,6 +24,8 @@ import java.util.List;
 
 @Service
 public class CategoryAttributeServiceImpl implements CategoryAttributeService {
+    
+    private static final Logger logger = LoggerFactory.getLogger(CategoryAttributeServiceImpl.class);
     private final CategoryAttributeRepository categoryAttributeRepository;
     private final CategoryRepository categoryRepository;
     private final AttributeRepository attributeRepository;
@@ -42,6 +46,7 @@ public class CategoryAttributeServiceImpl implements CategoryAttributeService {
     @Transactional
     @CacheEvict(value = "category_attributes", allEntries = true)
     public CategoryAttributeDTO create(CategoryAttributeCreateDTO dto) {
+        logger.info("Creating category attribute: categoryId={}, attributeId={}", dto.categoryId(), dto.attributeId());
         Category category = categoryRepository.findById(dto.categoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + dto.categoryId()));
         

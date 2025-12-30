@@ -48,13 +48,18 @@ public class UserService implements UserDetailsService {
     @Override
     @Transactional(readOnly = true)
     public User loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(username).orElseThrow(() ->
-                new UsernameNotFoundException("User details not found for the user " + username));
+        logger.debug("Loading user by username: {}", username);
+        User user = userRepository.findByEmail(username).orElseThrow(() -> {
+            logger.warn("User not found: {}", username);
+            return new UsernameNotFoundException("User details not found for the user " + username);
+        });
 
         if (!user.isEnabled()) {
+            logger.warn("User account is disabled: {}", username);
             throw new UsernameNotFoundException("User account is disabled: " + username);
         }
 
+        logger.debug("User loaded successfully: userId={}, email={}", user.getId(), username);
         return user;
     }
 
@@ -145,6 +150,7 @@ public class UserService implements UserDetailsService {
 
     @Transactional
     public UserDto updateUser(Long id, UserUpdateDTO dto) {
+        logger.info("Updating user: userId={}", id);
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
 
@@ -158,11 +164,13 @@ public class UserService implements UserDetailsService {
         }
         
         User savedUser = userRepository.save(user);
+        logger.info("User updated successfully: userId={}, email={}", savedUser.getId(), savedUser.getEmail());
         return mapToDto(savedUser);
     }
 
     @Transactional
     public void deleteUser(Long id) {
+        logger.info("Deleting user: userId={}", id);
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
         
@@ -171,6 +179,7 @@ public class UserService implements UserDetailsService {
         user.setEnabled(false);
         
         userRepository.delete(user);
+        logger.info("User deleted successfully: userId={}, email={}", user.getId(), user.getEmail());
     }
 
 

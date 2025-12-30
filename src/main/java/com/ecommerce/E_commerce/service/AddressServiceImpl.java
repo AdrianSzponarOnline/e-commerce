@@ -9,6 +9,8 @@ import com.ecommerce.E_commerce.model.Address;
 import com.ecommerce.E_commerce.model.User;
 import com.ecommerce.E_commerce.repository.AddressRepository;
 import com.ecommerce.E_commerce.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +28,7 @@ import java.util.List;
 @Transactional
 public class AddressServiceImpl implements AddressService {
 
+    private static final Logger logger = LoggerFactory.getLogger(AddressServiceImpl.class);
     private final AddressRepository addressRepository;
     private final UserRepository userRepository;
     private final AddressMapper addressMapper;
@@ -53,6 +56,7 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     public AddressDTO create(AddressCreateDTO dto) {
+        logger.info("Creating address for userId: {}, country: {}", dto.userId(), dto.country());
         User user = userRepository.findById(dto.userId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + dto.userId()));
 

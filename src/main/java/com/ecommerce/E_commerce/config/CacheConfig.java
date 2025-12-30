@@ -25,7 +25,7 @@ public class CacheConfig {
 
                 buildCache("products", Duration.ofMinutes(30), 2000),
 
-                buildCache("product-images", Duration.ofHours(24), 2000),
+                buildCache("product_images", Duration.ofHours(24), 2000),
 
                 buildCache("category_attributes", Duration.ofHours(24), 500),
 

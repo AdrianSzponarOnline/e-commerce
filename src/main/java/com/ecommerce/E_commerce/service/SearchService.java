@@ -6,6 +6,8 @@ import com.ecommerce.E_commerce.model.Product;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.graph.GraphSemantic;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.hibernate.search.engine.search.query.SearchResult;
 import org.hibernate.search.mapper.orm.Search;
 import org.hibernate.search.mapper.orm.session.SearchSession;
@@ -22,6 +24,8 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class SearchService {
+    
+    private static final Logger logger = LoggerFactory.getLogger(SearchService.class);
     private final EntityManager em;
     private final ProductMapper productMapper;
     private final ImageUrlService imageUrlService;
@@ -35,7 +39,8 @@ public class SearchService {
             Pageable pageable
     ) {
 
-        System.out.println("SEARCH REQUEST: query='" + query + "', filters=" + attributes);
+        logger.info("Executing product search: query='{}', minPrice={}, maxPrice={}, isActive={}, attributesCount={}", 
+                   query, minPrice, maxPrice, isActive, attributes != null ? attributes.size() : 0);
 
         SearchSession searchSession = Search.session(em);
 
@@ -104,11 +109,14 @@ public class SearchService {
                 .loading(o -> o.graph("Product.withDetails", GraphSemantic.LOAD))
                 .fetch((int) pageable.getOffset(), pageable.getPageSize());
 
-        System.out.println("ZNALEZIONO: " + result.total().hitCount());
+        logger.info("Search completed: found {} products", result.total().hitCount());
 
         List<ProductSearchDTO> dtos = result.hits().stream()
                 .map(productMapper::toDTO)
                 .toList();
+
+        logger.debug("Returning {} products for page {} (size: {})", 
+                    dtos.size(), pageable.getPageNumber(), pageable.getPageSize());
 
         return new PageImpl<>(dtos, pageable, result.total().hitCount());
     }

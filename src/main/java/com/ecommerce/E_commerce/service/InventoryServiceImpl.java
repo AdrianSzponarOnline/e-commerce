@@ -13,6 +13,8 @@ import com.ecommerce.E_commerce.model.Inventory;
 import com.ecommerce.E_commerce.model.Product;
 import com.ecommerce.E_commerce.repository.InventoryRepository;
 import com.ecommerce.E_commerce.repository.ProductRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +28,7 @@ import java.util.Optional;
 @Transactional
 public class InventoryServiceImpl implements InventoryService {
 
+    private static final Logger logger = LoggerFactory.getLogger(InventoryServiceImpl.class);
     private final InventoryRepository inventoryRepository;
     private final ProductRepository productRepository;
     private final InventoryMapper inventoryMapper;
@@ -140,9 +143,12 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public void reserveStock(Long productId, Integer quantity) {
+        logger.info("Attempting to reserve stock: productId={}, quantity={}", productId, quantity);
         Inventory inventory = getActiveInventory(productId);
 
         if (inventory.getAvailableQuantity() < quantity) {
+            logger.warn("Insufficient stock for reservation: productId={}, available={}, requested={}", 
+                productId, inventory.getAvailableQuantity(), quantity);
             throw new InsufficientStockException(
                 String.format("Insufficient stock for product id %d. Available: %d, Requested: %d",
                     productId, inventory.getAvailableQuantity(), quantity));
@@ -151,13 +157,18 @@ public class InventoryServiceImpl implements InventoryService {
         inventory.setAvailableQuantity(inventory.getAvailableQuantity() - quantity);
         inventory.setReservedQuantity(inventory.getReservedQuantity() + quantity);
         inventoryRepository.save(inventory);
+        logger.info("Stock reserved successfully: productId={}, quantity={}, newAvailable={}, newReserved={}", 
+            productId, quantity, inventory.getAvailableQuantity(), inventory.getReservedQuantity());
     }
 
     @Override
     public void releaseStock(Long productId, Integer quantity) {
+        logger.info("Attempting to release stock: productId={}, quantity={}", productId, quantity);
         Inventory inventory = getActiveInventory(productId);
 
         if (inventory.getReservedQuantity() < quantity) {
+            logger.warn("Insufficient reserved stock for release: productId={}, reserved={}, requested={}", 
+                productId, inventory.getReservedQuantity(), quantity);
             throw new InsufficientStockException(
                 String.format("Insufficient reserved stock for product id %d. Reserved: %d, Requested: %d",
                     productId, inventory.getReservedQuantity(), quantity));
@@ -166,13 +177,18 @@ public class InventoryServiceImpl implements InventoryService {
         inventory.setAvailableQuantity(inventory.getAvailableQuantity() + quantity);
         inventory.setReservedQuantity(inventory.getReservedQuantity() - quantity);
         inventoryRepository.save(inventory);
+        logger.info("Stock released successfully: productId={}, quantity={}, newAvailable={}, newReserved={}", 
+            productId, quantity, inventory.getAvailableQuantity(), inventory.getReservedQuantity());
     }
 
     @Override
     public void finalizeReservation(Long productId, Integer quantity) {
+        logger.info("Finalizing stock reservation: productId={}, quantity={}", productId, quantity);
         Inventory inventory = getActiveInventory(productId);
 
         if (inventory.getReservedQuantity() < quantity) {
+            logger.warn("Insufficient reserved stock for finalization: productId={}, reserved={}, requested={}", 
+                productId, inventory.getReservedQuantity(), quantity);
             throw new InsufficientStockException(
                 String.format("Insufficient reserved stock for product id %d. Reserved: %d, Requested: %d",
                     productId, inventory.getReservedQuantity(), quantity));
@@ -180,6 +196,8 @@ public class InventoryServiceImpl implements InventoryService {
 
         inventory.setReservedQuantity(inventory.getReservedQuantity() - quantity);
         inventoryRepository.save(inventory);
+        logger.info("Stock reservation finalized successfully: productId={}, quantity={}, newReserved={}", 
+            productId, quantity, inventory.getReservedQuantity());
     }
 
     @Override

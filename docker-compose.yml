@@ -1,11 +1,39 @@
-version: '3.8'
 services:
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
     container_name: elasticsearch_shop_new
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "ES_JAVA_OPTS=-Xms${ES_MEM_LIMIT:-512m} -Xmx${ES_MEM_LIMIT:-512m}"
     ports:
-      - "9200:9200"
+      - "${ELASTIC_PORT:-9200}:9200"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    networks:
+      - ecommerce-network
+
+  postgres:
+    image: postgres:17.5-alpine
+    container_name: ecommerce-db
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-ecommerce_db}
+      POSTGRES_USER: ${DATABASE_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-password}
+    ports:
+      - "${DATABASE_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - ecommerce-network
+
+volumes:
+  esdata:
+    driver: local
+  pgdata:
+    driver: local
+
+networks:
+  ecommerce-network:
+    driver: bridge

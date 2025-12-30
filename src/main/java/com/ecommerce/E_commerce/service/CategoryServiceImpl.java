@@ -9,6 +9,8 @@ import com.ecommerce.E_commerce.exception.SeoSlugAlreadyExistsException;
 import com.ecommerce.E_commerce.mapper.CategoryMapper;
 import com.ecommerce.E_commerce.model.Category;
 import com.ecommerce.E_commerce.repository.CategoryRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -22,6 +24,8 @@ import java.util.Map;
 
 @Service
 public class CategoryServiceImpl implements CategoryService {
+    
+    private static final Logger logger = LoggerFactory.getLogger(CategoryServiceImpl.class);
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
 
@@ -35,6 +39,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     @CacheEvict(value = "categories", allEntries = true)
     public CategoryDTO create(CategoryCreateDTO dto) {
+        logger.info("Creating category: name={}, seoSlug={}, parentId={}", dto.name(), dto.seoSlug(), dto.parentId());
         if (categoryRepository.existsBySeoSlug(dto.seoSlug())) {
             throw new SeoSlugAlreadyExistsException(dto.seoSlug());
         }

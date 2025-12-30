@@ -7,6 +7,8 @@ import com.ecommerce.E_commerce.dto.inventory.InventoryUpdateDTO;
 import com.ecommerce.E_commerce.service.InventoryService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "*")
 public class InventoryController {
     
+    private static final Logger logger = LoggerFactory.getLogger(InventoryController.class);
     private final InventoryService inventoryService;
     
     @Autowired
@@ -32,7 +35,9 @@ public class InventoryController {
     @PostMapping
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<InventoryDTO> createInventory(@Valid @RequestBody InventoryCreateDTO dto) {
+        logger.info("POST /api/inventory - Creating inventory for productId: {}, availableQuantity: {}", dto.productId(), dto.availableQuantity());
         InventoryDTO inventory = inventoryService.create(dto);
+        logger.info("POST /api/inventory - Inventory created successfully with id: {} for productId: {}", inventory.id(), dto.productId());
         return ResponseEntity.status(HttpStatus.CREATED).body(inventory);
     }
     
@@ -41,14 +46,18 @@ public class InventoryController {
     public ResponseEntity<InventoryDTO> updateInventory(
             @PathVariable Long id,
             @Valid @RequestBody InventoryUpdateDTO dto) {
+        logger.info("PUT /api/inventory/{} - Updating inventory", id);
         InventoryDTO inventory = inventoryService.update(id, dto);
+        logger.info("PUT /api/inventory/{} - Inventory updated successfully", id);
         return ResponseEntity.ok(inventory);
     }
     
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<Void> deleteInventory(@PathVariable Long id) {
+        logger.info("DELETE /api/inventory/{} - Deleting inventory", id);
         inventoryService.delete(id);
+        logger.info("DELETE /api/inventory/{} - Inventory deleted successfully", id);
         return ResponseEntity.noContent().build();
     }
     

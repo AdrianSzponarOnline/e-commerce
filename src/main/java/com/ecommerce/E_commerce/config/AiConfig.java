@@ -3,6 +3,8 @@ package com.ecommerce.E_commerce.config;
 import com.ecommerce.E_commerce.dto.product.ProductSearchDTO;
 import com.ecommerce.E_commerce.dto.search.ProductSearchRequest;
 import com.ecommerce.E_commerce.service.SearchService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -20,6 +22,9 @@ import java.util.function.Function;
 @Configuration
 @Profile("!test")
 public class AiConfig {
+    
+    private static final Logger logger = LoggerFactory.getLogger(AiConfig.class);
+    
     @Bean
     public ChatMemory chatMemory() {
         return new InMemoryChatMemory();
@@ -29,7 +34,7 @@ public class AiConfig {
     @Description("Wyszukuje produkty. Użyj tego narzędzia, gdy użytkownik pyta o asortyment, chce coś znaleźć lub pyta o cenę.")
     public Function<ProductSearchRequest, ProductSearchResponse> searchProductsTool(SearchService searchService) {
         return request -> {
-            System.out.println("Gemini wykonuje funkcję z:" + request);
+            logger.debug("Gemini executing function with request: {}", request);
             Pageable pageable = PageRequest.of(0,5);
 
             Page<ProductSearchDTO> results = searchService.search(

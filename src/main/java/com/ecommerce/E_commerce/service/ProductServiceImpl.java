@@ -113,6 +113,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @CacheEvict(value = "products", allEntries = true)
     public ProductDTO update(Long id, ProductUpdateDTO dto) {
+        logger.info("Updating product: productId={}", id);
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
         
@@ -130,12 +131,15 @@ public class ProductServiceImpl implements ProductService {
         product.setUpdatedAt(Instant.now());
         
         if (!originalName.equals(product.getName()) || !originalCategoryId.equals(product.getCategory().getId())) {
+            logger.debug("Regenerating SKU due to name/category change: productId={}", id);
             product.setSku(SkuGenerator.generate(product));
         }
         
         Product savedProduct = productRepository.save(product);
+        logger.info("Product updated successfully: productId={}, name={}", id, savedProduct.getName());
         
         if (dto.attributeValues() != null && !dto.attributeValues().isEmpty()) {
+            logger.debug("Updating attribute values for product: productId={}, attributesCount={}", id, dto.attributeValues().size());
             productAttributeValueService.updateByProduct(savedProduct.getId(), dto.attributeValues());
         }
         
@@ -145,6 +149,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @CacheEvict(value = "products", allEntries = true)
     public void delete(Long id) {
+        logger.info("Deleting product: productId={}", id);
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
         
@@ -153,6 +158,8 @@ public class ProductServiceImpl implements ProductService {
         product.setUpdatedAt(Instant.now());
 
         if (product.getAttributeValues() != null) {
+            logger.debug("Deactivating {} attribute values for deleted product: productId={}", 
+                        product.getAttributeValues().size(), id);
             for (var pav : product.getAttributeValues()) {
                 pav.setActive(false);
                 pav.setDeletedAt(Instant.now());
@@ -160,6 +167,7 @@ public class ProductServiceImpl implements ProductService {
         }
         
         productRepository.save(product);
+        logger.info("Product deleted successfully (soft delete): productId={}", id);
     }
 
     @Override

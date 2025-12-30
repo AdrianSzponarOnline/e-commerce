@@ -4,6 +4,8 @@ import com.ecommerce.E_commerce.model.Product;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.search.mapper.orm.Search;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.hibernate.search.mapper.orm.massindexing.MassIndexer;
 import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -17,12 +19,14 @@ import org.springframework.transaction.support.TransactionTemplate;
 @RequiredArgsConstructor
 @Profile("!test")
 public class SearchIndexer implements ApplicationListener<ApplicationReadyEvent> {
+    
+    private static final Logger logger = LoggerFactory.getLogger(SearchIndexer.class);
     private final EntityManager em;
     private final PlatformTransactionManager transactionManager;
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
-        System.out.println("Rozpoczynam indeksowanie ElasticSearch");
+        logger.info("Starting ElasticSearch indexing process");
         TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
 
         transactionTemplate.execute(status -> {
@@ -35,9 +39,9 @@ public class SearchIndexer implements ApplicationListener<ApplicationReadyEvent>
 
                 indexer.startAndWait();
 
-                System.out.println("Indeksowanie zakończone sukcesem!");
+                logger.info("ElasticSearch indexing completed successfully!");
             } catch (InterruptedException e) {
-                System.err.println("Błąd indeksowania: " + e.getMessage());
+                logger.error("ElasticSearch indexing failed: {}", e.getMessage(), e);
                 Thread.currentThread().interrupt();
             }
             return null;

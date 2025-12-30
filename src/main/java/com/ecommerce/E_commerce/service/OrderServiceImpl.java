@@ -137,14 +137,20 @@ public class OrderServiceImpl implements OrderService {
 
 
     private void handleInventoryStatusChange(Order order, OrderStatus oldStatus, OrderStatus newStatus) {
+        logger.debug("Handling inventory status change for order: orderId={}, oldStatus={}, newStatus={}", 
+                    order.getId(), oldStatus, newStatus);
 
         if (newStatus == OrderStatus.CANCELLED) {
             if (isReservationActive(oldStatus)) {
+                logger.info("Releasing stock for cancelled order: orderId={}, itemsCount={}", 
+                           order.getId(), order.getItems().size());
                 for (OrderItem item : order.getItems()) {
                     inventoryService.releaseStock(item.getProduct().getId(), item.getQuantity());
                 }
             }
         } else if (isFinalizingStatus(newStatus) && !isFinalizingStatus(oldStatus)) {
+            logger.info("Finalizing stock reservations for order: orderId={}, newStatus={}, itemsCount={}", 
+                       order.getId(), newStatus, order.getItems().size());
             for (OrderItem item : order.getItems()) {
                 inventoryService.finalizeReservation(item.getProduct().getId(), item.getQuantity());
             }
@@ -252,10 +258,15 @@ public class OrderServiceImpl implements OrderService {
 
 
     private void handleNotificationTrigger(Order order, OrderStatus oldStatus, OrderStatus newStatus) {
+        logger.debug("Handling notification trigger: orderId={}, oldStatus={}, newStatus={}", 
+                    order.getId(), oldStatus, newStatus);
+        
         if (newStatus == OrderStatus.CONFIRMED && oldStatus != OrderStatus.CONFIRMED) {
+            logger.info("Sending order confirmation notification: orderId={}", order.getId());
             orderNotificationService.sendOrderConfirmedToOwner(order.getId());
         }
         if (newStatus == OrderStatus.SHIPPED && oldStatus != OrderStatus.SHIPPED) {
+            logger.info("Sending order shipped notification: orderId={}", order.getId());
             orderNotificationService.sendOrderShipped(order.getId());
         }
     }

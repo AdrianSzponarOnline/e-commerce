@@ -7,6 +7,8 @@ import com.ecommerce.E_commerce.model.Product;
 import com.ecommerce.E_commerce.model.ProductImage;
 import com.ecommerce.E_commerce.repository.ProductImageRepository;
 import com.ecommerce.E_commerce.repository.ProductRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -34,6 +36,7 @@ import java.util.stream.Collectors;
 @Transactional
 public class ProductImageServiceImpl implements ProductImageService {
 
+    private static final Logger logger = LoggerFactory.getLogger(ProductImageServiceImpl.class);
     private final ProductRepository productRepository;
     private final ProductImageRepository productImageRepository;
 
@@ -75,6 +78,7 @@ public class ProductImageServiceImpl implements ProductImageService {
     @Override
     @CacheEvict(value = "product_images", key = "#productId")
     public ProductImageDTO upload(Long productId, MultipartFile file, String altText, boolean isThumbnail) {
+        logger.info("Uploading image for product: productId={}, fileName={}, isThumbnail={}", productId, file.getOriginalFilename(), isThumbnail);
         Product product = verifyProduct(productId);
         
         checkImagePermission(product);

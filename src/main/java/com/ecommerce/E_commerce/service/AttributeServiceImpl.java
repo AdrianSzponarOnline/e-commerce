@@ -10,6 +10,8 @@ import com.ecommerce.E_commerce.model.Attribute;
 import com.ecommerce.E_commerce.model.CategoryAttributeType;
 import com.ecommerce.E_commerce.repository.AttributeRepository;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -23,6 +25,7 @@ import java.util.Optional;
 @Service
 public class AttributeServiceImpl implements AttributeService {
 
+    private static final Logger logger = LoggerFactory.getLogger(AttributeServiceImpl.class);
     private final AttributeRepository attributeRepository;
     private final AttributeMapper attributeMapper;
 
@@ -43,9 +46,11 @@ public class AttributeServiceImpl implements AttributeService {
     @Override
     @CacheEvict(value = "attributes", allEntries = true)
     public AttributeDTO createAttribute(AttributeCreateDTO dto) {
+        logger.info("Creating attribute: name={}, type={}", dto.name(), dto.type());
         validateUniqueness(dto.name(), dto.type());
         Attribute newAttribute = attributeMapper.toEntity(dto);
         Attribute savedAttribute = attributeRepository.save(newAttribute);
+        logger.info("Attribute created successfully: id={}, name={}", savedAttribute.getId(), savedAttribute.getName());
         return attributeMapper.toDTO(savedAttribute);
     }
 

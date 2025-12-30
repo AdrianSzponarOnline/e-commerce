@@ -4,6 +4,8 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,6 +18,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class JWTService {
+    
+    private static final Logger logger = LoggerFactory.getLogger(JWTService.class);
+    
     @Value("${security.jwt.secret-key}")
     private String secretKey;
 
@@ -37,9 +42,12 @@ public class JWTService {
     }
 
     public String generateToken(UserDetails userDetails) {
+        logger.debug("Generating JWT token for user: {}", userDetails.getUsername());
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", getRolesFromUserDetails(userDetails));
-        return generateToken(claims, userDetails);
+        String token = generateToken(claims, userDetails);
+        logger.info("JWT token generated successfully for user: {}", userDetails.getUsername());
+        return token;
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
@@ -69,10 +77,22 @@ public class JWTService {
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername())) &&
-                !isTokenExpired(token) &&
-                rolesMatch(userDetails, extractRoles(token));
+        try {
+            final String username = extractUsername(token);
+            boolean isValid = (username.equals(userDetails.getUsername())) &&
+                    !isTokenExpired(token) &&
+                    rolesMatch(userDetails, extractRoles(token));
+            
+            if (isValid) {
+                logger.debug("JWT token validation successful for user: {}", username);
+            } else {
+                logger.warn("JWT token validation failed for user: {}", username);
+            }
+            return isValid;
+        } catch (Exception e) {
+            logger.error("JWT token validation error for user: {}", userDetails.getUsername(), e);
+            return false;
+        }
     }
 
     private boolean isTokenExpired(String token) {
@@ -97,12 +117,17 @@ public class JWTService {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts
-                .parser()
-                .setSigningKey(getSignInKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        try {
+            return Jwts
+                    .parser()
+                    .setSigningKey(getSignInKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } catch (Exception e) {
+            logger.error("Failed to extract claims from JWT token", e);
+            throw e;
+        }
     }
 
     private Key getSignInKey() {
