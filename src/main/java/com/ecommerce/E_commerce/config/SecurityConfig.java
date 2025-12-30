@@ -1,8 +1,8 @@
 package com.ecommerce.E_commerce.config;
 
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -25,6 +25,7 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
@@ -32,17 +33,6 @@ public class SecurityConfig {
     private final JsonAuthenticationEntryPoint authenticationEntryPoint;
     private final JsonAccessDeniedHandler accessDeniedHandler;
     private final Environment environment;
-
-    @Autowired
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter,
-                          JsonAuthenticationEntryPoint authenticationEntryPoint,
-                          JsonAccessDeniedHandler accessDeniedHandler,
-                          Environment environment) {
-        this.jwtAuthFilter = jwtAuthFilter;
-        this.authenticationEntryPoint = authenticationEntryPoint;
-        this.accessDeniedHandler = accessDeniedHandler;
-        this.environment = environment;
-    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

@@ -3,14 +3,15 @@ package com.ecommerce.E_commerce.config;
 import com.ecommerce.E_commerce.model.User;
 import com.ecommerce.E_commerce.service.JWTService;
 import com.ecommerce.E_commerce.service.UserService;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
@@ -24,43 +25,31 @@ import java.io.IOException;
 
 @Component
 @Profile("!test")
+@RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
     
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthFilter.class);
     private final JWTService jwtService;
     private final UserService userService;
 
-    @Autowired
-    public JwtAuthFilter(JWTService jwtService, @Lazy UserService userService) {
-        this.jwtService = jwtService;
-        this.userService = userService;
-    }
-
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain chain)
             throws ServletException, IOException {
-
-        // Allow CORS preflight through
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             chain.doFilter(request, response);
             return;
         }
-
-        // If already authenticated, continue
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
             chain.doFilter(request, response);
             return;
         }
-
         final String authHeader = request.getHeader("Authorization");
-
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             chain.doFilter(request, response);
             return;
         }
-
         final String jwt = authHeader.substring(7);
         try {
             final String userEmail = jwtService.extractUsername(jwt);
@@ -84,10 +73,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
 
             chain.doFilter(request, response);
-        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+        } catch (ExpiredJwtException e) {
             writeUnauthorized(response, "Token expired");
             return;
-        } catch (io.jsonwebtoken.JwtException | IllegalArgumentException e) {
+        } catch (JwtException | IllegalArgumentException e) {
             writeUnauthorized(response, "Invalid token");
             return;
         } catch (Exception e) {

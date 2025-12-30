@@ -20,19 +20,23 @@ public class Role implements GrantedAuthority {
     @Enumerated(EnumType.STRING)
     private ERole role;
 
+    @Setter
     @Column(name = "description", length = Integer.MAX_VALUE)
     private String description;
 
+    @Setter
     @NotNull
     @ColumnDefault("now()")
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Setter
     @NotNull
     @ColumnDefault("now()")
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Setter
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
@@ -40,32 +44,16 @@ public class Role implements GrantedAuthority {
         return deletedAt;
     }
 
-    public void setDeletedAt(Instant deletedAt) {
-        this.deletedAt = deletedAt;
-    }
-
     public Instant getUpdatedAt() {
         return updatedAt;
-    }
-
-    public void setUpdatedAt(Instant updatedAt) {
-        this.updatedAt = updatedAt;
     }
 
     public Instant getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public String getDescription() {
         return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public Role() {

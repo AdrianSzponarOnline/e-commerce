@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -100,7 +101,7 @@ public class AddressController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
         Page<AddressDTO> addresses = addressService.findAll(
-                org.springframework.data.domain.PageRequest.of(
+                PageRequest.of(
                         page,
                         size,
                         sortDir.equalsIgnoreCase("desc")

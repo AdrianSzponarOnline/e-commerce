@@ -1,8 +1,7 @@
 package com.ecommerce.E_commerce.config;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -14,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 @EnableJpaAuditing
+@RequiredArgsConstructor
 public class AppConfig {
     private final UserDetailsService userDetailsService;
 
@@ -33,10 +33,4 @@ public class AppConfig {
         authProvider.setUserDetailsService(userDetailsService);
         return authProvider;
     }
-
-    @Autowired
-    public AppConfig(@Lazy UserDetailsService userDetailsService) {
-        this.userDetailsService = userDetailsService;
-    }
-
 }
