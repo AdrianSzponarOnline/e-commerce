@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
     
@@ -27,6 +28,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Page<Order> findByUserIdAndCreatedAtBetween(Long userId, Instant startDate, Instant endDate, Pageable pageable);
     
     // Find active orders
+    @Query("SELECT o FROM Order o JOIN FETCH o.user WHERE o.id = :id")
+    Optional<Order> findByIdWithUser(@Param("id") Long id);
     Page<Order> findByIsActive(Boolean isActive, Pageable pageable);
     Page<Order> findByUserIdAndIsActive(Long userId, Boolean isActive, Pageable pageable);
 

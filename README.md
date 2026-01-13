@@ -28,6 +28,7 @@ Kompleksowy system e-commerce zbudowany w Spring Boot z obsługą produktów, ka
 
 ### W trakcie rozwoju
 - Newsletter
+- Rozszerzona integracja AI dla rekomendacji produktów
 
 ##  Architektura
 
@@ -149,17 +150,19 @@ mvn spring-boot:run -Dspring.profiles.active=test
 ##  API Documentation
 
 ### Główne API
-- **Auth API:** `/api/auth` - Logowanie, rejestracja, aktywacja konta, reset hasła
+- **Auth API:** `/api/auth` - Logowanie, rejestracja, aktywacja konta, reset hasła, aktualizacja profilu
 - **Categories API:** `/api/categories` - Zarządzanie kategoriami
 - **Category Attributes API:** `/api/categories/{categoryId}/attributes` - Atrybuty kategorii
 - **Products API:** `/api/products` - Zarządzanie produktami
 - **Search API:** `/api/search` - Wyszukiwanie produktów (Elasticsearch)
 - **Product Attribute Values API:** `/api/product-attribute-values` - Wartości atrybutów
 - **Product Images API:** `/api/products/{productId}/images` - Zarządzanie obrazami produktów
-- **Orders API:** `/api/orders` - Zarządzanie zamówieniami
-- **Payments API:** `/api/payments` - Zarządzanie płatnościami
+- **Orders API:** `/api/orders` - Zarządzanie zamówieniami z filtrowaniem i statystykami
+- **Payments API:** `/api/payments` - Zarządzanie płatnościami z symulacją bramki płatniczej
 - **Addresses API:** `/api/addresses` - Zarządzanie adresami użytkowników
 - **Inventory API:** `/api/inventory` - Zarządzanie stanem magazynowym
+- **AI Chat API:** `/api/ai/chat` - Asystent sprzedażowy z AI (Gemini)
+- **Contact API:** `/api/contact` - Formularz kontaktowy
 
 ### Dokumentacja
 - [Kompletna dokumentacja API](API_DOCUMENTATION.md)
@@ -340,6 +343,28 @@ export MAIL_FROM=sklep@ecommerce.com
 ```
 
 ##  Changelog
+
+### v1.5.0
+- **Rozszerzone API płatności**
+  - Endpoint `/api/payments/me` - pobieranie własnych płatności
+  - Endpoint `/api/payments/user/{userId}` - płatności użytkownika
+  - Endpoint `/api/payments/order/{orderId}` - płatności zamówienia
+  - Endpoint `/api/payments/status/{status}` - filtrowanie po statusie
+  - Endpoint `/api/payments/filter` - zaawansowane filtrowanie
+  - Endpoint `/api/payments/stats/count` - statystyki płatności
+  - Endpoint `/api/payments/{paymentId}/simulate` - symulacja bramki płatniczej
+- **Rozszerzone API zamówień**
+  - Endpoint `/api/orders/me` - pobieranie własnych zamówień
+  - Endpoint `/api/orders/user/{userId}` - zamówienia użytkownika
+  - Endpoint `/api/orders/status/{status}` - filtrowanie po statusie
+  - Endpoint `/api/orders/filter` - zaawansowane filtrowanie z datami
+  - Endpoint `/api/orders/stats/count` - statystyki zamówień
+- **Nowe funkcjonalności**
+  - AI Chat API (`/api/ai/chat`) - asystent sprzedażowy z integracją Gemini
+  - Contact API (`/api/contact`) - formularz kontaktowy z wysyłką emaili
+  - Aktualizacja profilu użytkownika (`PUT /api/auth/update`)
+  - Ponowne wysyłanie linku aktywacyjnego (`POST /api/auth/resend-activation`)
+  - Rozszerzone API magazynu z podsumowaniami i sprawdzaniem dostępności
 
 ### v1.4.0 
 - **Dodano kompleksowe logowanie SLF4J**

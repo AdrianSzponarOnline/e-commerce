@@ -107,15 +107,14 @@ public class SecurityConfig {
                                     "/api/auth/register",
                                     "/uploads/**"
                             ).permitAll();
-                    if (isDevOrTest) {
-                        authorize.requestMatchers(
-                                "/swagger-ui/**",
-                                "/swagger-resources/**",
-                                "/v3/api-docs/**",
-                                "/v3/api-docs.yaml",
-                                "/webjars/**"
-                        ).permitAll();
-                    }
+                            authorize.requestMatchers(
+                                    "/swagger-ui/**",
+                                    "/swagger-ui.html",
+                                    "/swagger-resources/**",
+                                    "/v3/api-docs/**",
+                                    "/v3/api-docs.yaml",
+                                    "/webjars/**"
+                            ).permitAll();
                     authorize
                             .requestMatchers("/api/**").authenticated()
                             .anyRequest().authenticated();

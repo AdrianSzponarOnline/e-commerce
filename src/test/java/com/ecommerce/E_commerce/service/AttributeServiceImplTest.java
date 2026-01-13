@@ -9,6 +9,7 @@ import com.ecommerce.E_commerce.mapper.AttributeMapper;
 import com.ecommerce.E_commerce.model.Attribute;
 import com.ecommerce.E_commerce.model.CategoryAttributeType;
 import com.ecommerce.E_commerce.repository.AttributeRepository;
+import com.ecommerce.E_commerce.repository.ProductAttributeValueRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +35,8 @@ class AttributeServiceImplTest {
     private AttributeRepository attributeRepository;
 
     @Mock
+    ProductAttributeValueRepository productAttributeValueRepository;
+    @Mock
     private AttributeMapper attributeMapper;
 
     private AttributeServiceImpl attributeService;
@@ -42,7 +45,7 @@ class AttributeServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        attributeService = new AttributeServiceImpl(attributeRepository, attributeMapper);
+        attributeService = new AttributeServiceImpl(attributeRepository, attributeMapper, productAttributeValueRepository);
 
         testAttribute = new Attribute();
         testAttribute.setId(1L);

@@ -10,20 +10,24 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, Long> {
-    
-    // Find by product
-    Optional<Inventory> findByProductId(Long productId);
-    Optional<Inventory> findByProductIdAndIsActive(Long productId, Boolean isActive);
-    
-    // Find by product with pessimistic lock (for concurrent updates)
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    List<Inventory> findByProductIdIn(Collection<Long> productIds);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT i FROM Inventory i WHERE i.product.id = :productId")
     Optional<Inventory> findByProductIdWithLock(@Param("productId") Long productId);
-    
+
+
+
+    Optional<Inventory> findByProductId(Long productId);
+    Optional<Inventory> findByProductIdAndIsActive(Long productId, Boolean isActive);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT i FROM Inventory i WHERE i.product.id = :productId AND i.isActive = :isActive")
     Optional<Inventory> findByProductIdAndIsActiveWithLock(@Param("productId") Long productId, @Param("isActive") Boolean isActive);

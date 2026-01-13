@@ -178,6 +178,33 @@ public class CategoryServiceImpl implements CategoryService {
         }
         return roots;
     }
+    @Override
+    @Transactional(readOnly = true)
+    @Cacheable(value = "categories", key = "'ai_context_string'")
+    public String getCategoryTreeStructure() {
+        List<CategoryDTO> categoryTree = listActive();
+
+        StringBuilder sb = new StringBuilder();
+        for (CategoryDTO rootCategory : categoryTree) {
+            appendCategoryToStringBuilder(sb, rootCategory, 0);
+        }
+
+        return sb.toString();
+    }
+
+    private void appendCategoryToStringBuilder(StringBuilder sb, CategoryDTO category, int level) {
+        String indent = "  ".repeat(level);
+
+        String bullet = (level == 0) ? "• " : "- ";
+
+        sb.append(String.format("%s%s[ID: %d] %s\n", indent, bullet, category.id(), category.name()));
+
+        if (category.children() != null && !category.children().isEmpty()) {
+            for (CategoryDTO child : category.children()) {
+                appendCategoryToStringBuilder(sb, child, level + 1);
+            }
+        }
+    }
 }
 
 

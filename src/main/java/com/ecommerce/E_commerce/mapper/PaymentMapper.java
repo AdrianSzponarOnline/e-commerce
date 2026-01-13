@@ -15,8 +15,8 @@ public interface PaymentMapper {
     
     @Mapping(target = "orderId", source = "order.id")
     @Mapping(target = "transactionDate", source = "updatedAt")
-    @Mapping(target = "method", expression = "java(payment.getMethod() != null ? payment.getMethod().name() : null)")
-    @Mapping(target = "status", expression = "java(payment.getStatus() != null ? payment.getStatus().name() : null)")
+    @Mapping(target = "method", source = "method")
+    @Mapping(target = "status", source = "status")
     PaymentDTO toPaymentDTO(Payment payment);
     
     @Mapping(target = "id", ignore = true)
@@ -38,6 +38,7 @@ public interface PaymentMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
+    @Mapping(target = "isActive", ignore = true)
     void updatePaymentFromDTO(PaymentUpdateDTO dto, @MappingTarget Payment payment);
 }
 

@@ -12,6 +12,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -28,6 +29,7 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @ColumnDefault("nextval('categories_id_seq'::regclass)")
     @Column(name = "id", nullable = false)
+    @GenericField
     private Long id;
 
     @Size(max = 100)
@@ -41,11 +43,9 @@ public class Category {
     @JsonBackReference
     private Category parent;
 
-    @OneToMany(
-            mappedBy = "category",
+    @OneToMany(mappedBy = "category",
             cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
+            orphanRemoval = true)
     private Set<CategoryAttribute> attributes = new HashSet<>();
 
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)

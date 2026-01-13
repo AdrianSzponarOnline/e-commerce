@@ -3,6 +3,7 @@ package com.ecommerce.E_commerce.service;
 import com.ecommerce.E_commerce.dto.payment.PaymentCreateDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentUpdateDTO;
+import com.ecommerce.E_commerce.model.PaymentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,7 +27,7 @@ public interface PaymentService {
     
     Page<PaymentDTO> findByUserId(Long userId, Pageable pageable);
     
-    Page<PaymentDTO> findByStatus(String status, Pageable pageable);
+    Page<PaymentDTO> findByStatus(PaymentStatus status, Pageable pageable);
     
     Page<PaymentDTO> findAll(Pageable pageable);
     

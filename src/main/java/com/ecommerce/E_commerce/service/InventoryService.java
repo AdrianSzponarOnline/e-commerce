@@ -8,9 +8,10 @@ import com.ecommerce.E_commerce.exception.ResourceNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Map;
+
 public interface InventoryService {
     
-    // CRUD Operations
     InventoryDTO create(InventoryCreateDTO dto);
     
     InventoryDTO update(Long id, InventoryUpdateDTO dto);
@@ -34,8 +35,9 @@ public interface InventoryService {
      * @throws ResourceNotFoundException if inventory not found for product
      * @throws IllegalArgumentException if inventory is not active or insufficient stock available
      */
+
     void reserveStock(Long productId, Integer quantity);
-    
+    void reserveStockBatch(Map<Long, Integer> productQuantities);
     /**
      * Releases reserved stock back to available (increases available quantity, decreases reserved quantity).
      * 

@@ -26,6 +26,7 @@ public class SearchController {
     @PostMapping
     public Page<ProductSearchDTO> search(
             @RequestParam(required = false) String query,
+            @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) Boolean isActive,
@@ -34,7 +35,7 @@ public class SearchController {
     {
         logger.debug("POST /api/search - Searching products: query={}, minPrice={}, maxPrice={}, attributesCount={}", 
                     query, minPrice, maxPrice, attributes != null ? attributes.size() : 0);
-        Page<ProductSearchDTO> results = searchService.search(query, minPrice, maxPrice, isActive, attributes, pageable);
+        Page<ProductSearchDTO> results = searchService.search(query,categoryId ,minPrice, maxPrice, isActive, attributes, pageable);
         logger.debug("POST /api/search - Search completed: resultsCount={}", results.getTotalElements());
         return results;
     }

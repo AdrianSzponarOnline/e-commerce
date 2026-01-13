@@ -4,6 +4,8 @@ import com.ecommerce.E_commerce.dto.payment.PaymentCreateDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentUpdateDTO;
 import com.ecommerce.E_commerce.exception.InvalidOperationException;
+import com.ecommerce.E_commerce.model.PaymentMethod;
+import com.ecommerce.E_commerce.model.PaymentStatus;
 import com.ecommerce.E_commerce.exception.ResourceNotFoundException;
 import com.ecommerce.E_commerce.mapper.PaymentMapper;
 import com.ecommerce.E_commerce.model.*;
@@ -46,7 +48,7 @@ class PaymentServiceImplTest {
     private PaymentMapper paymentMapper;
 
     @Mock
-    private InventoryService inventoryService;
+    private OrderService orderService;
 
     private PaymentServiceImpl paymentService;
 
@@ -56,7 +58,7 @@ class PaymentServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        paymentService = new PaymentServiceImpl(paymentRepository, orderRepository, paymentMapper, inventoryService);
+        paymentService = new PaymentServiceImpl(paymentRepository, orderRepository, paymentMapper, orderService);
 
         testUser = new User();
         testUser.setId(1L);
@@ -83,13 +85,13 @@ class PaymentServiceImplTest {
         PaymentCreateDTO createDTO = new PaymentCreateDTO(
                 1L,
                 new BigDecimal("199.98"),
-                "CREDIT_CARD",
+                PaymentMethod.CREDIT_CARD,
                 "TXN-123",
                 "Payment notes"
         );
 
         PaymentDTO paymentDTO = new PaymentDTO(
-                1L, 1L, new BigDecimal("199.98"), "CREDIT_CARD", "PENDING",
+                1L, 1L, new BigDecimal("199.98"), PaymentMethod.CREDIT_CARD, PaymentStatus.PENDING,
                 Instant.now(), "TXN-123", "Payment notes", Instant.now(), Instant.now(), true
         );
 
@@ -120,7 +122,7 @@ class PaymentServiceImplTest {
     void create_ShouldThrowException_WhenOrderNotFound() {
         // Given
         PaymentCreateDTO createDTO = new PaymentCreateDTO(
-                1L, new BigDecimal("199.98"), "CREDIT_CARD", "TXN-123", null
+                1L, new BigDecimal("199.98"), PaymentMethod.CREDIT_CARD, "TXN-123", null
         );
         when(orderRepository.findById(1L)).thenReturn(Optional.empty());
 
@@ -136,7 +138,7 @@ class PaymentServiceImplTest {
         // Given
         testOrder.setStatus(OrderStatus.SHIPPED);
         PaymentCreateDTO createDTO = new PaymentCreateDTO(
-                1L, new BigDecimal("199.98"), "CREDIT_CARD", "TXN-123", null
+                1L, new BigDecimal("199.98"), PaymentMethod.CREDIT_CARD, "TXN-123", null
         );
         
         // Mock SecurityContext
@@ -159,7 +161,7 @@ class PaymentServiceImplTest {
     void create_ShouldThrowException_WhenAmountDoesNotMatch() {
         // Given
         PaymentCreateDTO createDTO = new PaymentCreateDTO(
-                1L, new BigDecimal("100.00"), "CREDIT_CARD", "TXN-123", null
+                1L, new BigDecimal("100.00"), PaymentMethod.CREDIT_CARD, "TXN-123", null
         );
         
         // Mock SecurityContext
@@ -181,9 +183,9 @@ class PaymentServiceImplTest {
     @Test
     void update_ShouldUpdatePaymentSuccessfully() {
         // Given
-        PaymentUpdateDTO updateDTO = new PaymentUpdateDTO("COMPLETED", null, null);
+        PaymentUpdateDTO updateDTO = new PaymentUpdateDTO(PaymentStatus.COMPLETED, null, null);
         PaymentDTO paymentDTO = new PaymentDTO(
-                1L, 1L, new BigDecimal("199.98"), "CREDIT_CARD", "COMPLETED",
+                1L, 1L, new BigDecimal("199.98"), PaymentMethod.CREDIT_CARD, PaymentStatus.COMPLETED,
                 Instant.now(), "TXN-123", null, Instant.now(), Instant.now(), true
         );
 
@@ -212,7 +214,7 @@ class PaymentServiceImplTest {
     @Test
     void update_ShouldThrowException_WhenPaymentNotFound() {
         // Given
-        PaymentUpdateDTO updateDTO = new PaymentUpdateDTO("COMPLETED", null, null);
+        PaymentUpdateDTO updateDTO = new PaymentUpdateDTO(PaymentStatus.COMPLETED, null, null);
         when(paymentRepository.findById(1L)).thenReturn(Optional.empty());
 
         // When & Then
@@ -225,7 +227,7 @@ class PaymentServiceImplTest {
     void getById_ShouldReturnPayment_WhenPaymentExists() {
         // Given
         PaymentDTO paymentDTO = new PaymentDTO(
-                1L, 1L, new BigDecimal("199.98"), "CREDIT_CARD", "PENDING",
+                1L, 1L, new BigDecimal("199.98"), PaymentMethod.CREDIT_CARD, PaymentStatus.PENDING,
                 Instant.now(), "TXN-123", null, Instant.now(), Instant.now(), true
         );
         
@@ -276,7 +278,7 @@ class PaymentServiceImplTest {
         Pageable pageable = PageRequest.of(0, 10);
         Page<Payment> paymentPage = new PageImpl<>(List.of(testPayment));
         PaymentDTO paymentDTO = new PaymentDTO(
-                1L, 1L, new BigDecimal("199.98"), "CREDIT_CARD", "PENDING",
+                1L, 1L, new BigDecimal("199.98"), PaymentMethod.CREDIT_CARD, PaymentStatus.PENDING,
                 Instant.now(), "TXN-123", null, Instant.now(), Instant.now(), true
         );
 

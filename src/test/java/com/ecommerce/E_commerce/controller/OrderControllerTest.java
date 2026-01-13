@@ -3,6 +3,7 @@ package com.ecommerce.E_commerce.controller;
 import com.ecommerce.E_commerce.dto.order.OrderCreateDTO;
 import com.ecommerce.E_commerce.dto.order.OrderDTO;
 import com.ecommerce.E_commerce.dto.orderitem.OrderItemCreateDTO;
+import com.ecommerce.E_commerce.model.OrderStatus;
 import com.ecommerce.E_commerce.dto.payment.PaymentDTO;
 import com.ecommerce.E_commerce.model.ERole;
 import com.ecommerce.E_commerce.model.Role;
@@ -52,12 +53,11 @@ class OrderControllerTest {
         // Given
         OrderCreateDTO createDTO = new OrderCreateDTO(
                 1L,
-                "NEW",
                 List.of(new OrderItemCreateDTO(1L, 2))
         );
 
         OrderDTO orderDTO = new OrderDTO(
-                1L, 1L, null, null, null, "NEW", new BigDecimal("199.98"),
+                1L, 1L, null, null, null, OrderStatus.NEW, new BigDecimal("199.98"),
                 List.of(), List.<PaymentDTO>of(), Instant.now(), Instant.now(), true
         );
 
@@ -80,6 +80,6 @@ class OrderControllerTest {
                 .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.status").value("NEW"));
+                .andExpect(jsonPath("$.status").value(OrderStatus.NEW));
     }
 }

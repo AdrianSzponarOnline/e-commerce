@@ -4,6 +4,7 @@ import com.ecommerce.E_commerce.dto.order.OrderCreateDTO;
 import com.ecommerce.E_commerce.dto.order.OrderDTO;
 import com.ecommerce.E_commerce.dto.order.OrderUpdateDTO;
 import com.ecommerce.E_commerce.dto.orderitem.OrderItemCreateDTO;
+import com.ecommerce.E_commerce.model.OrderStatus;
 import com.ecommerce.E_commerce.dto.payment.PaymentDTO;
 import com.ecommerce.E_commerce.exception.InvalidOperationException;
 import com.ecommerce.E_commerce.exception.ResourceNotFoundException;
@@ -108,7 +109,6 @@ class OrderServiceImplTest {
         // Given
         OrderCreateDTO createDTO = new OrderCreateDTO(
                 1L,
-                "NEW",
                 List.of(new OrderItemCreateDTO(1L, 2))
         );
 
@@ -118,7 +118,7 @@ class OrderServiceImplTest {
         when(orderMapper.toOrder(createDTO)).thenReturn(testOrder);
         when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
         when(orderMapper.toOrderDTO(testOrder)).thenReturn(new OrderDTO(
-                1L, 1L, null, null, null, "NEW", new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<PaymentDTO>(), Instant.now(), Instant.now(), true
+                1L, 1L, null, null, null, OrderStatus.NEW, new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<PaymentDTO>(), Instant.now(), Instant.now(), true
         ));
 
         // When
@@ -137,7 +137,7 @@ class OrderServiceImplTest {
     @Test
     void create_ShouldThrowException_WhenUserNotFound() {
         // Given
-        OrderCreateDTO createDTO = new OrderCreateDTO(1L, "NEW", List.of(new OrderItemCreateDTO(1L, 2)));
+        OrderCreateDTO createDTO = new OrderCreateDTO(1L, List.of(new OrderItemCreateDTO(1L, 2)));
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
         // When & Then
@@ -156,7 +156,7 @@ class OrderServiceImplTest {
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
         when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
         when(orderMapper.toOrderDTO(testOrder)).thenReturn(new OrderDTO(
-                1L, 1L, null, null, null, "CONFIRMED", new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<PaymentDTO>(), Instant.now(), Instant.now(), true
+                1L, 1L, null, null, null, OrderStatus.CONFIRMED, new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<PaymentDTO>(), Instant.now(), Instant.now(), true
         ));
 
         // When
@@ -183,7 +183,7 @@ class OrderServiceImplTest {
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
         when(orderRepository.save(any(Order.class))).thenReturn(testOrder);
         when(orderMapper.toOrderDTO(testOrder)).thenReturn(new OrderDTO(
-                1L, 1L, null, null, null, "CANCELLED", new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<PaymentDTO>(), Instant.now(), Instant.now(), true
+                1L, 1L, null, null, null, OrderStatus.CANCELLED, new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<PaymentDTO>(), Instant.now(), Instant.now(), true
         ));
 
         // When
@@ -211,7 +211,7 @@ class OrderServiceImplTest {
     void getById_ShouldReturnOrder_WhenOrderExists() {
         // Given
         OrderDTO orderDTO = new OrderDTO(
-                1L, 1L, null, null, null, "NEW", new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<PaymentDTO>(), Instant.now(), Instant.now(), true
+                1L, 1L, null, null, null, OrderStatus.NEW, new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<PaymentDTO>(), Instant.now(), Instant.now(), true
         );
         when(orderRepository.findById(1L)).thenReturn(Optional.of(testOrder));
         when(orderMapper.toOrderDTO(testOrder)).thenReturn(orderDTO);
@@ -243,7 +243,7 @@ class OrderServiceImplTest {
         Page<Order> orderPage = new PageImpl<>(List.of(testOrder));
         when(orderRepository.findByUserId(1L, pageable)).thenReturn(orderPage);
         when(orderMapper.toOrderDTO(testOrder)).thenReturn(new OrderDTO(
-                1L, 1L, null, null, null, "NEW", new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<PaymentDTO>(), Instant.now(), Instant.now(), true
+                1L, 1L, null, null, null, OrderStatus.NEW, new BigDecimal("199.98"), new ArrayList<>(), new ArrayList<PaymentDTO>(), Instant.now(), Instant.now(), true
         ));
 
         // When

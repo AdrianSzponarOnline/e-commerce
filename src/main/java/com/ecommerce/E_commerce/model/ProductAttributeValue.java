@@ -24,14 +24,12 @@ import java.util.Objects;
 @Setter
 @NoArgsConstructor
 public class ProductAttributeValue {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
     @Column(name = "attribute_value", columnDefinition = "TEXT")
-    @FullTextField(name = "value", analyzer = "standard")
+    @FullTextField(name = "attributeValue", analyzer = "standard")
     private String attributeValue;
 
     @CreationTimestamp
@@ -42,16 +40,15 @@ public class ProductAttributeValue {
     @Column(nullable = false)
     private Instant updatedAt;
 
+    @Column
     private Instant deletedAt;
 
     @Column(nullable = false)
     private boolean isActive = true;
 
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
-
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "attribute_id", nullable = false)

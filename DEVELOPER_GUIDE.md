@@ -908,6 +908,155 @@ public class ProductMetrics {
 }
 ```
 
+## AI Chat Integration
+
+### Konfiguracja
+System wykorzystuje Spring AI z integracją Google Gemini do asystenta sprzedażowego.
+
+### Konfiguracja właściwości
+```properties
+# Google Vertex AI Gemini
+spring.ai.vertex.ai.gemini.chat.options.model=gemini-pro
+spring.ai.vertex.ai.gemini.chat.options.temperature=0.7
+spring.ai.vertex.ai.project-id=your-project-id
+spring.ai.vertex.ai.location=us-central1
+spring.ai.vertex.ai.credentials.location=classpath:credentials.json
+```
+
+### Implementacja ChatController
+```java
+@RestController
+@RequestMapping("/api/ai")
+public class ChatController {
+    
+    private final ChatClient.Builder builder;
+    private final AttributeService attributeService;
+    private final CategoryService categoryService;
+    private final ChatMemory chatMemory;
+    
+    @EventListener(ApplicationReadyEvent.class)
+    public void initializeChatClient() {
+        // Pobranie struktury kategorii i atrybutów
+        String categoriesTree = categoryService.getCategoryTreeStructure();
+        Map<String, List<String>> attributesMap = attributeService.getAllAttributesWithValues();
+        
+        // Budowa system prompt z kontekstem
+        String systemPrompt = buildSystemPrompt(categoriesTree, attributesMap);
+        
+        // Inicjalizacja ChatClient z funkcjami
+        this.chatClient = builder
+            .defaultFunctions("searchProductsTool", "productDetailsTool")
+            .defaultOptions(VertexAiGeminiChatOptions.builder()
+                .withModel(model)
+                .withTemperature(temperature)
+                .build())
+            .defaultSystem(systemPrompt)
+            .defaultAdvisors(new MessageChatMemoryAdvisor(chatMemory))
+            .build();
+    }
+}
+```
+
+### Funkcje AI (Tools)
+System definiuje dwie funkcje dla AI:
+
+1. **searchProductsTool** - Wyszukiwanie produktów
+   - Parametry: `query`, `categoryId`, `minPrice`, `maxPrice`, `attributes`
+   - Zwraca listę produktów z sugestiami alternatyw
+
+2. **productDetailsTool** - Szczegóły produktu
+   - Parametry: `productSlug`
+   - Zwraca pełne informacje o produkcie
+
+### Pamięć konwersacji
+System wykorzystuje `ChatMemory` do utrzymania kontekstu rozmowy:
+- Każda konwersacja ma unikalny `conversationId`
+- Pamięć przechowuje ostatnie 10 wiadomości
+- Kontekst jest automatycznie przekazywany do AI
+
+### System Prompt
+Asystent jest skonfigurowany jako polski asystent sprzedażowy z:
+- Dostępem do struktury kategorii
+- Listą dostępnych atrybutów produktów
+- Instrukcjami dotyczącymi formatowania odpowiedzi
+- Protokołem decyzyjnym dla wyszukiwania produktów
+
+## Contact Form Integration
+
+### Implementacja
+```java
+@RestController
+@RequestMapping("/api/contact")
+public class ContactController {
+    
+    private final EmailService emailService;
+    
+    @Value("${app.contact.admin.email}")
+    private String adminEmail;
+    
+    @PostMapping
+    public ResponseEntity<String> sendContactMessage(
+            @Valid @RequestBody ContactRequestDTO request) {
+        String subject = "Nowa wiadomość od: " + request.name();
+        String content = buildEmailContent(request);
+        
+        emailService.sendSimpleMail(adminEmail, subject, content);
+        return ResponseEntity.ok(content);
+    }
+}
+```
+
+### Konfiguracja
+```properties
+app.contact.admin.email=admin@ecommerce.com
+```
+
+### Walidacja
+DTO `ContactRequestDTO` zawiera walidację:
+- `name` - wymagane, max 255 znaków
+- `email` - wymagane, format email
+- `message` - wymagane, min 10 znaków
+
+## Rozszerzone API - Filtrowanie i Statystyki
+
+### Filtrowanie zamówień
+```java
+@GetMapping("/filter")
+@PreAuthorize("hasRole('OWNER')")
+public ResponseEntity<Page<OrderDTO>> filterOrders(
+        @RequestParam(required = false) Long userId,
+        @RequestParam(required = false) OrderStatus status,
+        @RequestParam(required = false) Boolean isActive,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
+        Pageable pageable) {
+    return ResponseEntity.ok(orderService.findByMultipleCriteria(
+        userId, status, isActive, startDate, endDate, pageable));
+}
+```
+
+### Filtrowanie płatności
+```java
+@GetMapping("/filter")
+@PreAuthorize("hasRole('OWNER')")
+public ResponseEntity<Page<PaymentDTO>> filterPayments(
+        @RequestParam(required = false) Long orderId,
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) String method,
+        @RequestParam(required = false) Boolean isActive,
+        @RequestParam(required = false) Instant startDate,
+        @RequestParam(required = false) Instant endDate,
+        Pageable pageable) {
+    return ResponseEntity.ok(paymentService.findByMultipleCriteria(
+        orderId, status, method, isActive, startDate, endDate, pageable));
+}
+```
+
+### Statystyki
+Wszystkie kontrolery z rozszerzonym API mają endpointy statystyk:
+- `/stats/count` - liczba rekordów z opcjonalnymi filtrami
+- Wsparcie dla filtrowania po userId, status, itp.
+
 ## 🔧 Development Tools
 
 ### Maven Plugins
@@ -938,6 +1087,53 @@ public class ProductMetrics {
 }
 ```
 
+## Aktualizacja profilu użytkownika
+
+### Implementacja
+```java
+@PutMapping("/update")
+@PreAuthorize("hasRole('OWNER') or (hasRole('USER'))")
+public ResponseEntity<UserDto> update(
+        @Valid @RequestBody UserUpdateDTO request,
+        @AuthenticationPrincipal User user) {
+    UserDto updatedUser = userService.updateUser(user.getId(), request);
+    return ResponseEntity.ok(updatedUser);
+}
+```
+
+### Walidacja
+DTO `UserUpdateDTO` zawiera opcjonalne pola:
+- `firstName` - imię
+- `lastName` - nazwisko
+- `email` - email (walidacja formatu)
+
+### Bezpieczeństwo
+- USER może aktualizować tylko swój profil
+- OWNER może aktualizować dowolny profil
+- Email jest walidowany pod kątem unikalności
+
+## Ponowne wysyłanie linku aktywacyjnego
+
+### Implementacja
+```java
+@PostMapping("/resend-activation")
+public ResponseEntity<String> resendActivation(
+        @Valid @RequestBody ResendActivationRequestDTO request) {
+    userService.resendActivationLink(request.email());
+    return ResponseEntity.ok("Nowy link aktywacyjny został wysłany");
+}
+```
+
+### Flow
+1. Użytkownik wysyła żądanie z emailem
+2. System generuje nowy token aktywacyjny (ważny 15 minut)
+3. Email z nowym linkiem jest wysyłany
+4. Stary token jest unieważniany
+
+### Bezpieczeństwo
+- Dla bezpieczeństwa zawsze zwracany jest ten sam komunikat (nawet jeśli email nie istnieje)
+- Nowy token unieważnia poprzedni token dla danego użytkownika
+
 ---
 
-*Przewodnik dewelopera - ostatnia aktualizacja: 2025-10-30*
+*Przewodnik dewelopera - ostatnia aktualizacja: 2025-01-15*

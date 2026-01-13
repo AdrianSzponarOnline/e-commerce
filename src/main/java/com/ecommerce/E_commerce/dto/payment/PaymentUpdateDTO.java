@@ -1,13 +1,13 @@
 package com.ecommerce.E_commerce.dto.payment;
 
+import com.ecommerce.E_commerce.model.PaymentStatus;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record PaymentUpdateDTO(
-        @Size(max = 20, message = "Status must not exceed 20 characters")
-        @Pattern(regexp = "^(PENDING|PROCESSING|COMPLETED|FAILED|CANCELLED|REFUNDED)?$", 
-                message = "Status must be one of the valid payment statuses")
-        String status,
+        @NotNull
+        PaymentStatus status,
         
         @Size(max = 255, message = "Transaction ID must not exceed 255 characters")
         @Pattern(regexp = "^[\\p{L}\\p{N} \\-_]*$", message = "Transaction ID contains invalid characters")

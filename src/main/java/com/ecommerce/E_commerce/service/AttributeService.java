@@ -8,16 +8,17 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 
 
 public interface AttributeService {
-    public Attribute findOrCreateAttribute(AttributeCreateDTO dto);
+    Attribute findOrCreateAttribute(AttributeCreateDTO dto);
     AttributeDTO createAttribute(AttributeCreateDTO dto);
-    public AttributeDTO update(Long id, AttributeUpdateDTO dto);
-    public void deleteAttribute(Long id);
+    AttributeDTO update(Long id, AttributeUpdateDTO dto);void deleteAttribute(Long id);
     AttributeDTO getAttributeById(Long id);
     Page<AttributeDTO> getActiveAttributes(Pageable pageable);
     Page<AttributeDTO> getInactiveAttributes(Pageable pageable);
     void restoreAttribute(Long id);
     List<String> getAllAttributeNames();
+    Map<String, List<String>> getAllAttributesWithValues();
 }

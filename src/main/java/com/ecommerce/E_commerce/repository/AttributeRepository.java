@@ -30,4 +30,6 @@ public interface AttributeRepository extends JpaRepository<Attribute, Long> {
 
     @Query("SELECT DISTINCT a.name FROM Attribute a WHERE a.isActive = true")
     List<String> findAllActiveAttributeNames();
+
+    List<Attribute> findAllByIsActiveTrue();
 }

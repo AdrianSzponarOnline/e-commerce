@@ -15,6 +15,8 @@ Kompletna dokumentacja API dla systemu e-commerce z obsługą produktów, katego
 - **Payments API:** `/api/payments`
 - **Addresses API:** `/api/addresses`
 - **Inventory API:** `/api/inventory`
+- **AI Chat API:** `/api/ai/chat`
+- **Contact API:** `/api/contact`
 
 ## Autoryzacja
 - **Publiczne endpointy** - dostępne dla wszystkich użytkowników
@@ -170,6 +172,60 @@ Hasło zmienione pomyślnie
   "roles": ["ROLE_USER"]
 }
 ```
+
+### 1.7 Aktualizacja profilu użytkownika
+**Endpoint:** `PUT /api/auth/update`  
+**Autoryzacja:** Authenticated (USER lub OWNER)
+
+**Request Body:**
+```json
+{
+  "firstName": "Jan",
+  "lastName": "Kowalski",
+  "email": "newemail@example.com"
+}
+```
+
+**Response:**
+```json
+{
+  "id": 1,
+  "email": "newemail@example.com",
+  "firstName": "Jan",
+  "lastName": "Kowalski",
+  "roles": ["ROLE_USER"]
+}
+```
+
+**Status codes:**
+- `200 OK` - Profil został zaktualizowany
+- `400 Bad Request` - Błędne dane wejściowe
+- `401 Unauthorized` - Brak autoryzacji
+
+### 1.8 Ponowne wysłanie linku aktywacyjnego
+**Endpoint:** `POST /api/auth/resend-activation`  
+**Autoryzacja:** Public
+
+**Request Body:**
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Response:**
+```
+Nowy link aktywacyjny został wysłany
+```
+
+**Status codes:**
+- `200 OK` - Link został wysłany (jeśli email istnieje i konto nie jest aktywne)
+- `400 Bad Request` - Błędne dane wejściowe
+
+**Uwagi:**
+- Link jest wysyłany tylko jeśli konto nie jest jeszcze aktywne
+- Nowy token aktywacyjny jest generowany i wysyłany na email
+- Token jest ważny przez 15 minut
 
 ---
 
@@ -1272,7 +1328,100 @@ spring.flyway.locations=classpath:db/migration
 **Endpoint:** `GET /api/orders/user/{userId}`  
 **Autoryzacja:** USER (tylko własne) lub OWNER
 
-### 14.5 Aktualizacja zamówienia (tylko OWNER)
+**Query Parameters:**
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "createdAt") - pole sortowania
+- `sortDir` (string, default: "desc") - kierunek sortowania (asc/desc)
+
+**Response:** `Page<OrderDTO>`
+
+### 14.5 Pobieranie własnych zamówień
+**Endpoint:** `GET /api/orders/me`  
+**Autoryzacja:** USER lub OWNER
+
+**Query Parameters:**
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "createdAt") - pole sortowania
+- `sortDir` (string, default: "desc") - kierunek sortowania (asc/desc)
+
+**Response:** `Page<OrderDTO>`
+
+**Uwagi:**
+- Zwraca zamówienia zalogowanego użytkownika
+- Automatycznie używa ID z tokena JWT
+
+### 14.6 Zamówienia według statusu
+**Endpoint:** `GET /api/orders/status/{status}`  
+**Autoryzacja:** OWNER
+
+**Path Parameters:**
+- `status` (OrderStatus) - Status zamówienia (NEW, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED, REFUNDED)
+
+**Query Parameters:**
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "createdAt") - pole sortowania
+- `sortDir` (string, default: "desc") - kierunek sortowania (asc/desc)
+
+**Response:** `Page<OrderDTO>`
+
+### 14.7 Zamówienia użytkownika według statusu
+**Endpoint:** `GET /api/orders/user/{userId}/status/{status}`  
+**Autoryzacja:** USER (tylko własne) lub OWNER
+
+**Path Parameters:**
+- `userId` (Long) - ID użytkownika
+- `status` (OrderStatus) - Status zamówienia
+
+**Query Parameters:**
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "createdAt") - pole sortowania
+- `sortDir` (string, default: "desc") - kierunek sortowania (asc/desc)
+
+**Response:** `Page<OrderDTO>`
+
+### 14.8 Zaawansowane filtrowanie zamówień
+**Endpoint:** `GET /api/orders/filter`  
+**Autoryzacja:** OWNER
+
+**Query Parameters:**
+- `userId` (Long, optional) - ID użytkownika
+- `status` (OrderStatus, optional) - Status zamówienia
+- `isActive` (Boolean, optional) - Status aktywności
+- `startDate` (Instant, optional) - Data początkowa (ISO 8601)
+- `endDate` (Instant, optional) - Data końcowa (ISO 8601)
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "createdAt") - pole sortowania
+- `sortDir` (string, default: "desc") - kierunek sortowania (asc/desc)
+
+**Response:** `Page<OrderDTO>`
+
+**Przykład:**
+```bash
+GET /api/orders/filter?userId=1&status=CONFIRMED&startDate=2024-01-01T00:00:00Z&endDate=2024-12-31T23:59:59Z
+```
+
+### 14.9 Statystyki zamówień
+**Endpoint:** `GET /api/orders/stats/count`  
+**Autoryzacja:** USER (tylko własne) lub OWNER
+
+**Query Parameters:**
+- `userId` (Long, optional) - ID użytkownika
+- `status` (OrderStatus, optional) - Status zamówienia
+
+**Response:** `Long` - liczba zamówień
+
+**Uwagi:**
+- Można podać `userId`, `status` lub oba parametry
+- Jeśli podano oba, zwraca liczbę zamówień użytkownika o danym statusie
+- Jeśli podano tylko `userId`, zwraca liczbę wszystkich zamówień użytkownika
+- Jeśli podano tylko `status`, zwraca liczbę wszystkich zamówień o danym statusie
+
+### 14.10 Aktualizacja zamówienia (tylko OWNER)
 **Endpoint:** `PUT /api/orders/{id}`  
 **Autoryzacja:** OWNER
 
@@ -1351,7 +1500,101 @@ spring.flyway.locations=classpath:db/migration
 **Endpoint:** `GET /api/payments/order/{orderId}`  
 **Autoryzacja:** USER (tylko własne zamówienia) lub OWNER
 
-### 15.5 Metody płatności
+**Query Parameters:**
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "createdAt") - pole sortowania
+- `sortDir` (string, default: "desc") - kierunek sortowania (asc/desc)
+
+**Response:** `Page<PaymentDTO>`
+
+### 15.5 Pobieranie własnych płatności
+**Endpoint:** `GET /api/payments/me`  
+**Autoryzacja:** USER lub OWNER
+
+**Query Parameters:**
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "createdAt") - pole sortowania
+- `sortDir` (string, default: "desc") - kierunek sortowania (asc/desc)
+
+**Response:** `Page<PaymentDTO>`
+
+**Uwagi:**
+- Zwraca płatności zalogowanego użytkownika
+- Automatycznie używa ID z tokena JWT
+
+### 15.6 Płatności według statusu
+**Endpoint:** `GET /api/payments/status/{status}`  
+**Autoryzacja:** OWNER
+
+**Path Parameters:**
+- `status` (PaymentStatus) - Status płatności (PENDING, PROCESSING, COMPLETED, FAILED, CANCELLED, REFUNDED)
+
+**Query Parameters:**
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "createdAt") - pole sortowania
+- `sortDir` (string, default: "desc") - kierunek sortowania (asc/desc)
+
+**Response:** `Page<PaymentDTO>`
+
+### 15.7 Płatności zamówienia według statusu
+**Endpoint:** `GET /api/payments/order/{orderId}/status/{status}`  
+**Autoryzacja:** USER (tylko własne zamówienia) lub OWNER
+
+**Path Parameters:**
+- `orderId` (Long) - ID zamówienia
+- `status` (String) - Status płatności (PENDING, PROCESSING, COMPLETED, FAILED, CANCELLED, REFUNDED)
+
+**Query Parameters:**
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "createdAt") - pole sortowania
+- `sortDir` (string, default: "desc") - kierunek sortowania (asc/desc)
+
+**Response:** `Page<PaymentDTO>`
+
+### 15.8 Zaawansowane filtrowanie płatności
+**Endpoint:** `GET /api/payments/filter`  
+**Autoryzacja:** OWNER
+
+**Query Parameters:**
+- `orderId` (Long, optional) - ID zamówienia
+- `status` (String, optional) - Status płatności
+- `method` (String, optional) - Metoda płatności (CREDIT_CARD, DEBIT_CARD, PAYPAL, BANK_TRANSFER, CASH_ON_DELIVERY, BLIK, APPLE_PAY, GOOGLE_PAY)
+- `isActive` (Boolean, optional) - Status aktywności
+- `startDate` (Instant, optional) - Data początkowa (ISO 8601)
+- `endDate` (Instant, optional) - Data końcowa (ISO 8601)
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "createdAt") - pole sortowania
+- `sortDir` (string, default: "desc") - kierunek sortowania (asc/desc)
+
+**Response:** `Page<PaymentDTO>`
+
+**Przykład:**
+```bash
+GET /api/payments/filter?status=COMPLETED&method=CREDIT_CARD&startDate=2024-01-01T00:00:00Z&endDate=2024-12-31T23:59:59Z
+```
+
+### 15.9 Statystyki płatności
+**Endpoint:** `GET /api/payments/stats/count`  
+**Autoryzacja:** USER (tylko własne zamówienia) lub OWNER
+
+**Query Parameters:**
+- `orderId` (Long, optional) - ID zamówienia
+- `status` (String, optional) - Status płatności
+
+**Response:** `Long` - liczba płatności
+
+**Uwagi:**
+- Można podać `orderId`, `status` lub oba parametry
+- Jeśli podano oba, zwraca liczbę płatności zamówienia o danym statusie
+- Jeśli podano tylko `orderId`, zwraca liczbę wszystkich płatności zamówienia
+- Jeśli podano tylko `status`, zwraca liczbę wszystkich płatności o danym statusie
+
+### 15.10 Metody płatności
 - `CREDIT_CARD`
 - `DEBIT_CARD`
 - `PAYPAL`
@@ -1481,6 +1724,200 @@ curl -X POST "http://localhost:8080/api/payments/1/simulate?scenario=FAIL" \
 - `size` - rozmiar strony (default: 10)
 - `sortBy` - pole sortowania (default: id)
 - `sortDir` - kierunek sortowania (asc/desc, default: asc)
+
+---
+
+## 18. Inventory API (`/api/inventory`)
+
+### 18.1 Tworzenie stanu magazynowego
+**Endpoint:** `POST /api/inventory`  
+**Autoryzacja:** `ROLE_OWNER`
+
+**Request Body:**
+```json
+{
+  "productId": 1,
+  "availableQuantity": 100,
+  "reservedQuantity": 0
+}
+```
+
+**Response:** `201 Created`
+```json
+{
+  "id": 1,
+  "productId": 1,
+  "availableQuantity": 100,
+  "reservedQuantity": 0,
+  "createdAt": "2024-01-01T10:00:00Z",
+  "updatedAt": "2024-01-01T10:00:00Z"
+}
+```
+
+### 18.2 Aktualizacja stanu magazynowego
+**Endpoint:** `PUT /api/inventory/{id}`  
+**Autoryzacja:** `ROLE_OWNER`
+
+**Request Body:**
+```json
+{
+  "availableQuantity": 150,
+  "reservedQuantity": 10
+}
+```
+
+### 18.3 Usuwanie stanu magazynowego
+**Endpoint:** `DELETE /api/inventory/{id}`  
+**Autoryzacja:** `ROLE_OWNER`
+
+### 18.4 Pobieranie stanu magazynowego po ID
+**Endpoint:** `GET /api/inventory/{id}`  
+**Autoryzacja:** Public
+
+**Response:** `InventoryDTO`
+
+### 18.5 Pobieranie stanu magazynowego po ID produktu
+**Endpoint:** `GET /api/inventory/product/{productId}`  
+**Autoryzacja:** Public
+
+**Response:** `InventoryDTO`
+
+### 18.6 Lista wszystkich stanów magazynowych
+**Endpoint:** `GET /api/inventory`  
+**Autoryzacja:** Public
+
+**Query Parameters:**
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "id") - pole sortowania
+- `sortDir` (string, default: "asc") - kierunek sortowania (asc/desc)
+
+**Response:** `Page<InventoryDTO>`
+
+### 18.7 Podsumowanie stanów magazynowych
+**Endpoint:** `GET /api/inventory/summary`  
+**Autoryzacja:** Public
+
+**Query Parameters:**
+- `page` (int, default: 0) - numer strony
+- `size` (int, default: 10) - rozmiar strony
+- `sortBy` (string, default: "id") - pole sortowania
+- `sortDir` (string, default: "asc") - kierunek sortowania (asc/desc)
+
+**Response:** `Page<InventorySummaryDTO>`
+
+**Uwagi:**
+- Zwraca uproszczone podsumowanie stanów magazynowych
+- `InventorySummaryDTO` zawiera podstawowe informacje o stanie magazynowym
+
+### 18.8 Sprawdzanie dostępności produktu
+**Endpoint:** `GET /api/inventory/product/{productId}/available`  
+**Autoryzacja:** Public
+
+**Query Parameters:**
+- `quantity` (Integer, required, min: 1) - Sprawdzana ilość
+
+**Response:** `Boolean` - `true` jeśli produkt jest dostępny w podanej ilości, `false` w przeciwnym razie
+
+**Przykład:**
+```bash
+GET /api/inventory/product/1/available?quantity=5
+```
+
+**Response:**
+```json
+true
+```
+
+---
+
+## 19. AI Chat API (`/api/ai/chat`)
+
+### 19.1 Chat z asystentem AI
+**Endpoint:** `POST /api/ai/chat`  
+**Autoryzacja:** USER lub OWNER
+
+**Request Body:**
+```json
+{
+  "message": "Szukam zielonego wazonu do 200 zł",
+  "conversationId": "conv-123"
+}
+```
+
+**Response:**
+```
+Znalazłem kilka zielonych wazonów w Twoim budżecie:
+
+- [Wazon Zielony Ceramiczny](/product/wazon-zielony-ceramiczny) - **150 zł**
+- [Wazon Zielony Szklany](/product/wazon-zielony-szklany) - **180 zł**
+
+Oba są dostępne w magazynie. Który Cię bardziej interesuje?
+```
+
+**Uwagi:**
+- Asystent AI wykorzystuje Spring AI z Vertex AI Gemini
+- System automatycznie indeksuje kategorie i atrybuty produktów przy starcie aplikacji
+- Asystent może wyszukiwać produkty używając funkcji `searchProductsTool` i `productDetailsTool`
+- Konwersacje są zapamiętywane dzięki `ChatMemory` - użyj tego samego `conversationId` dla kontynuacji rozmowy
+- Asystent odpowiada po polsku i pomaga w znalezieniu idealnego produktu
+- System automatycznie mapuje zapytania użytkownika na parametry wyszukiwania (kategorie, atrybuty, ceny)
+
+**Funkcjonalności:**
+- Wyszukiwanie produktów na podstawie naturalnego języka
+- Filtrowanie po kategoriach, atrybutach i cenach
+- Pobieranie szczegółów produktów
+- Sugerowanie alternatyw, jeśli nie znaleziono idealnego dopasowania
+- Zapamiętywanie kontekstu konwersacji
+
+**Przykłady zapytań:**
+- "Szukam laptopa do 3000 zł"
+- "Pokaż mi czerwone buty Nike rozmiar 42"
+- "Masz jakieś rzeźby drewniane?"
+- "Pokaż szczegóły tego wazonu" (wymaga wcześniejszego wyszukania)
+
+---
+
+## 20. Contact API (`/api/contact`)
+
+### 20.1 Wysyłanie wiadomości kontaktowej
+**Endpoint:** `POST /api/contact`  
+**Autoryzacja:** Public
+
+**Request Body:**
+```json
+{
+  "name": "Jan Kowalski",
+  "email": "jan@example.com",
+  "message": "Chciałbym zapytać o dostępność produktu..."
+}
+```
+
+**Response:**
+```
+Otrzymano nową wiadomość z formularza kontaktowego: 
+
+Od: Jan Kowalski
+Adres e-mail nadawcy: jan@example.com
+
+Treść:
+Chciałbym zapytać o dostępność produktu...
+```
+
+**Status codes:**
+- `200 OK` - Wiadomość została wysłana
+- `400 Bad Request` - Błędne dane wejściowe
+- `500 Internal Server Error` - Błąd podczas wysyłki emaila
+
+**Uwagi:**
+- Wiadomość jest wysyłana na adres email administratora skonfigurowany w `app.contact.admin.email`
+- Wymaga skonfigurowanego serwera SMTP (zobacz konfigurację email w README.md)
+- Wszystkie pola są wymagane i walidowane
+
+**Konfiguracja:**
+```properties
+app.contact.admin.email=admin@example.com
+```
 
 ---
 

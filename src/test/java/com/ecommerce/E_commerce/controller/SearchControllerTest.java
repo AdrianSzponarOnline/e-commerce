@@ -3,6 +3,7 @@ package com.ecommerce.E_commerce.controller;
 import com.ecommerce.E_commerce.dto.product.ProductSearchDTO;
 import com.ecommerce.E_commerce.service.SearchService;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Pageable;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -54,11 +55,12 @@ class SearchControllerTest {
 
         Mockito.when(searchService.search(
                 anyString(),
+                any(Long.class),
                 any(BigDecimal.class),
                 any(BigDecimal.class),
-                any(),
-                any(),
-                any()
+                any(Boolean.class),
+                any(Map.class),
+                any(Pageable.class)
         )).thenReturn(page);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/search")
@@ -90,11 +92,12 @@ class SearchControllerTest {
 
         Mockito.when(searchService.search(
                 anyString(),
-                isNull(),
-                isNull(),
-                isNull(),
+                any(Long.class),
+                any(BigDecimal.class),
+                any(BigDecimal.class),
+                any(Boolean.class),
                 any(Map.class),
-                any()
+                any(Pageable.class)
         )).thenReturn(page);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/search")

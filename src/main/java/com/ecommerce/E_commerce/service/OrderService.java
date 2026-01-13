@@ -43,5 +43,9 @@ public interface OrderService {
     long countByUserIdAndStatus(Long userId, OrderStatus status);
 
     boolean isOrderOwner(Long orderId, String userEmail);
+
+    void confirmOrderPayment(Long id);
+
+    void handlePaymentFailure(Long id, String string);
 }
 

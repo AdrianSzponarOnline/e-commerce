@@ -3,6 +3,8 @@ package com.ecommerce.E_commerce.controller;
 import com.ecommerce.E_commerce.dto.payment.PaymentCreateDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentUpdateDTO;
+import com.ecommerce.E_commerce.model.PaymentMethod;
+import com.ecommerce.E_commerce.model.PaymentStatus;
 import com.ecommerce.E_commerce.service.OrderService;
 import com.ecommerce.E_commerce.service.PaymentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,7 +51,7 @@ class PaymentControllerTest {
         PaymentCreateDTO createDTO = new PaymentCreateDTO(
                 1L,
                 new BigDecimal("199.98"),
-                "CREDIT_CARD",
+                PaymentMethod.CREDIT_CARD,
                 "TXN-123",
                 "Payment notes"
         );
@@ -58,8 +60,8 @@ class PaymentControllerTest {
                 1L,
                 1L,
                 new BigDecimal("199.98"),
-                "CREDIT_CARD",
-                "PENDING",
+                PaymentMethod.CREDIT_CARD,
+                PaymentStatus.PENDING,
                 Instant.now(),
                 "TXN-123",
                 "Payment notes",
@@ -84,8 +86,8 @@ class PaymentControllerTest {
                 1L,
                 1L,
                 new BigDecimal("199.98"),
-                "CREDIT_CARD",
-                "PENDING",
+                PaymentMethod.CREDIT_CARD,
+                PaymentStatus.PENDING,
                 Instant.now(),
                 "TXN-123",
                 "Payment notes",
@@ -108,8 +110,8 @@ class PaymentControllerTest {
                 1L,
                 1L,
                 new BigDecimal("199.98"),
-                "CREDIT_CARD",
-                "PENDING",
+                PaymentMethod.CREDIT_CARD,
+                PaymentStatus.PENDING,
                 Instant.now(),
                 "TXN-123",
                 null,
@@ -135,8 +137,8 @@ class PaymentControllerTest {
                 1L,
                 1L,
                 new BigDecimal("199.98"),
-                "CREDIT_CARD",
-                "PENDING",
+                PaymentMethod.CREDIT_CARD,
+                PaymentStatus.PENDING,
                 Instant.now(),
                 "TXN-123",
                 null,
@@ -161,8 +163,8 @@ class PaymentControllerTest {
                 1L,
                 1L,
                 new BigDecimal("199.98"),
-                "CREDIT_CARD",
-                "COMPLETED",
+                PaymentMethod.CREDIT_CARD,
+                PaymentStatus.COMPLETED,
                 Instant.now(),
                 "TXN-123",
                 null,
@@ -172,7 +174,7 @@ class PaymentControllerTest {
         );
 
         Page<PaymentDTO> page = new PageImpl<>(List.of(paymentDTO));
-        Mockito.when(paymentService.findByStatus(anyString(), any())).thenReturn(page);
+        Mockito.when(paymentService.findByStatus(Mockito.eq(PaymentStatus.COMPLETED), Mockito.any())).thenReturn(page);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/payments/status/COMPLETED")
                         .param("page", "0")
@@ -183,14 +185,14 @@ class PaymentControllerTest {
 
     @Test
     void updatePayment_ShouldReturnUpdatedPayment() throws Exception {
-        PaymentUpdateDTO updateDTO = new PaymentUpdateDTO("COMPLETED", null, null);
+        PaymentUpdateDTO updateDTO = new PaymentUpdateDTO(PaymentStatus.COMPLETED, null, null);
 
         PaymentDTO paymentDTO = new PaymentDTO(
                 1L,
                 1L,
                 new BigDecimal("199.98"),
-                "CREDIT_CARD",
-                "COMPLETED",
+                PaymentMethod.CREDIT_CARD,
+                PaymentStatus.COMPLETED,
                 Instant.now(),
                 "TXN-123",
                 null,

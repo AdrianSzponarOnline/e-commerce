@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
+import java.util.Map;
 
 public interface ProductAttributeValueService {
     
@@ -33,7 +34,7 @@ public interface ProductAttributeValueService {
     Page<ProductAttributeValueDTO> findByAttributeId(Long attributeId, Pageable pageable);
     Page<ProductAttributeValueDTO> findByCategoryId(Long categoryId, Pageable pageable);
     Page<ProductAttributeValueDTO> findByValue(String value, Pageable pageable);
-    
+
     // Search and Filter
     Page<ProductAttributeValueDTO> searchByValue(String value, Pageable pageable);
     Page<ProductAttributeValueDTO> findByAttributeType(String attributeType, Pageable pageable);

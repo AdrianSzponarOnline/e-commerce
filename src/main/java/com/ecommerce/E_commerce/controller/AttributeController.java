@@ -5,9 +5,9 @@ import com.ecommerce.E_commerce.dto.attribute.AttributeDTO;
 import com.ecommerce.E_commerce.dto.attribute.AttributeUpdateDTO;
 import com.ecommerce.E_commerce.service.AttributeService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -18,15 +18,11 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/attributes")
+@RequiredArgsConstructor
 public class AttributeController {
 
     private static final Logger logger = LoggerFactory.getLogger(AttributeController.class);
     private final AttributeService attributeService;
-
-    @Autowired
-    public AttributeController(AttributeService attributeService) {
-        this.attributeService = attributeService;
-    }
 
     @GetMapping
     public ResponseEntity<Page<AttributeDTO>> getAllActive(

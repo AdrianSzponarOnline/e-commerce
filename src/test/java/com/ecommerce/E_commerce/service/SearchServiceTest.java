@@ -1,6 +1,7 @@
 package com.ecommerce.E_commerce.service;
 
 import com.ecommerce.E_commerce.mapper.ProductMapper;
+import com.ecommerce.E_commerce.repository.CategoryRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,13 +22,13 @@ class SearchServiceTest {
     private ProductMapper productMapper;
 
     @Mock
-    private ImageUrlService imageUrlService;
+    private CategoryRepository categoryRepository;
 
     private SearchService searchService;
 
     @BeforeEach
     void setUp() {
-        searchService = new SearchService(entityManager, productMapper, imageUrlService);
+        searchService = new SearchService(entityManager, productMapper, categoryRepository);
     }
 
     @Test

@@ -14,9 +14,9 @@ import com.ecommerce.E_commerce.model.ProductAttributeValue;
 import com.ecommerce.E_commerce.repository.AttributeRepository;
 import com.ecommerce.E_commerce.repository.ProductAttributeValueRepository;
 import com.ecommerce.E_commerce.repository.ProductRepository;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -24,12 +24,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class ProductAttributeValueServiceImpl implements ProductAttributeValueService {
 
     private final ProductRepository productRepository;
@@ -208,13 +210,12 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
                     .orElseThrow(() -> new ResourceNotFoundException("Attribute not found with id: " + dto.attributeId()));
             
             if (productAttributeValueRepository.findByProductIdAndAttributeId(dto.productId(), dto.attributeId()).isPresent()) {
-                throw new DuplicateResourceException("Product attribute value already exists for product id: " + dto.productId() + " and attribute id: " + dto.attributeId());
+                throw new DuplicateResourceException("Product attribute value already exists for product id: " +
+                        dto.productId() + " and attribute id: " + dto.attributeId());
             }
-            
             validateAttributeValue(dto.attributeValue(), attribute.getType(), attribute.getName());
         }
-        
-        
+
         List<ProductAttributeValue> entities = dtos.stream()
                 .map(dto -> {
                     Product product = productRepository.findById(dto.productId())
@@ -379,17 +380,6 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
                 .collect(Collectors.toList());
     }
 
-    @Autowired
-    public ProductAttributeValueServiceImpl(ProductRepository productRepository,
-                                            ProductAttributeValueRepository productAttributeValueRepository,
-                                            AttributeRepository attributeRepository,
-                                            ProductAttributeValueMapper productAttributeValueMapper) {
-        this.productRepository = productRepository;
-        this.productAttributeValueRepository = productAttributeValueRepository;
-        this.attributeRepository = attributeRepository;
-        this.productAttributeValueMapper = productAttributeValueMapper;
-    }
-
     /**
      * Validates that the provided value matches the expected attribute type.
      * 
@@ -402,7 +392,6 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
         if (value == null || value.trim().isEmpty()) {
             return;
         }
-
         switch (attributeType) {
             case NUMBER:
                 validateNumberValue(value, attributeName);
@@ -440,5 +429,4 @@ public class ProductAttributeValueServiceImpl implements ProductAttributeValueSe
             );
         }
     }
-
 }

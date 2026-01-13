@@ -11,6 +11,5 @@ public class SearchAnalisisConfig implements ElasticsearchAnalysisConfigurer {
         elasticsearchAnalysisConfigurationContext.analyzer("english").type("english");
         elasticsearchAnalysisConfigurationContext.normalizer("lowercase").custom()
                 .tokenFilters("lowercase", "asciifolding");
-
     }
 }

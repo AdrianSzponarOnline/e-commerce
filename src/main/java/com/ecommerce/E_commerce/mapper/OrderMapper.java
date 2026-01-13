@@ -20,7 +20,7 @@ public interface OrderMapper {
     @Mapping(target = "address", source = "address")
     @Mapping(target = "items", source = "items")
     @Mapping(target = "payments", source = "payments")
-    @Mapping(target = "status", expression = "java(order.getStatus() != null ? order.getStatus().name() : null)")
+    @Mapping(target = "status", source = "status")
     OrderDTO toOrderDTO(Order order);
 
     @Mapping(target = "id", ignore = true)

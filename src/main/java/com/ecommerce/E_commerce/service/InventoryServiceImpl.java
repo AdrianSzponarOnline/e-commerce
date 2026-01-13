@@ -22,7 +22,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -53,7 +57,7 @@ public class InventoryServiceImpl implements InventoryService {
 
         Inventory inventory = inventoryMapper.toInventory(dto);
         inventory.setProduct(product);
-        inventory.setAvailableQuantity(dto.availableQuantity()); // @NotNull in DTO
+        inventory.setAvailableQuantity(dto.availableQuantity());
         inventory.setReservedQuantity(dto.reservedQuantity() != null ? dto.reservedQuantity() : 0);
         inventory.setMinimumStockLevel(dto.minimumStockLevel() != null ? dto.minimumStockLevel() : 0);
         inventory.setCreatedAt(Instant.now());
@@ -160,7 +164,45 @@ public class InventoryServiceImpl implements InventoryService {
         logger.info("Stock reserved successfully: productId={}, quantity={}, newAvailable={}, newReserved={}", 
             productId, quantity, inventory.getAvailableQuantity(), inventory.getReservedQuantity());
     }
+    @Override
+    public void reserveStockBatch(Map<Long, Integer> productQuantities) {
+        logger.info("Attempting batch stock reservation for {} items", productQuantities.size());
 
+        List<Long> productIds = productQuantities.keySet().stream().sorted().toList();
+        List<Inventory> inventories = inventoryRepository.findByProductIdIn(productIds);
+
+        if (inventories.size() != productIds.size()) {
+            Set<Long> foundIds = inventories.stream()
+                    .map(inv -> inv.getProduct().getId())
+                    .collect(Collectors.toSet());
+            List<Long> missingIds = productIds.stream()
+                    .filter(id -> !foundIds.contains(id))
+                    .toList();
+            throw new ResourceNotFoundException("Inventory not found for product ids: " + missingIds);
+        }
+
+        for (Inventory inventory : inventories) {
+            Long productId = inventory.getProduct().getId();
+            Integer requestedQuantity = productQuantities.get(productId);
+
+            if (!inventory.getIsActive()) {
+                throw new InvalidOperationException("Product " + productId + " inventory is inactive");
+            }
+
+            if (inventory.getAvailableQuantity() < requestedQuantity) {
+                throw new InsufficientStockException(
+                        String.format("Insufficient stock for product %d. Available: %d, Requested: %d",
+                                productId, inventory.getAvailableQuantity(), requestedQuantity));
+            }
+
+            inventory.setAvailableQuantity(inventory.getAvailableQuantity() - requestedQuantity);
+            inventory.setReservedQuantity(inventory.getReservedQuantity() + requestedQuantity);
+            inventory.setUpdatedAt(Instant.now());
+        }
+
+        inventoryRepository.saveAll(inventories);
+        logger.info("Batch stock reservation successful");
+    }
     @Override
     public void releaseStock(Long productId, Integer quantity) {
         logger.info("Attempting to release stock: productId={}, quantity={}", productId, quantity);

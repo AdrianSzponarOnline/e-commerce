@@ -4,6 +4,9 @@ import com.ecommerce.E_commerce.dto.order.OrderCreateDTO;
 import com.ecommerce.E_commerce.dto.order.OrderDTO;
 import com.ecommerce.E_commerce.dto.order.OrderUpdateDTO;
 import com.ecommerce.E_commerce.dto.orderitem.OrderItemCreateDTO;
+import com.ecommerce.E_commerce.event.OrderConfirmedEvent;
+import com.ecommerce.E_commerce.event.OrderCreatedEvent;
+import com.ecommerce.E_commerce.event.OrderShippedEvent;
 import com.ecommerce.E_commerce.exception.InvalidOperationException;
 import com.ecommerce.E_commerce.exception.ResourceNotFoundException;
 import com.ecommerce.E_commerce.mapper.OrderMapper;
@@ -15,12 +18,18 @@ import com.ecommerce.E_commerce.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -28,78 +37,88 @@ import java.time.Instant;
 public class OrderServiceImpl implements OrderService {
 
     private static final Logger logger = LoggerFactory.getLogger(OrderServiceImpl.class);
+    private final ApplicationEventPublisher eventPublisher;
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final AddressRepository addressRepository;
     private final ProductRepository productRepository;
     private final InventoryService inventoryService;
     private final OrderMapper orderMapper;
-    private final OrderNotificationService orderNotificationService;
-
 
     @Override
     public OrderDTO create(Long userId, OrderCreateDTO dto) {
-        logger.info("Creating order for userId={}, itemsCount={}", userId, dto.items() != null ? dto.items().size() : 0);
+        if (dto.items() == null || dto.items().isEmpty()) {
+            logger.error("Attempted to create order with no items for userId={}", userId);
+            throw new InvalidOperationException("Order must contain at least one item");
+        }
+
+        logger.info("Creating order for userId={}, itemsCount={}", userId, dto.items().size());
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         Address address = addressRepository.findById(dto.addressId())
                 .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + dto.addressId()));
 
+        Map<Long, Integer> quantitiesMap = dto.items().stream()
+                .collect(Collectors.toMap(
+                        OrderItemCreateDTO::productId,
+                        OrderItemCreateDTO::quantity,
+                        Integer::sum
+                ));
+
+        inventoryService.reserveStockBatch(quantitiesMap);
+
+        List<Product> products = productRepository.findAllById(quantitiesMap.keySet());
+
+        if (products.size() != quantitiesMap.size()) {
+            throw new ResourceNotFoundException("Some products specified in the order were not found");
+        }
+
+        Map<Long, Product> productMap = products.stream()
+                .collect(Collectors.toMap(Product::getId, Function.identity()));
 
         Order order = orderMapper.toOrder(dto);
         order.setUser(user);
         order.setAddress(address);
-        order.setStatus(dto.status() != null ? OrderStatus.valueOf(dto.status().toUpperCase()) : OrderStatus.NEW);
 
-        assert dto.items() != null;
+        order.setStatus(OrderStatus.NEW);
+
         for (OrderItemCreateDTO itemDto : dto.items()) {
-            Product product = productRepository.findById(itemDto.productId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + itemDto.productId()));
+            Product product = productMap.get(itemDto.productId());
 
             if (Boolean.FALSE.equals(product.getIsActive())) {
-                logger.warn("Attempted to add inactive product to order: productId={}, userId={}", itemDto.productId(), userId);
-                throw new InvalidOperationException("Product with id " + itemDto.productId() + " is not active");
+                throw new InvalidOperationException("Product " + itemDto.productId() + " is inactive");
             }
-
-            logger.debug("Reserving stock: productId={}, quantity={}", itemDto.productId(), itemDto.quantity());
-            inventoryService.reserveStock(itemDto.productId(), itemDto.quantity());
-
             order.addItem(product, itemDto.quantity());
         }
 
         Order savedOrder = orderRepository.save(order);
-        logger.info("Order created successfully: orderId={}, userId={}, total={}, status={}", savedOrder.getId(), userId, savedOrder.getTotalAmount(), savedOrder.getStatus());
 
-        orderNotificationService.sendOrderConfirmation(order.getId());
+        logger.info("Order created successfully: orderId={}, userId={}, total={}",
+                savedOrder.getId(), userId, savedOrder.getTotalAmount());
 
+        eventPublisher.publishEvent(new OrderCreatedEvent(savedOrder.getId()));
         return orderMapper.toOrderDTO(savedOrder);
     }
 
     @Override
+    @Transactional
     public OrderDTO update(Long id, OrderUpdateDTO dto) {
-        logger.info("Updating order: orderId={}, newStatus={}", id, dto.status());
+        logger.info("Updating order: orderId={}, dto={}", id, dto);
         Order order = getOrderOrThrow(id);
-        OrderStatus oldStatus = order.getStatus();
 
         if (dto.status() != null) {
-            OrderStatus newStatus = dto.status();
-            order.setStatus(newStatus);
-
-            if (oldStatus != newStatus) {
-                logger.info("Order status changed: orderId={}, oldStatus={}, newStatus={}", id, oldStatus, newStatus);
-                handleInventoryStatusChange(order, oldStatus, newStatus);
-                handleNotificationTrigger(order, oldStatus, newStatus);
-            }
+            updateOrderStatusInternal(order, dto.status());
         }
 
         if (dto.isActive() != null) {
             order.setIsActive(dto.isActive());
         }
 
-        Order updatedOrder = orderRepository.save(order);
-        logger.info("Order updated successfully: orderId={}, status={}", id, updatedOrder.getStatus());
-        return orderMapper.toOrderDTO(updatedOrder);
+        Order savedOrder = orderRepository.save(order);
+        logger.info("Order updated successfully: orderId={}", id);
+        return orderMapper.toOrderDTO(savedOrder);
     }
 
     @Override
@@ -112,14 +131,14 @@ public class OrderServiceImpl implements OrderService {
             throw new InvalidOperationException("Order is already cancelled");
         }
 
-        OrderStatus oldStatus = order.getStatus();
-        order.setStatus(OrderStatus.CANCELLED);
+        if (isFinalizingStatus(order.getStatus())) {
+            throw new InvalidOperationException("Cannot cancel order that has already been shipped or delivered");
+        }
 
-        handleInventoryStatusChange(order, oldStatus, OrderStatus.CANCELLED);
+        updateOrderStatusInternal(order, OrderStatus.CANCELLED);
 
-        Order cancelledOrder = orderRepository.save(order);
         logger.info("Order cancelled successfully: orderId={}", id);
-        return orderMapper.toOrderDTO(cancelledOrder);
+        return orderMapper.toOrderDTO(order);
     }
 
     @Override
@@ -137,25 +156,66 @@ public class OrderServiceImpl implements OrderService {
 
 
     private void handleInventoryStatusChange(Order order, OrderStatus oldStatus, OrderStatus newStatus) {
-        logger.debug("Handling inventory status change for order: orderId={}, oldStatus={}, newStatus={}", 
-                    order.getId(), oldStatus, newStatus);
+        logger.debug("Handling inventory status change for order: orderId={}, oldStatus={}, newStatus={}",
+                order.getId(), oldStatus, newStatus);
 
         if (newStatus == OrderStatus.CANCELLED) {
             if (isReservationActive(oldStatus)) {
-                logger.info("Releasing stock for cancelled order: orderId={}, itemsCount={}", 
-                           order.getId(), order.getItems().size());
+                logger.info("Releasing stock for cancelled order: orderId={}, itemsCount={}",
+                        order.getId(), order.getItems().size());
                 for (OrderItem item : order.getItems()) {
                     inventoryService.releaseStock(item.getProduct().getId(), item.getQuantity());
                 }
             }
         } else if (isFinalizingStatus(newStatus) && !isFinalizingStatus(oldStatus)) {
-            logger.info("Finalizing stock reservations for order: orderId={}, newStatus={}, itemsCount={}", 
-                       order.getId(), newStatus, order.getItems().size());
+            logger.info("Finalizing stock reservations for order: orderId={}, newStatus={}, itemsCount={}",
+                    order.getId(), newStatus, order.getItems().size());
             for (OrderItem item : order.getItems()) {
                 inventoryService.finalizeReservation(item.getProduct().getId(), item.getQuantity());
             }
         }
     }
+
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void handlePaymentFailure(Long orderId, String failureReason) {
+        Order order = getOrderOrThrow(orderId);
+
+        if (order.getStatus() == OrderStatus.NEW) {
+            logger.warn("Cancelling order due to payment failure: orderId={}, reason={}", orderId, failureReason);
+
+            updateOrderStatusInternal(order, OrderStatus.CANCELLED);
+        } else {
+            logger.info("Skipping cancellation for payment failure - order not in NEW status: orderId={}, status={}",
+                    orderId, order.getStatus());
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void confirmOrderPayment(Long orderId) {
+        Order order = getOrderOrThrow(orderId);
+
+        if (order.getStatus() == OrderStatus.NEW) {
+            logger.info("Confirming order after successful payment: orderId={}", orderId);
+            updateOrderStatusInternal(order, OrderStatus.CONFIRMED);
+        }
+    }
+
+    private void updateOrderStatusInternal(Order order, OrderStatus newStatus) {
+        OrderStatus oldStatus = order.getStatus();
+
+        if (oldStatus != newStatus) {
+            order.setStatus(newStatus);
+            Order savedOrder = orderRepository.saveAndFlush(order);
+
+            handleInventoryStatusChange(savedOrder, oldStatus, newStatus);
+            handleNotificationTrigger(savedOrder, oldStatus, newStatus);
+
+            logger.info("Order status updated internally: orderId={}, oldStatus={}, newStatus={}",
+                    order.getId(), oldStatus, newStatus);
+        }
+    }
+
 
     private boolean isReservationActive(OrderStatus status) {
         return status == OrderStatus.NEW || status == OrderStatus.CONFIRMED;
@@ -167,7 +227,7 @@ public class OrderServiceImpl implements OrderService {
 
 
     private Order getOrderOrThrow(Long id) {
-        return orderRepository.findById(id)
+        return orderRepository.findByIdWithUser(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
     }
 
@@ -258,16 +318,18 @@ public class OrderServiceImpl implements OrderService {
 
 
     private void handleNotificationTrigger(Order order, OrderStatus oldStatus, OrderStatus newStatus) {
-        logger.debug("Handling notification trigger: orderId={}, oldStatus={}, newStatus={}", 
-                    order.getId(), oldStatus, newStatus);
-        
+        logger.debug("Handling notification trigger: orderId={}, oldStatus={}, newStatus={}",
+                order.getId(), oldStatus, newStatus);
+
         if (newStatus == OrderStatus.CONFIRMED && oldStatus != OrderStatus.CONFIRMED) {
             logger.info("Sending order confirmation notification: orderId={}", order.getId());
-            orderNotificationService.sendOrderConfirmedToOwner(order.getId());
+            String email = order.getUser().getEmail();
+            String name = order.getUser().getFirstName();
+            eventPublisher.publishEvent(new OrderConfirmedEvent(order.getId(), email, name));
         }
         if (newStatus == OrderStatus.SHIPPED && oldStatus != OrderStatus.SHIPPED) {
             logger.info("Sending order shipped notification: orderId={}", order.getId());
-            orderNotificationService.sendOrderShipped(order.getId());
+            eventPublisher.publishEvent(new OrderShippedEvent(order.getId()));
         }
     }
 

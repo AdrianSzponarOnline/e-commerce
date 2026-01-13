@@ -9,31 +9,30 @@ import com.ecommerce.E_commerce.mapper.AttributeMapper;
 import com.ecommerce.E_commerce.model.Attribute;
 import com.ecommerce.E_commerce.model.CategoryAttributeType;
 import com.ecommerce.E_commerce.repository.AttributeRepository;
+import com.ecommerce.E_commerce.repository.ProductAttributeValueRepository;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class AttributeServiceImpl implements AttributeService {
 
     private static final Logger logger = LoggerFactory.getLogger(AttributeServiceImpl.class);
     private final AttributeRepository attributeRepository;
+    private final ProductAttributeValueRepository productAttributeValueRepository;
     private final AttributeMapper attributeMapper;
-
-    @Autowired
-    public AttributeServiceImpl(AttributeRepository attributeRepository, AttributeMapper attributeMapper) {
-        this.attributeRepository = attributeRepository;
-        this.attributeMapper = attributeMapper;
-    }
 
     public Attribute findOrCreateAttribute(AttributeCreateDTO dto) {
         return attributeRepository.findByNameAndType(dto.name(), dto.type())
@@ -135,5 +134,26 @@ public class AttributeServiceImpl implements AttributeService {
                 throw new DuplicateResourceException("Attribute with name '" + name + "' and type '" + type + "' already exists.");
             }
         });
+    }
+
+    @Override
+    @Cacheable(value = "ai_context_attributes", key = "'all_values'") // Cache na dłużej, to się rzadko zmienia
+    public Map<String, List<String>> getAllAttributesWithValues() {
+        List<Attribute> attributes = attributeRepository.findAllByIsActiveTrue();
+
+        Map<String, List<String>> result = new HashMap<>();
+
+        for (Attribute attr : attributes) {
+            List<String> values = productAttributeValueRepository.findDistinctValuesByAttribute(attr.getId());
+
+            if (!values.isEmpty()) {
+
+                if (values.size() > 20) {
+                    values = values.subList(0, 20);
+                }
+                result.put(attr.getName(), values);
+            }
+        }
+        return result;
     }
 }

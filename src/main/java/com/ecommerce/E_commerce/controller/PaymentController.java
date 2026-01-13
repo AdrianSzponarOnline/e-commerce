@@ -3,6 +3,8 @@ package com.ecommerce.E_commerce.controller;
 import com.ecommerce.E_commerce.dto.payment.PaymentCreateDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentUpdateDTO;
+import com.ecommerce.E_commerce.model.OrderStatus;
+import com.ecommerce.E_commerce.model.PaymentStatus;
 import com.ecommerce.E_commerce.model.User;
 import com.ecommerce.E_commerce.service.OrderService;
 import com.ecommerce.E_commerce.service.PaymentService;
@@ -32,8 +34,6 @@ public class PaymentController {
     
     private static final Logger logger = LoggerFactory.getLogger(PaymentController.class);
     private final PaymentService paymentService;
-    private final OrderService orderService;
-
     
     @PostMapping
     @PreAuthorize("hasRole('OWNER') or (hasRole('USER') and @orderServiceImpl.isOrderOwner(#dto.orderId(), authentication.name))")
@@ -129,7 +129,7 @@ public class PaymentController {
     @GetMapping("/status/{status}")
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<Page<PaymentDTO>> getPaymentsByStatus(
-            @PathVariable String status,
+            @PathVariable PaymentStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,

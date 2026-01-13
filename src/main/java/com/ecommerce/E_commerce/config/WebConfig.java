@@ -16,18 +16,13 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Pobieramy ścieżkę absolutną do folderu uploads
         Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-        
-        // Konwersja do URI zapewnia poprawną obsługę separatorów ścieżek na różnych systemach
-        // Dodajemy ukośnik na końcu, aby Spring poprawnie mapował ścieżki
+
         String location = uploadPath.toUri().toString();
         if (!location.endsWith("/")) {
             location += "/";
         }
-        
-        // Mapowanie:
-        // URL: /uploads/** -> Folder na dysku: file:/sciezka/do/projektu/uploads/
+
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations(location);
     }

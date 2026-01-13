@@ -217,6 +217,16 @@ public class UserService implements UserDetailsService {
         logger.info("Account activated successfully: userId={}, email={}", user.getId(), user.getEmail());
     }
 
+    private ConfirmationToken getAndValidateToken(String token) {
+        ConfirmationToken confirmationToken = confirmationTokenRepository.findByToken(token)
+                .orElseThrow(() -> new ResourceNotFoundException("Invalid token"));
+
+        if (confirmationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalStateException("Token expired");
+        }
+        return confirmationToken;
+    }
+
     @Transactional
     public void forgotPassword(String email) {
         logger.info("Processing forgot password request: email={}", email);
@@ -246,7 +256,7 @@ public class UserService implements UserDetailsService {
 
         if (confirmToken.getConfirmedAt() != null) {
             logger.warn("Attempted to use already used reset token");
-            throw new IllegalStateException("Ten link resetujący został już wykorzystany.");
+            throw new IllegalStateException("Link already used.");
         }
 
         User user = confirmToken.getUser();
@@ -263,15 +273,7 @@ public class UserService implements UserDetailsService {
        return confirmationToken.getToken();
     }
 
-    private ConfirmationToken getAndValidateToken(String token) {
-        ConfirmationToken confirmationToken = confirmationTokenRepository.findByToken(token)
-                .orElseThrow(() -> new ResourceNotFoundException("Invalid token"));
 
-        if (confirmationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new IllegalStateException("Token expired");
-        }
-        return confirmationToken;
-    }
 
     @Transactional
     public void resendActivationLink(String email){

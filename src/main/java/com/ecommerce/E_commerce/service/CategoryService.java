@@ -22,6 +22,7 @@ public interface CategoryService {
     List<CategoryDTO> listByParent(Long parentId);
 
     void delete(Long id);
+    String getCategoryTreeStructure();
 }
 
 

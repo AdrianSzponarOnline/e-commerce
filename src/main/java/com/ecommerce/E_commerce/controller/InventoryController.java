@@ -7,9 +7,9 @@ import com.ecommerce.E_commerce.dto.inventory.InventoryUpdateDTO;
 import com.ecommerce.E_commerce.service.InventoryService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,16 +22,12 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/inventory")
 @CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 public class InventoryController {
     
     private static final Logger logger = LoggerFactory.getLogger(InventoryController.class);
     private final InventoryService inventoryService;
-    
-    @Autowired
-    public InventoryController(InventoryService inventoryService) {
-        this.inventoryService = inventoryService;
-    }
-    
+
     @PostMapping
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<InventoryDTO> createInventory(@Valid @RequestBody InventoryCreateDTO dto) {

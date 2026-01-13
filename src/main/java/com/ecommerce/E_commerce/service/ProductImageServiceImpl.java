@@ -7,6 +7,9 @@ import com.ecommerce.E_commerce.model.Product;
 import com.ecommerce.E_commerce.model.ProductImage;
 import com.ecommerce.E_commerce.repository.ProductImageRepository;
 import com.ecommerce.E_commerce.repository.ProductRepository;
+import lombok.Getter;
+import lombok.Setter;
+import org.apache.tika.Tika;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,7 +21,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -28,17 +30,18 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@Getter
+@Setter
 public class ProductImageServiceImpl implements ProductImageService {
 
     private static final Logger logger = LoggerFactory.getLogger(ProductImageServiceImpl.class);
     private final ProductRepository productRepository;
     private final ProductImageRepository productImageRepository;
+    private final Tika tika = new Tika();
 
     private final Path uploadRoot;
 
@@ -78,78 +81,25 @@ public class ProductImageServiceImpl implements ProductImageService {
     @Override
     @CacheEvict(value = "product_images", key = "#productId")
     public ProductImageDTO upload(Long productId, MultipartFile file, String altText, boolean isThumbnail) {
-        logger.info("Uploading image for product: productId={}, fileName={}, isThumbnail={}", productId, file.getOriginalFilename(), isThumbnail);
+        logger.info("Starting upload: productId={}, originalName={}, isThumbnail={}",
+                productId, file.getOriginalFilename(), isThumbnail);
+
+
         Product product = verifyProduct(productId);
-        
         checkImagePermission(product);
+        checkProductImageLimit(productId);
 
-        if (file == null || file.isEmpty()) {
-            throw new InvalidOperationException("Plik jest wymagany");
-        }
-        if (file.getSize() > maxUploadBytes) {
-            throw new InvalidOperationException("Plik jest za duży (limit " + maxUploadBytes + " B)");
-        }
-        
-        String originalFilename = file.getOriginalFilename();
-        if (originalFilename == null || originalFilename.trim().isEmpty()) {
-            throw new InvalidOperationException("Nazwa pliku jest wymagana");
-        }
-        
-        String contentType = file.getContentType() == null ? "" : file.getContentType();
-        if (!isAllowedContentType(contentType)) {
-            throw new InvalidOperationException("Niedozwolony typ pliku: " + contentType);
-        }
-        
-        String sanitizedFilename = sanitizeFilename(originalFilename);
-        String extension = getFileExtension(sanitizedFilename);
-        
-        if (extension.isEmpty() && !contentType.isEmpty()) {
-            extension = getExtensionFromContentType(contentType);
-        }
-        
-        if (extension.isEmpty()) {
-            throw new InvalidOperationException("Nie można określić rozszerzenia pliku. Upewnij się, że plik ma rozszerzenie (jpg, png, webp) lub poprawny Content-Type");
-        }
-        
-        if (!isAllowedExtension(extension)) {
-            throw new InvalidOperationException("Niedozwolone rozszerzenie pliku: " + extension);
-        }
+        String extension = validateAndAnalyzeFile(file);
 
-        long currentCount = productImageRepository.findByProductId(productId).size();
-        if (currentCount >= maxImagesPerProduct) {
-            throw new InvalidOperationException("Przekroczono limit zdjęć dla produktu (" + maxImagesPerProduct + ")");
-        }
+        String storedFilename = storeFileOnDisk(file, productId, extension);
 
-        String filename = UUID.randomUUID() + "." + extension;
-
-        Path productDir = uploadRoot.resolve("products").resolve(String.valueOf(productId));
-        try {
-            Files.createDirectories(productDir);
-            Path target = productDir.resolve(filename);
-            file.transferTo(target);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to store file", e);
-        }
-
-        String url = "/uploads/products/" + productId + "/" + filename;
-
-        Instant now = Instant.now();
-        ProductImage image = new ProductImage();
-        image.setProduct(product);
-        image.setUrl(url);
-        image.setAltText(altText);
-        image.setIsThumbnail(isThumbnail);
-        image.setIsActive(true);
-        image.setCreatedAt(now);
-        image.setUpdatedAt(now);
-
-        ProductImage saved = productImageRepository.save(image);
+        ProductImage savedImage = saveImageMetadata(product, storedFilename, altText, isThumbnail);
 
         if (isThumbnail) {
-            setThumbnailAtomically(productId, saved.getId(), url);
+            setThumbnailAtomically(productId, savedImage.getId(), savedImage.getUrl());
         }
 
-        return toDTO(saved);
+        return toDTO(savedImage);
     }
 
     @Override
@@ -178,7 +128,6 @@ public class ProductImageServiceImpl implements ProductImageService {
     public ProductImageDTO setThumbnail(Long productId, Long imageId) {
         Product product = verifyProduct(productId);
         
-        // Security check: User can only set thumbnails for products (unless OWNER)
         checkImagePermission(product);
         
         ProductImage image = productImageRepository.findById(imageId)
@@ -230,88 +179,95 @@ public class ProductImageServiceImpl implements ProductImageService {
             throw new AccessDeniedException("Only OWNER can manage product images");
         }
     }
-    
 
-    private String sanitizeFilename(String filename) {
-        if (filename == null) {
-            return "image";
-        }
-        
-        String sanitized = StringUtils.cleanPath(filename);
-        
-        // Usuwamy niebezpieczne sekwencje (../, ..\, etc.) ale zachowujemy kropki w nazwie pliku
-        sanitized = sanitized.replaceAll("\\.\\./", "");
-        sanitized = sanitized.replaceAll("\\.\\.\\\\", "");
-        sanitized = sanitized.replaceAll("[/\\\\]", "");
-        
-        if (sanitized.trim().isEmpty()) {
-            return "image";
-        }
-        
-        return sanitized;
+
+    private String getExtensionFromMimeType(String mimeType) {
+        if (mimeType == null) return null;
+
+        return switch (mimeType.toLowerCase()) {
+            case "image/jpeg", "image/jpg" -> "jpg";
+            case "image/png" -> "png";
+            case "image/webp" -> "webp";
+            default -> null;
+        };
     }
-    
-    /**
-     * Extracts file extension from filename (without the dot).
-     */
-    private String getFileExtension(String filename) {
-        if (filename == null || !filename.contains(".")) {
-            return "";
-        }
-        String ext = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
-        return ext;
-    }
-    
-    /**
-     * Validates if file extension is allowed.
-     */
-    private boolean isAllowedExtension(String extension) {
-        if (extension == null || extension.isEmpty()) {
-            return false;
-        }
-        Set<String> allowed = Arrays.stream(allowedExtensionsCsv.split(","))
-                .map(String::trim)
-                .map(String::toLowerCase)
-                .collect(Collectors.toSet());
-        return allowed.contains(extension.toLowerCase());
-    }
-    
-    /**
-     * Validates if Content-Type is allowed.
-     */
+
     private boolean isAllowedContentType(String contentType) {
         if (contentType == null || contentType.isEmpty()) {
             return false;
         }
         List<String> allowed = Arrays.stream(allowedTypesCsv.split(","))
                 .map(String::trim)
-                .collect(Collectors.toList());
+                .toList();
         return allowed.stream().anyMatch(contentType::equalsIgnoreCase);
-    }
-    
-    /**
-     * Extracts file extension from Content-Type.
-     */
-    private String getExtensionFromContentType(String contentType) {
-        if (contentType == null || contentType.isEmpty()) {
-            return "";
-        }
-        
-        // Mapowanie Content-Type na rozszerzenie
-        if (contentType.equalsIgnoreCase("image/jpeg") || contentType.equalsIgnoreCase("image/jpg")) {
-            return "jpg";
-        } else if (contentType.equalsIgnoreCase("image/png")) {
-            return "png";
-        } else if (contentType.equalsIgnoreCase("image/webp")) {
-            return "webp";
-        }
-        
-        return "";
     }
     
     private Product verifyProduct(Long productId) {
         return productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
+    }
+
+    private void checkProductImageLimit(Long productId) {
+        long currentCount = productImageRepository.findByProductId(productId).size();
+        if (currentCount >= maxImagesPerProduct) {
+            throw new InvalidOperationException("Image limit for this product exceeded (" + maxImagesPerProduct + ")");
+        }
+    }
+
+    private String validateAndAnalyzeFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new InvalidOperationException("File is required");
+        }
+        if (file.getSize() > maxUploadBytes) {
+            throw new InvalidOperationException("File too big (limit " + maxUploadBytes + " bytes)");
+        }
+
+        String detectedType;
+        try {
+            detectedType = tika.detect(file.getInputStream());
+        } catch (IOException e) {
+            throw new InvalidOperationException("Failed to analyze file content");
+        }
+
+        if (!isAllowedContentType(detectedType)) {
+            throw new InvalidOperationException("Invalid file content type. Detected: " + detectedType);
+        }
+
+        String extension = getExtensionFromMimeType(detectedType);
+        if (extension == null) {
+            throw new InvalidOperationException("Could not determine extension for MIME type: " + detectedType);
+        }
+
+        return extension;
+    }
+
+    private String storeFileOnDisk(MultipartFile file, Long productId, String extension) {
+        String filename = UUID.randomUUID() + "." + extension;
+        Path productDir = uploadRoot.resolve("products").resolve(String.valueOf(productId));
+
+        try {
+            Files.createDirectories(productDir);
+            Path target = productDir.resolve(filename);
+            file.transferTo(target);
+            return filename;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to store file on disk", e);
+        }
+    }
+    private ProductImage saveImageMetadata(Product product, String filename, String altText, boolean isThumbnail) {
+        String url = "/uploads/products/" + product.getId() + "/" + filename;
+        Instant now = Instant.now();
+
+        ProductImage image = new ProductImage();
+        image.setProduct(product);
+        image.setUrl(url);
+        image.setAltText(altText);
+        image.setIsThumbnail(isThumbnail);
+        image.setIsActive(true);
+        image.setCreatedAt(now);
+        image.setUpdatedAt(now);
+
+        return productImageRepository.save(image);
     }
 
     private ProductImageDTO toDTO(ProductImage image) {

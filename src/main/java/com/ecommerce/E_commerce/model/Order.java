@@ -116,6 +116,7 @@ public class Order {
         
         OrderItem orderItem = new OrderItem();
         orderItem.setOrder(this);
+
         orderItem.setProduct(product);
         orderItem.setQuantity(quantity);
         orderItem.setPrice(product.getPrice());

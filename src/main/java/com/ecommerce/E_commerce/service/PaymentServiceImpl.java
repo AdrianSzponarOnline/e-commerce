@@ -3,15 +3,17 @@ package com.ecommerce.E_commerce.service;
 import com.ecommerce.E_commerce.dto.payment.PaymentCreateDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentUpdateDTO;
+import com.ecommerce.E_commerce.event.PaymentStatusChangedEvent;
 import com.ecommerce.E_commerce.exception.InvalidOperationException;
 import com.ecommerce.E_commerce.exception.ResourceNotFoundException;
 import com.ecommerce.E_commerce.mapper.PaymentMapper;
 import com.ecommerce.E_commerce.model.*;
 import com.ecommerce.E_commerce.repository.OrderRepository;
 import com.ecommerce.E_commerce.repository.PaymentRepository;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,23 +24,14 @@ import java.util.UUID;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
 
     private static final Logger logger = LoggerFactory.getLogger(PaymentServiceImpl.class);
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final PaymentMapper paymentMapper;
-    private final InventoryService inventoryService;
-
-    @Autowired
-    public PaymentServiceImpl(PaymentRepository paymentRepository,
-                              OrderRepository orderRepository,
-                              PaymentMapper paymentMapper, InventoryService inventoryService) {
-        this.paymentRepository = paymentRepository;
-        this.orderRepository = orderRepository;
-        this.paymentMapper = paymentMapper;
-        this.inventoryService = inventoryService;
-    }
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public PaymentDTO create(PaymentCreateDTO dto) {
@@ -47,12 +40,14 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + dto.orderId()));
 
         if (order.getStatus() != OrderStatus.NEW && order.getStatus() != OrderStatus.CONFIRMED) {
-            logger.warn("Attempted to create payment for order with invalid status: orderId={}, status={}", dto.orderId(), order.getStatus());
+            logger.warn("Attempted to create payment for order with invalid status: orderId={}, status={}",
+                    dto.orderId(), order.getStatus());
             throw new InvalidOperationException("Payment can only be created for orders with status NEW or CONFIRMED");
         }
 
         if (dto.amount().compareTo(order.getTotalAmount()) != 0) {
-            logger.warn("Payment amount mismatch: orderId={}, paymentAmount={}, orderTotal={}", dto.orderId(), dto.amount(), order.getTotalAmount());
+            logger.warn("Payment amount mismatch: orderId={}, paymentAmount={}, orderTotal={}",
+                    dto.orderId(), dto.amount(), order.getTotalAmount());
             throw new InvalidOperationException(
                     String.format("Payment amount %.2f does not match order total %.2f",
                             dto.amount(), order.getTotalAmount()));
@@ -61,13 +56,16 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentMapper.toPayment(dto);
         payment.setOrder(order);
         payment.setAmount(dto.amount());
-        payment.setMethod(PaymentMethod.valueOf(dto.method().toUpperCase()));
+
+        payment.setMethod(dto.method());
+
         payment.setStatus(PaymentStatus.PENDING);
         payment.setTransactionId(dto.transactionId());
         payment.setNotes(dto.notes());
 
         Payment savedPayment = paymentRepository.save(payment);
-        logger.info("Payment created successfully: paymentId={}, orderId={}, status={}", savedPayment.getId(), dto.orderId(), savedPayment.getStatus());
+        logger.info("Payment created successfully: paymentId={}, orderId={}, status={}",
+                savedPayment.getId(), dto.orderId(), savedPayment.getStatus());
         return paymentMapper.toPaymentDTO(savedPayment);
     }
 
@@ -82,7 +80,7 @@ public class PaymentServiceImpl implements PaymentService {
         paymentMapper.updatePaymentFromDTO(dto, payment);
 
         if (dto.status() != null) {
-            payment.setStatus(PaymentStatus.valueOf(dto.status().toUpperCase()));
+            payment.setStatus(dto.status());
         }
 
         PaymentStatus newStatus = payment.getStatus();
@@ -99,44 +97,19 @@ public class PaymentServiceImpl implements PaymentService {
 
 
     private void handlePaymentStatusChange(Payment payment, PaymentStatus oldStatus, PaymentStatus newStatus) {
-        Order order = payment.getOrder();
-        logger.info("Handling payment status change: paymentId={}, orderId={}, oldStatus={}, newStatus={}", 
-                   payment.getId(), order.getId(), oldStatus, newStatus);
+        logger.info("Payment status transition: paymentId={} [{} -> {}]",
+                payment.getId(), oldStatus, newStatus);
 
-        if (order.getStatus() == OrderStatus.SHIPPED || order.getStatus() == OrderStatus.DELIVERED) {
-            logger.debug("Skipping status change for already shipped/delivered order: orderId={}, orderStatus={}", 
-                        order.getId(), order.getStatus());
-            return;
-        }
+        logger.debug("Publishing PaymentStatusChangedEvent for orderId={}", payment.getOrder().getId());
 
-        if (newStatus == PaymentStatus.COMPLETED && oldStatus != PaymentStatus.COMPLETED) {
-            if (order.getStatus() == OrderStatus.NEW) {
-                logger.info("Payment completed, confirming order: paymentId={}, orderId={}", payment.getId(), order.getId());
-                order.setStatus(OrderStatus.CONFIRMED);
-                orderRepository.save(order);
-            }
-        }
-
-        else if ((newStatus == PaymentStatus.FAILED || newStatus == PaymentStatus.CANCELLED) &&
-                oldStatus == PaymentStatus.PENDING) {
-
-            if (order.getStatus() == OrderStatus.NEW) {
-                logger.warn("Payment failed/cancelled, cancelling order: paymentId={}, orderId={}, reason={}", 
-                           payment.getId(), order.getId(), newStatus);
-                order.setStatus(OrderStatus.CANCELLED);
-                orderRepository.save(order);
-
-                for (OrderItem item : order.getItems()) {
-                    try {
-                        logger.debug("Releasing stock for failed payment: productId={}, quantity={}", item.getProduct().getId(), item.getQuantity());
-                        inventoryService.releaseStock(item.getProduct().getId(), item.getQuantity());
-                    } catch (Exception e) {
-                        logger.error("Failed to release stock for product: productId={}", item.getProduct().getId(), e);
-                    }
-                }
-            }
-        }
+        eventPublisher.publishEvent(new PaymentStatusChangedEvent(
+                payment.getId(),
+                payment.getOrder().getId(),
+                oldStatus,
+                newStatus
+        ));
     }
+
 
     @Override
     @Transactional
@@ -178,11 +151,11 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PaymentDTO> findByStatus(String status, Pageable pageable) {
-        PaymentStatus paymentStatus = status != null ? PaymentStatus.valueOf(status.toUpperCase()) : null;
-        Page<Payment> payments = paymentRepository.findByStatus(paymentStatus, pageable);
+    public Page<PaymentDTO> findByStatus(PaymentStatus status, Pageable pageable) {
+        Page<Payment> payments = paymentRepository.findByStatus(status, pageable);
         return payments.map(paymentMapper::toPaymentDTO);
     }
+
 
     @Override
     @Transactional(readOnly = true)
@@ -231,8 +204,7 @@ public class PaymentServiceImpl implements PaymentService {
         PaymentStatus paymentStatus = status != null ? PaymentStatus.valueOf(status.toUpperCase()) : null;
         return paymentRepository.countByStatus(paymentStatus);
     }
-
-
+    
     @Override
     @Transactional
     public PaymentDTO simulatePayment(Long paymentId, String scenario) {
