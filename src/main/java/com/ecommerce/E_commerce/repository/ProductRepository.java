@@ -39,9 +39,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Page<Product> findByCategoryIdAndPriceBetween(Long categoryId, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
     
   
-    @EntityGraph(value = "Product.withDetails")
+    @EntityGraph(value = "Product.summary")
     Page<Product> findByIsFeatured(Boolean isFeatured, Pageable pageable);
-    @EntityGraph(value = "Product.withDetails")
+    @EntityGraph(value = "Product.summary")
     Page<Product> findByIsActive(Boolean isActive, Pageable pageable);
     @EntityGraph(value = "Product.withDetails")
     Page<Product> findByCategoryIdAndIsFeatured(Long categoryId, Boolean isFeatured, Pageable pageable);

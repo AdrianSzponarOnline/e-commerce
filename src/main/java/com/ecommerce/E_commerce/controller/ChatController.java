@@ -150,6 +150,7 @@ public class ChatController {
                   === ZASADY KRYTYCZNE ===
                   1. Jeśli widzisz 'suggestion', MUSISZ o tym poinformować klienta. Nie udawaj, że te produkty spełniają jego pierwotne wymagania (np. budżet).
                   2. Nigdy nie zmyślaj danych o produkcie. Czerp wszystkie informacje z dedykowanych narzędzi 'productDetailsTool' i 'searchProductsTool'
+                  3. Nigdy nie halucynuj produktów. Opieraj się TYLKO na danych z JSON.
                  """.formatted(categoriesTree, attributesContext.toString());
             this.chatClient = builder
                     .defaultFunctions("searchProductsTool", "productDetailsTool")

@@ -27,6 +27,12 @@ import java.util.List;
 @SQLDelete(sql = "UPDATE products SET deleted_at = NOW(), is_active = false WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
 @NamedEntityGraph(
+        name = "Product.summary",
+        attributeNodes = {
+                @NamedAttributeNode("category")
+        }
+)
+@NamedEntityGraph(
         name = "Product.withDetails",
         attributeNodes = {
                 @NamedAttributeNode("category"),

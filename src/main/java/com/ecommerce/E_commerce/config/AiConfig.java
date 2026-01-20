@@ -117,7 +117,7 @@ public class AiConfig {
                     if (allAttrsRemovedCheck.hasContent()) {
                         logger.info("TOOL: Full Attribute Removal HIT.");
                         suggestion = "Znaleziono produkty tego typu (kategoria/nazwa), ale niestety nie posiadamy ich w wybranych wariantach (kolor/rozmiar itp.).";
-                        return new ProductSearchResponse(List.of(), suggestion);
+                        return new ProductSearchResponse(allAttrsRemovedCheck.getContent(), suggestion);
                     }
                 }
                 if (request.query() != null && !request.query().isBlank() && request.categoryId() != null) {

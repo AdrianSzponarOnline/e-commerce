@@ -163,6 +163,7 @@ mvn spring-boot:run -Dspring.profiles.active=test
 - **Inventory API:** `/api/inventory` - Zarządzanie stanem magazynowym
 - **AI Chat API:** `/api/ai/chat` - Asystent sprzedażowy z AI (Gemini)
 - **Contact API:** `/api/contact` - Formularz kontaktowy
+- **Statistics API:** `/api/statistics` - Statystyki sprzedaży i produktów (tylko dla OWNER)
 
 ### Dokumentacja
 - [Kompletna dokumentacja API](API_DOCUMENTATION.md)

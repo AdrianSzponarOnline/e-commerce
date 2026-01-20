@@ -17,6 +17,7 @@ Kompletna dokumentacja API dla systemu e-commerce z obsługą produktów, katego
 - **Inventory API:** `/api/inventory`
 - **AI Chat API:** `/api/ai/chat`
 - **Contact API:** `/api/contact`
+- **Statistics API:** `/api/statistics` - Statystyki sprzedaży i produktów (tylko dla OWNER)
 
 ## Autoryzacja
 - **Publiczne endpointy** - dostępne dla wszystkich użytkowników
@@ -1918,6 +1919,289 @@ Chciałbym zapytać o dostępność produktu...
 ```properties
 app.contact.admin.email=admin@example.com
 ```
+
+---
+
+## 21. Statistics API (`/api/statistics`)
+
+Statistics API zapewnia szczegółowe statystyki sprzedaży i produktów dla właścicieli sklepu. Wszystkie endpointy wymagają roli `ROLE_OWNER`.
+
+### 21.1 Top produkty według ilości sprzedanych
+
+**Endpoint:** `GET /api/statistics/products/top-by-quantity`  
+**Autoryzacja:** `ROLE_OWNER`
+
+**Query Parameters:**
+- `startDate` (Instant, optional) - Data początkowa w formacie ISO 8601 (domyślnie: 30 dni temu)
+- `endDate` (Instant, optional) - Data końcowa w formacie ISO 8601 (domyślnie: teraz)
+- `limit` (int, default: 10, min: 1, max: 100) - Maksymalna liczba produktów do zwrócenia
+
+**Walidacja:**
+- Daty nie mogą być w przyszłości (`@PastOrPresent`)
+- `startDate` musi być przed `endDate`
+- `limit` musi być między 1 a 100
+
+**Response:** `List<TopProductDTO>`
+
+**Przykład:**
+```bash
+GET /api/statistics/products/top-by-quantity?startDate=2024-01-01T00:00:00Z&endDate=2024-12-31T23:59:59Z&limit=10
+Authorization: Bearer {token}
+```
+
+**Response:**
+```json
+[
+  {
+    "productId": 1,
+    "productName": "Laptop Dell XPS 15",
+    "productSku": "LAP-DELL-XPS15-BLK-16GB",
+    "totalQuantitySold": 150,
+    "totalRevenue": 225000.00,
+    "orderCount": 120
+  },
+  {
+    "productId": 2,
+    "productName": "Smartphone Samsung Galaxy S24",
+    "productSku": "PHN-SAMS-S24-256GB-BLK",
+    "totalQuantitySold": 98,
+    "totalRevenue": 294000.00,
+    "orderCount": 95
+  }
+]
+```
+
+**Status codes:**
+- `200 OK` - Lista top produktów
+- `400 Bad Request` - Nieprawidłowe parametry (np. startDate po endDate)
+- `403 Forbidden` - Brak uprawnień OWNER
+
+---
+
+### 21.2 Top produkty według przychodu
+
+**Endpoint:** `GET /api/statistics/products/top-by-revenue`  
+**Autoryzacja:** `ROLE_OWNER`
+
+**Query Parameters:**
+- `startDate` (Instant, optional) - Data początkowa w formacie ISO 8601 (domyślnie: 30 dni temu)
+- `endDate` (Instant, optional) - Data końcowa w formacie ISO 8601 (domyślnie: teraz)
+- `limit` (int, default: 10, min: 1, max: 100) - Maksymalna liczba produktów do zwrócenia
+
+**Walidacja:**
+- Daty nie mogą być w przyszłości (`@PastOrPresent`)
+- `startDate` musi być przed `endDate`
+- `limit` musi być między 1 a 100
+
+**Response:** `List<TopProductDTO>`
+
+**Przykład:**
+```bash
+GET /api/statistics/products/top-by-revenue?limit=5
+Authorization: Bearer {token}
+```
+
+**Response:** (format jak w 21.1, ale posortowane według przychodu)
+
+---
+
+### 21.3 Top produkty według ilości - konkretny miesiąc
+
+**Endpoint:** `GET /api/statistics/products/top-by-quantity/month`  
+**Autoryzacja:** `ROLE_OWNER`
+
+**Query Parameters:**
+- `year` (int, required, min: 2000, max: 2100) - Rok
+- `month` (int, required, min: 1, max: 12) - Miesiąc (1-12)
+- `limit` (int, default: 10, min: 1, max: 100) - Maksymalna liczba produktów do zwrócenia
+
+**Response:** `List<TopProductDTO>`
+
+**Przykład:**
+```bash
+GET /api/statistics/products/top-by-quantity/month?year=2024&month=12&limit=10
+Authorization: Bearer {token}
+```
+
+**Response:** (format jak w 21.1)
+
+---
+
+### 21.4 Top produkty według przychodu - konkretny miesiąc
+
+**Endpoint:** `GET /api/statistics/products/top-by-revenue/month`  
+**Autoryzacja:** `ROLE_OWNER`
+
+**Query Parameters:**
+- `year` (int, required, min: 2000, max: 2100) - Rok
+- `month` (int, required, min: 1, max: 12) - Miesiąc (1-12)
+- `limit` (int, default: 10, min: 1, max: 100) - Maksymalna liczba produktów do zwrócenia
+
+**Response:** `List<TopProductDTO>`
+
+**Przykład:**
+```bash
+GET /api/statistics/products/top-by-revenue/month?year=2024&month=12&limit=10
+Authorization: Bearer {token}
+```
+
+**Response:** (format jak w 21.1)
+
+---
+
+### 21.5 Statystyki sprzedaży
+
+**Endpoint:** `GET /api/statistics/sales`  
+**Autoryzacja:** `ROLE_OWNER`
+
+**Query Parameters:**
+- `startDate` (Instant, optional) - Data początkowa w formacie ISO 8601 (domyślnie: 30 dni temu)
+- `endDate` (Instant, optional) - Data końcowa w formacie ISO 8601 (domyślnie: teraz)
+
+**Walidacja:**
+- Daty nie mogą być w przyszłości (`@PastOrPresent`)
+- `startDate` musi być przed `endDate`
+
+**Response:** `SalesStatisticsDTO`
+
+**Przykład:**
+```bash
+GET /api/statistics/sales?startDate=2024-01-01T00:00:00Z&endDate=2024-12-31T23:59:59Z
+Authorization: Bearer {token}
+```
+
+**Response:**
+```json
+{
+  "totalRevenue": 1250000.50,
+  "totalOrders": 1250,
+  "totalProductsSold": 5678,
+  "averageOrderValue": 1000.00,
+  "periodStart": "2024-01-01T00:00:00Z",
+  "periodEnd": "2024-12-31T23:59:59Z"
+}
+```
+
+**Pola:**
+- `totalRevenue` - Całkowity przychód z zamówień w statusach: CONFIRMED, PROCESSING, SHIPPED, DELIVERED, COMPLETED
+- `totalOrders` - Całkowita liczba zamówień
+- `totalProductsSold` - Całkowita liczba sprzedanych produktów
+- `averageOrderValue` - Średnia wartość zamówienia
+- `periodStart` - Data początkowa okresu
+- `periodEnd` - Data końcowa okresu
+
+**Status codes:**
+- `200 OK` - Statystyki sprzedaży
+- `400 Bad Request` - Nieprawidłowe parametry
+- `403 Forbidden` - Brak uprawnień OWNER
+
+---
+
+### 21.6 Statystyki sprzedaży miesięczne
+
+**Endpoint:** `GET /api/statistics/sales/monthly`  
+**Autoryzacja:** `ROLE_OWNER`
+
+**Query Parameters:**
+- `startDate` (Instant, optional) - Data początkowa w formacie ISO 8601 (domyślnie: 12 miesięcy temu)
+- `endDate` (Instant, optional) - Data końcowa w formacie ISO 8601 (domyślnie: teraz)
+
+**Walidacja:**
+- Daty nie mogą być w przyszłości (`@PastOrPresent`)
+- `startDate` musi być przed `endDate`
+
+**Response:** `List<MonthlySalesDTO>`
+
+**Przykład:**
+```bash
+GET /api/statistics/sales/monthly?startDate=2024-01-01T00:00:00Z&endDate=2024-12-31T23:59:59Z
+Authorization: Bearer {token}
+```
+
+**Response:**
+```json
+[
+  {
+    "year": 2024,
+    "month": 12,
+    "monthName": "Grudzień",
+    "totalRevenue": 150000.00,
+    "totalOrders": 150,
+    "totalProductsSold": 680
+  },
+  {
+    "year": 2024,
+    "month": 11,
+    "monthName": "Listopad",
+    "totalRevenue": 140000.00,
+    "totalOrders": 140,
+    "totalProductsSold": 620
+  }
+]
+```
+
+**Pola:**
+- `year` - Rok
+- `month` - Miesiąc (1-12)
+- `monthName` - Nazwa miesiąca po polsku
+- `totalRevenue` - Całkowity przychód w danym miesiącu
+- `totalOrders` - Całkowita liczba zamówień w danym miesiącu
+- `totalProductsSold` - Całkowita liczba sprzedanych produktów w danym miesiącu
+
+**Status codes:**
+- `200 OK` - Lista statystyk miesięcznych
+- `400 Bad Request` - Nieprawidłowe parametry
+- `403 Forbidden` - Brak uprawnień OWNER
+
+---
+
+### Modele danych Statistics API
+
+#### TopProductDTO
+```json
+{
+  "productId": 1,
+  "productName": "Nazwa produktu",
+  "productSku": "SKU-PRODUKTU",
+  "totalQuantitySold": 100,
+  "totalRevenue": 50000.00,
+  "orderCount": 85
+}
+```
+
+#### SalesStatisticsDTO
+```json
+{
+  "totalRevenue": 1000000.00,
+  "totalOrders": 1000,
+  "totalProductsSold": 5000,
+  "averageOrderValue": 1000.00,
+  "periodStart": "2024-01-01T00:00:00Z",
+  "periodEnd": "2024-12-31T23:59:59Z"
+}
+```
+
+#### MonthlySalesDTO
+```json
+{
+  "year": 2024,
+  "month": 12,
+  "monthName": "Grudzień",
+  "totalRevenue": 150000.00,
+  "totalOrders": 150,
+  "totalProductsSold": 680
+}
+```
+
+---
+
+### Uwagi dotyczące Statistics API
+
+- **Statusy zamówień:** Statystyki uwzględniają tylko zamówienia w statusach: CONFIRMED, PROCESSING, SHIPPED, DELIVERED, COMPLETED
+- **Domyślne okresy:** Jeśli nie podano dat, używane są domyślne wartości (ostatnie 30 dni dla większości endpointów, ostatnie 12 miesięcy dla statystyk miesięcznych)
+- **Walidacja dat:** System automatycznie sprawdza, czy `startDate` jest przed `endDate`
+- **Precyzja liczbowa:** Wszystkie wartości finansowe są zaokrąglane do 2 miejsc po przecinku
+- **Wydajność:** Statystyki są obliczane na podstawie zapytań do bazy danych, więc dla dużych okresów mogą wymagać więcej czasu
 
 ---
 

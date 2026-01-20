@@ -19,10 +19,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,12 +40,15 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final ProductMapper productMapper;
     private final ProductAttributeValueService productAttributeValueService;
-    private final ImageUrlService imageUrlService;
     private final InventoryService inventoryService;
 
     @Override
     @Transactional
-    @CacheEvict(value = "products", allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "products", allEntries = true),
+            @CacheEvict(value = "product_lists", allEntries = true),
+            @CacheEvict(value = "product_counts", allEntries = true)
+    })
     public ProductDTO create(ProductCreateDTO dto) {
         logger.info("Creating product: name={}, categoryId={}", dto.name(), dto.categoryId());
 
@@ -64,7 +66,11 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    @CacheEvict(value = "products", allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "products", allEntries = true),
+            @CacheEvict(value = "product_lists", allEntries = true),
+            @CacheEvict(value = "product_counts", allEntries = true)
+    })
     public ProductDTO update(Long id, ProductUpdateDTO dto) {
         logger.info("Updating product: productId={}", id);
         Product product = productRepository.findById(id)
@@ -100,7 +106,11 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    @CacheEvict(value = "products", allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "products", allEntries = true),
+            @CacheEvict(value = "product_lists", allEntries = true),
+            @CacheEvict(value = "product_counts", allEntries = true)
+    })
     public void delete(Long id) {
         logger.info("Deleting product: productId={}", id);
         Product product = productRepository.findById(id)
@@ -152,25 +162,28 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "product_lists", key = "'all_' + #pageable.pageNumber + '_' + #pageable.sort.toString()")
     public Page<ProductSummaryDTO> findAll(Pageable pageable) {
         return productRepository.findAll(pageable).map(productMapper::toProductSummaryDTO);
     }
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "product_lists", key = "'cat_' + #categoryId + '_' + #pageable.pageNumber + '_' + #pageable.sort.toString()")
     public Page<ProductSummaryDTO> findByCategory(Long categoryId, Pageable pageable) {
         return productRepository.findByCategoryId(categoryId, pageable).map(productMapper::toProductSummaryDTO);
     }
 
     @Override
     @Transactional(readOnly = true)
+
     public Page<ProductSummaryDTO> findByCategorySlug(String categorySlug, Pageable pageable) {
         return productRepository.findByCategorySeoSlug(categorySlug, pageable).map(productMapper::toProductSummaryDTO);
     }
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = "product_lists", key = "'featured_' + #isFeatured + '_' + #pageable.toString()")
+    @Cacheable(value = "product_lists", key = "'featured_' + #isFeatured + '_' + #pageable.pageNumber + '_' + #pageable.sort.toString()")
     public Page<ProductSummaryDTO> findByFeatured(Boolean isFeatured, Pageable pageable) {
         return productRepository.findByIsFeatured(isFeatured, pageable).map(productMapper::toProductSummaryDTO);
     }
@@ -183,59 +196,25 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "product_counts", key = "'count_cat_' + #categoryId")
     public long countByCategory(Long categoryId) {
         return productRepository.countByCategoryId(categoryId);
     }
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "product_counts", key = "'count_feat_' + #isFeatured")
     public long countByFeatured(Boolean isFeatured) {
         return productRepository.countByIsFeatured(isFeatured);
     }
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "product_counts", key = "'count_active_' + #isActive")
     public long countByActive(Boolean isActive) {
         return productRepository.countByIsActive(isActive);
     }
 
-    private Pageable buildPageable(int page, int size, String sortBy, String sortDir) {
-        Sort sort = (sortDir != null && sortDir.equalsIgnoreCase("desc"))
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending();
-        return PageRequest.of(page, size, sort);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductSummaryDTO> findAll(int page, int size, String sortBy, String sortDir) {
-        return findAll(buildPageable(page, size, sortBy, sortDir));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductSummaryDTO> findByCategory(Long categoryId, int page, int size, String sortBy, String sortDir) {
-        return findByCategory(categoryId, buildPageable(page, size, sortBy, sortDir));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductSummaryDTO> findByCategorySlug(String categorySlug, int page, int size, String sortBy, String sortDir) {
-        return findByCategorySlug(categorySlug, buildPageable(page, size, sortBy, sortDir));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    @Cacheable(value = "product_lists", key = "'featured_' + #isFeatured + '_' + #pageable.toString()")
-    public Page<ProductSummaryDTO> findByFeatured(Boolean isFeatured, int page, int size, String sortBy, String sortDir) {
-        return findByFeatured(isFeatured, buildPageable(page, size, sortBy, sortDir));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductSummaryDTO> findByActive(Boolean isActive, int page, int size, String sortBy, String sortDir) {
-        return findByActive(isActive, buildPageable(page, size, sortBy, sortDir));
-    }
 
     private Category fetchCategory(Long categoryId) {
         return categoryRepository.findById(categoryId)

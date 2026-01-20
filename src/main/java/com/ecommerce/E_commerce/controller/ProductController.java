@@ -10,6 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -53,12 +56,14 @@ public class ProductController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id) {
+        logger.info("GET /api/products/{} - Retrieving product", id);
         ProductDTO product = productService.getById(id);
         return ResponseEntity.ok(product);
     }
 
     @GetMapping("/slug/{seoSlug}")
     public ResponseEntity<ProductDTO> getProductBySlug(@PathVariable String seoSlug) {
+        logger.info("GET /api/products/{} - Retrieving product", seoSlug);
         ProductDTO product = productService.getBySeoSlug(seoSlug);
         return ResponseEntity.ok(product);
     }
@@ -71,55 +76,41 @@ public class ProductController {
 
     @GetMapping
     public ResponseEntity<Page<ProductSummaryDTO>> getAllProducts(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Page<ProductSummaryDTO> products = productService.findAll(page, size, sortBy, sortDir);
+            @PageableDefault(sort = "name", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<ProductSummaryDTO> products = productService.findAll(pageable);
         return ResponseEntity.ok(products);
     }
 
     @GetMapping("/category/{categoryId}")
     public ResponseEntity<Page<ProductSummaryDTO>> getProductsByCategory(
             @PathVariable Long categoryId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "name") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Page<ProductSummaryDTO> products = productService.findByCategory(categoryId, page, size, sortBy, sortDir);
+            @PageableDefault(sort = "name", direction = Sort.Direction.DESC) Pageable pageable
+            ) {
+        Page<ProductSummaryDTO> products = productService.findByCategory(categoryId, pageable);
         return ResponseEntity.ok(products);
     }
 
     @GetMapping("/category-slug/{categorySlug}")
     public ResponseEntity<Page<ProductSummaryDTO>> getProductsByCategorySlug(
             @PathVariable String categorySlug,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "name") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Page<ProductSummaryDTO> products = productService.findByCategorySlug(categorySlug, page, size, sortBy, sortDir);
+            @PageableDefault(sort = "name", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<ProductSummaryDTO> products = productService.findByCategorySlug(categorySlug, pageable);
         return ResponseEntity.ok(products);
     }
 
     @GetMapping("/featured")
     public ResponseEntity<Page<ProductSummaryDTO>> getFeaturedProducts(
             @RequestParam(defaultValue = "true") Boolean isFeatured,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "name") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Page<ProductSummaryDTO> products = productService.findByFeatured(isFeatured, page, size, sortBy, sortDir);
+            @PageableDefault(sort = "name", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<ProductSummaryDTO> products = productService.findByFeatured(isFeatured, pageable);
         return ResponseEntity.ok(products);
     }
 
     @GetMapping("/active")
     public ResponseEntity<Page<ProductSummaryDTO>> getActiveProducts(
             @RequestParam(defaultValue = "true") Boolean isActive,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "name") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
-        Page<ProductSummaryDTO> products = productService.findByActive(isActive, page, size, sortBy, sortDir);
+            @PageableDefault(sort = "name", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<ProductSummaryDTO> products = productService.findByActive(isActive, pageable);
         return ResponseEntity.ok(products);
     }
 

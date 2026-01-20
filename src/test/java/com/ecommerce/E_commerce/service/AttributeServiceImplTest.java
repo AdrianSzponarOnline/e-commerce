@@ -45,7 +45,7 @@ class AttributeServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        attributeService = new AttributeServiceImpl(attributeRepository, attributeMapper, productAttributeValueRepository);
+        attributeService = new AttributeServiceImpl(attributeRepository,  productAttributeValueRepository, attributeMapper);
 
         testAttribute = new Attribute();
         testAttribute.setId(1L);

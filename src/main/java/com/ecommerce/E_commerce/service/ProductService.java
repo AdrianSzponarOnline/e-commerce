@@ -38,13 +38,4 @@ public interface ProductService {
     long countByCategory(Long categoryId);
     long countByFeatured(Boolean isFeatured);
     long countByActive(Boolean isActive);
-    
-    // Overloads that encapsulate Sort/Pageable creation
-    Page<ProductSummaryDTO> findAll(int page, int size, String sortBy, String sortDir);
-    Page<ProductSummaryDTO> findByCategory(Long categoryId, int page, int size, String sortBy, String sortDir);
-    Page<ProductSummaryDTO> findByCategorySlug(String categorySlug, int page, int size, String sortBy, String sortDir);
-    Page<ProductSummaryDTO> findByFeatured(Boolean isFeatured, int page, int size, String sortBy, String sortDir);
-    @PreAuthorize("hasRole('OWNER') or #isActive == true")
-    Page<ProductSummaryDTO> findByActive(Boolean isActive, int page, int size, String sortBy, String sortDir);
-    
 }

@@ -72,7 +72,6 @@ class ProductServiceImplTest {
                 categoryRepository,
                 productMapper,
                 productAttributeValueService,
-                imageUrlService,
                 inventoryService
         );
 

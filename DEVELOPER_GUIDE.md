@@ -1134,6 +1134,173 @@ public ResponseEntity<String> resendActivation(
 - Dla bezpieczeństwa zawsze zwracany jest ten sam komunikat (nawet jeśli email nie istnieje)
 - Nowy token unieważnia poprzedni token dla danego użytkownika
 
+## Statistics API Implementation
+
+### Przegląd
+Statistics API zapewnia szczegółowe statystyki sprzedaży i produktów dla właścicieli sklepu. Wszystkie endpointy wymagają roli `ROLE_OWNER` i są zabezpieczone za pomocą `@PreAuthorize`.
+
+### Architektura
+
+#### Warstwy
+```
+StatisticsController (REST API)
+    ↓
+StatisticsService (Business Logic)
+    ↓
+OrderRepository / OrderItemRepository (Data Access)
+    ↓
+Database (PostgreSQL)
+```
+
+### Implementacja
+
+#### Controller
+```java
+@RestController
+@RequestMapping("/api/statistics")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "*")
+@Validated
+public class StatisticsController {
+    
+    @GetMapping("/products/top-by-quantity")
+    @PreAuthorize("hasRole('OWNER')")
+    public ResponseEntity<List<TopProductDTO>> getTopProductsByQuantity(
+            @RequestParam(required = false) @PastOrPresent Instant startDate,
+            @RequestParam(required = false) @PastOrPresent Instant endDate,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int limit) {
+        // Implementacja
+    }
+}
+```
+
+#### Service
+```java
+@Service
+@Transactional(readOnly = true)
+@RequiredArgsConstructor
+public class StatisticsServiceImpl implements StatisticsService {
+    
+    private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
+    
+    private static final List<OrderStatus> COMPLETED_STATUSES = Arrays.asList(
+        OrderStatus.CONFIRMED,
+        OrderStatus.PROCESSING,
+        OrderStatus.SHIPPED,
+        OrderStatus.DELIVERED,
+        OrderStatus.COMPLETED
+    );
+}
+```
+
+### Zapytania SQL
+
+#### Top produkty według ilości
+```sql
+SELECT 
+    oi.product_id,
+    oi.product_name,
+    oi.product_sku,
+    SUM(oi.quantity) as total_quantity,
+    SUM(oi.price * oi.quantity) as total_revenue,
+    COUNT(DISTINCT oi.order_id) as order_count
+FROM order_items oi
+JOIN orders o ON oi.order_id = o.id
+WHERE o.status IN ('CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED')
+  AND o.created_at >= :startDate
+  AND o.created_at <= :endDate
+  AND o.is_active = true
+GROUP BY oi.product_id, oi.product_name, oi.product_sku
+ORDER BY total_quantity DESC
+LIMIT :limit
+```
+
+#### Statystyki sprzedaży
+```sql
+SELECT 
+    SUM(o.total_amount) as total_revenue,
+    COUNT(o.id) as total_orders,
+    AVG(o.total_amount) as average_order_value
+FROM orders o
+WHERE o.status IN ('CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED')
+  AND o.created_at >= :startDate
+  AND o.created_at <= :endDate
+  AND o.is_active = true
+```
+
+### DTO
+
+#### TopProductDTO
+```java
+public record TopProductDTO(
+    @NotNull @Positive Long productId,
+    @NotBlank String productName,
+    @NotBlank String productSku,
+    @NotNull @PositiveOrZero Long totalQuantitySold,
+    @NotNull @PositiveOrZero BigDecimal totalRevenue,
+    @NotNull @PositiveOrZero Long orderCount
+) {}
+```
+
+#### SalesStatisticsDTO
+```java
+public record SalesStatisticsDTO(
+    @NotNull @PositiveOrZero BigDecimal totalRevenue,
+    @NotNull @PositiveOrZero Long totalOrders,
+    @NotNull @PositiveOrZero Long totalProductsSold,
+    @NotNull @PositiveOrZero BigDecimal averageOrderValue,
+    @NotNull Instant periodStart,
+    @NotNull Instant periodEnd
+) {}
+```
+
+### Walidacja
+
+#### Parametry kontrolera
+- `startDate` / `endDate`: `@PastOrPresent` - daty nie mogą być w przyszłości
+- `limit`: `@Min(1)` `@Max(100)` - limit między 1 a 100
+- `year`: `@Min(2000)` `@Max(2100)` - rok między 2000 a 2100
+- `month`: `@Min(1)` `@Max(12)` - miesiąc między 1 a 12
+
+#### Walidacja biznesowa
+- `startDate` musi być przed `endDate` (sprawdzane w kontrolerze)
+- Zwraca `400 Bad Request` jeśli daty są nieprawidłowe
+
+### Bezpieczeństwo
+
+- Wszystkie endpointy wymagają roli `ROLE_OWNER`
+- Używa `@PreAuthorize("hasRole('OWNER')")` na poziomie klasy i metod
+- Walidacja parametrów za pomocą `@Validated` na kontrolerze
+- Logowanie wszystkich operacji (INFO dla sukcesów, WARN dla błędów)
+
+### Wydajność
+
+- Używa `@Transactional(readOnly = true)` dla optymalizacji
+- Zapytania SQL z agregacjami są wykonywane bezpośrednio w bazie danych
+- Domyślne limity zapobiegają przeciążeniu (max 100 produktów)
+- Statystyki są obliczane na podstawie zamówień w statusach "zakończonych"
+
+### Logowanie
+
+```java
+logger.info("GET /api/statistics/products/top-by-quantity - startDate={}, endDate={}, limit={}", 
+    startDate, endDate, limit);
+logger.info("GET /api/statistics/products/top-by-quantity - Successfully retrieved {} top products", 
+    topProducts.size());
+```
+
+### Statusy zamówień
+
+Statystyki uwzględniają tylko zamówienia w następujących statusach:
+- `CONFIRMED` - Potwierdzone
+- `PROCESSING` - W trakcie realizacji
+- `SHIPPED` - Wysłane
+- `DELIVERED` - Dostarczone
+- `COMPLETED` - Zakończone
+
+Zamówienia w statusach `PENDING`, `CANCELLED`, `REFUNDED` nie są uwzględniane w statystykach.
+
 ---
 
 *Przewodnik dewelopera - ostatnia aktualizacja: 2025-01-15*
