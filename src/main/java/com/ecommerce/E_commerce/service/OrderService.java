@@ -1,5 +1,6 @@
 package com.ecommerce.E_commerce.service;
 
+import com.ecommerce.E_commerce.dto.order.GuestOrderCreateDTO;
 import com.ecommerce.E_commerce.dto.order.OrderCreateDTO;
 import com.ecommerce.E_commerce.dto.order.OrderDTO;
 import com.ecommerce.E_commerce.dto.order.OrderUpdateDTO;
@@ -13,6 +14,8 @@ import java.time.Instant;
 public interface OrderService {
     
     OrderDTO create(Long userId, OrderCreateDTO dto);
+    
+    OrderDTO createGuestOrder(GuestOrderCreateDTO dto);
     
     OrderDTO update(Long id, OrderUpdateDTO dto);
     

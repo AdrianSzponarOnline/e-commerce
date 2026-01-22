@@ -1,5 +1,6 @@
 package com.ecommerce.E_commerce.controller;
 
+import com.ecommerce.E_commerce.dto.payment.GuestPaymentCreateDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentCreateDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentUpdateDTO;
@@ -10,6 +11,8 @@ import com.ecommerce.E_commerce.service.OrderService;
 import com.ecommerce.E_commerce.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +44,16 @@ public class PaymentController {
         logger.info("POST /api/payments - Creating payment: orderId={}, amount={}, method={}", dto.orderId(), dto.amount(), dto.method());
         PaymentDTO payment = paymentService.create(dto);
         logger.info("POST /api/payments - Payment created successfully: paymentId={}, orderId={}, status={}", payment.id(), dto.orderId(), payment.status());
+        return ResponseEntity.status(HttpStatus.CREATED).body(payment);
+    }
+
+    @PostMapping("/guest")
+    public ResponseEntity<PaymentDTO> createGuestPayment(@Valid @RequestBody GuestPaymentCreateDTO dto) {
+        logger.info("POST /api/payments/guest - Creating guest payment: orderId={}, email={}, amount={}, method={}", 
+                dto.orderId(), dto.email(), dto.amount(), dto.method());
+        PaymentDTO payment = paymentService.createGuestPayment(dto);
+        logger.info("POST /api/payments/guest - Guest payment created successfully: paymentId={}, orderId={}, status={}", 
+                payment.id(), dto.orderId(), payment.status());
         return ResponseEntity.status(HttpStatus.CREATED).body(payment);
     }
     
@@ -212,6 +225,27 @@ public class PaymentController {
 
         PaymentDTO result = paymentService.simulatePayment(paymentId, scenario);
         logger.info("POST /api/payments/{}/simulate - Payment simulation completed: status={}", paymentId, result.status());
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/guest/{paymentId}/simulate")
+    @Operation(summary = "Simulate guest payment gateway response",
+            description = "Mocks a payment result for guest orders. Requires email verification. Scenarios: SUCCESS, FAIL, ERROR. Changes Order status automatically.")
+    public ResponseEntity<PaymentDTO> simulateGuestPayment(
+            @PathVariable Long paymentId,
+            @RequestParam @Email @NotBlank String email,
+            @RequestParam(defaultValue = "SUCCESS") String scenario
+    ) {
+        logger.info("POST /api/payments/guest/{}/simulate - Simulating guest payment: email={}, scenario={}", paymentId, email, scenario);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.warn("POST /api/payments/guest/{}/simulate - Thread interrupted", paymentId);
+        }
+
+        PaymentDTO result = paymentService.simulateGuestPayment(paymentId, email, scenario);
+        logger.info("POST /api/payments/guest/{}/simulate - Guest payment simulation completed: status={}", paymentId, result.status());
         return ResponseEntity.ok(result);
     }
 }

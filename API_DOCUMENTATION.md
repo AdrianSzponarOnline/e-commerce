@@ -1210,6 +1210,7 @@ mvn test jacoco:report
 - `V10__refactor_attributes_schema.sql` - Refaktoryzacja schematu atrybutów (utworzenie tabeli attributes, migracja danych)
 - `V11__add_payment_columns.sql` - Dodanie kolumn `transaction_id` i `notes` do tabeli payments
 - `V12__create_confirmation_tokens.sql` - Utworzenie tabeli confirmation_tokens do aktywacji kont użytkowników
+- `V16__make_address_user_id_nullable.sql` - Wsparcie dla zamówień gości: `user_id` w tabeli `addresses` jest teraz nullable, dodano pola kontaktowe gości w tabeli `orders` (`guest_email`, `guest_first_name`, `guest_last_name`, `guest_phone`)
 
 ### 12.2 Uruchamianie migracji
 ```bash
@@ -1258,6 +1259,12 @@ spring.flyway.locations=classpath:db/migration
 - Wszystkie operacje CUD wymagają roli `ROLE_OWNER`
 - Endpointy odczytu są publiczne
 - JWT token wymagany dla operacji wymagających autoryzacji
+- **Publiczne endpointy:**
+  - `POST /api/orders/guest` - Tworzenie zamówień przez gości (bez autoryzacji)
+  - `POST /api/payments/guest` - Tworzenie płatności przez gości (bez autoryzacji)
+  - `POST /api/payments/guest/{paymentId}/simulate` - Symulacja płatności gości (bez autoryzacji)
+  - `POST /api/auth/register`, `POST /api/auth/login` - Rejestracja i logowanie
+  - `GET /api/products/**`, `GET /api/categories/**` - Przeglądanie produktów i kategorii
 
 ### 13.3 Walidacja danych
 - Wszystkie DTOs mają walidację Bean Validation
@@ -1303,6 +1310,122 @@ spring.flyway.locations=classpath:db/migration
 - Automatyczna rezerwacja magazynu (pesymistyczna blokada)
 - Automatyczne obliczenie `totalAmount` na podstawie pozycji
 - Cena pozycji pobierana z produktu (zabezpieczenie przed manipulacją)
+
+### 14.1.1 Tworzenie zamówienia przez gościa (bez logowania)
+**Endpoint:** `POST /api/orders/guest`  
+**Autoryzacja:** Brak (endpoint publiczny)
+
+**Request Body:**
+```json
+{
+  "email": "guest@example.com",
+  "firstName": "Jan",
+  "lastName": "Kowalski",
+  "phone": "123456789",
+  "addressLine1": "ul. Przykładowa 1",
+  "addressLine2": "Mieszkanie 5",
+  "city": "Warszawa",
+  "region": "Mazowieckie",
+  "postalCode": "00-001",
+  "country": "Polska",
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 2
+    },
+    {
+      "productId": 3,
+      "quantity": 1
+    }
+  ]
+}
+```
+
+**Pola wymagane:**
+- `email` (String) - Email kontaktowy gościa (walidacja formatu email)
+- `firstName` (String) - Imię gościa (max 100 znaków)
+- `lastName` (String, opcjonalne) - Nazwisko gościa (max 100 znaków)
+- `phone` (String, opcjonalne) - Numer telefonu (max 20 znaków)
+- `addressLine1` (String) - Pierwsza linia adresu (max 255 znaków)
+- `addressLine2` (String, opcjonalne) - Druga linia adresu (max 255 znaków)
+- `city` (String) - Miasto (max 100 znaków)
+- `region` (String, opcjonalne) - Region/województwo (max 100 znaków)
+- `postalCode` (String) - Kod pocztowy (max 20 znaków)
+- `country` (String) - Kraj (max 100 znaków)
+- `items` (List<OrderItemCreateDTO>) - Lista produktów w zamówieniu (min 1 pozycja)
+
+**Response:** `201 Created`
+```json
+{
+  "id": 123,
+  "userId": null,
+  "firstName": "Jan",
+  "lastName": "Kowalski",
+  "address": {
+    "id": 456,
+    "line1": "ul. Przykładowa 1",
+    "line2": "Mieszkanie 5",
+    "city": "Warszawa",
+    "region": "Mazowieckie",
+    "postalCode": "00-001",
+    "country": "Polska"
+  },
+  "status": "NEW",
+  "totalAmount": 299.98,
+  "items": [
+    {
+      "id": 1,
+      "productId": 1,
+      "product": {...},
+      "quantity": 2,
+      "price": 99.99
+    }
+  ],
+  "payments": [],
+  "createdAt": "2024-01-01T10:00:00Z",
+  "updatedAt": "2024-01-01T10:00:00Z",
+  "isActive": true
+}
+```
+
+**Uwagi:**
+- Endpoint dostępny bez autoryzacji - umożliwia składanie zamówień przez niezalogowanych użytkowników
+- Automatyczna rezerwacja magazynu (pesymistyczna blokada)
+- Automatyczne obliczenie `totalAmount` na podstawie pozycji
+- Cena pozycji pobierana z produktu (zabezpieczenie przed manipulacją)
+- Adres dostawy jest automatycznie tworzony i powiązany z zamówieniem
+- Dane kontaktowe gościa (email, imię, nazwisko, telefon) są przechowywane w zamówieniu
+- Notyfikacje email są wysyłane na adres podany w polu `email`
+- W odpowiedzi `userId` będzie `null` dla zamówień gości
+- Wszystkie pola tekstowe są walidowane pod kątem bezpieczeństwa (brak HTML/script)
+
+**Status codes:**
+- `201 Created` - Zamówienie utworzone pomyślnie
+- `400 Bad Request` - Błędy walidacji (brak produktów, nieprawidłowy email, brak wymaganych pól)
+- `404 Not Found` - Jeden z produktów nie został znaleziony
+- `409 Conflict` - Brak wystarczającej ilości produktów w magazynie
+
+**Przykład użycia:**
+```bash
+curl -X POST http://localhost:8080/api/orders/guest \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "jan.kowalski@example.com",
+    "firstName": "Jan",
+    "lastName": "Kowalski",
+    "phone": "+48123456789",
+    "addressLine1": "ul. Przykładowa 1",
+    "city": "Warszawa",
+    "postalCode": "00-001",
+    "country": "Polska",
+    "items": [
+      {
+        "productId": 1,
+        "quantity": 1
+      }
+    ]
+  }'
+```
 
 ### 14.2 Anulowanie zamówienia
 **Endpoint:** `PATCH /api/orders/{id}/cancel`  
@@ -1474,6 +1597,75 @@ GET /api/orders/filter?userId=1&status=CONFIRMED&startDate=2024-01-01T00:00:00Z&
 - Kwota musi odpowiadać `order.totalAmount`
 - Zamówienie musi mieć status NEW lub CONFIRMED
 - USER może płacić tylko za swoje zamówienia
+
+### 15.1.1 Tworzenie płatności przez gościa (bez logowania)
+**Endpoint:** `POST /api/payments/guest`  
+**Autoryzacja:** Brak (endpoint publiczny)
+
+**Request Body:**
+```json
+{
+  "orderId": 13,
+  "email": "guest@example.com",
+  "amount": 299.98,
+  "method": "CREDIT_CARD",
+  "transactionId": "TXN-123456",
+  "notes": "Guest payment"
+}
+```
+
+**Pola wymagane:**
+- `orderId` (Long) - ID zamówienia gościa
+- `email` (String) - Email gościa (walidacja formatu email, musi się zgadzać z emailem zamówienia)
+- `amount` (BigDecimal) - Kwota płatności (musi się zgadzać z `order.totalAmount`)
+- `method` (PaymentMethod) - Metoda płatności (CREDIT_CARD, DEBIT_CARD, PAYPAL, BANK_TRANSFER, CASH_ON_DELIVERY, BLIK, APPLE_PAY, GOOGLE_PAY)
+- `transactionId` (String, opcjonalne) - ID transakcji (max 255 znaków)
+- `notes` (String, opcjonalne) - Notatki (max 500 znaków)
+
+**Response:** `201 Created`
+```json
+{
+  "id": 5,
+  "orderId": 13,
+  "amount": 299.98,
+  "method": "CREDIT_CARD",
+  "status": "PENDING",
+  "transactionId": "TXN-123456",
+  "transactionDate": "2024-01-01T10:00:00Z",
+  "notes": "Guest payment",
+  "createdAt": "2024-01-01T10:00:00Z",
+  "updatedAt": "2024-01-01T10:00:00Z",
+  "isActive": true
+}
+```
+
+**Uwagi:**
+- Endpoint dostępny bez autoryzacji - umożliwia tworzenie płatności dla zamówień gości
+- Email musi się zgadzać z `guestEmail` zamówienia
+- Zamówienie musi być zamówieniem gościa (user == null)
+- Kwota musi się zgadzać z `totalAmount` zamówienia
+- Zamówienie musi mieć status NEW lub CONFIRMED
+- Wszystkie pola tekstowe są walidowane pod kątem bezpieczeństwa (brak HTML/script)
+
+**Status codes:**
+- `201 Created` - Płatność utworzona pomyślnie
+- `400 Bad Request` - Błędy walidacji (nieprawidłowy email, kwota nie zgadza się, zamówienie nie jest gościa)
+- `404 Not Found` - Zamówienie nie zostało znalezione
+- `409 Conflict` - Zamówienie ma nieprawidłowy status (nie NEW ani CONFIRMED)
+
+**Przykład użycia:**
+```bash
+curl -X POST http://localhost:8080/api/payments/guest \
+  -H "Content-Type: application/json" \
+  -d '{
+    "orderId": 13,
+    "email": "guest@example.com",
+    "amount": 299.98,
+    "method": "CREDIT_CARD",
+    "transactionId": "TXN-123456",
+    "notes": "Guest payment"
+  }'
+```
 
 ### 15.2 Aktualizacja statusu płatności
 **Endpoint:** `PUT /api/payments/{id}`  
@@ -1659,6 +1851,68 @@ curl -X POST "http://localhost:8080/api/payments/1/simulate?scenario=FAIL" \
 - Dodaje odpowiednie notatki opisujące scenariusz
 - Opóźnienie 1 sekundy symuluje czas oczekiwania na odpowiedź bramki
 - Nie można symulować płatności już zakończonych (`COMPLETED`)
+
+### 15.7.1 Symulacja płatności gościa (Mock Payment Gateway)
+**Endpoint:** `POST /api/payments/guest/{paymentId}/simulate`  
+**Autoryzacja:** Brak (endpoint publiczny)
+
+**Path Parameters:**
+- `paymentId` (Long) - ID płatności
+
+**Query Parameters:**
+- `email` (wymagany) - Email gościa (walidacja formatu email, musi się zgadzać z emailem zamówienia)
+- `scenario` (opcjonalny, default: `SUCCESS`) - Scenariusz symulacji:
+  - `SUCCESS` - Płatność udana (status → `COMPLETED`)
+  - `FAIL` - Odmowa banku (status → `FAILED`)
+  - `ERROR` - Błąd połączenia (status → `FAILED`)
+
+**Response:** `200 OK`
+```json
+{
+  "id": 5,
+  "orderId": 13,
+  "amount": 299.98,
+  "method": "CREDIT_CARD",
+  "status": "COMPLETED",
+  "transactionId": "MOCK-A1B2C3D4",
+  "transactionDate": "2024-01-01T10:00:00Z",
+  "notes": "Symulacja: Płatność udana (Bank OK)",
+  "createdAt": "2024-01-01T10:00:00Z",
+  "updatedAt": "2024-01-01T10:01:00Z",
+  "isActive": true
+}
+```
+
+**Przykład użycia:**
+```bash
+# Symulacja udanej płatności gościa
+curl -X POST "http://localhost:8080/api/payments/guest/5/simulate?email=guest@example.com&scenario=SUCCESS"
+
+# Symulacja nieudanej płatności gościa
+curl -X POST "http://localhost:8080/api/payments/guest/5/simulate?email=guest@example.com&scenario=FAIL"
+
+# Symulacja błędu połączenia
+curl -X POST "http://localhost:8080/api/payments/guest/5/simulate?email=guest@example.com&scenario=ERROR"
+```
+
+**Uwagi:**
+- Endpoint dostępny bez autoryzacji - umożliwia symulację płatności dla zamówień gości
+- Email musi się zgadzać z `guestEmail` zamówienia powiązanego z płatnością
+- Płatność musi należeć do zamówienia gościa (user == null)
+- Endpoint symuluje odpowiedź z bramki płatniczej (mock)
+- Automatycznie generuje `transactionId` w formacie `MOCK-XXXXXXXX`
+- Automatycznie aktualizuje status zamówienia:
+  - `SUCCESS` → zamówienie zmienia status na `CONFIRMED` (jeśli było `NEW`)
+  - `FAIL`/`ERROR` → zamówienie zmienia status na `CANCELLED` (jeśli było `NEW`)
+- Dodaje odpowiednie notatki opisujące scenariusz
+- Opóźnienie 1 sekundy symuluje czas oczekiwania na odpowiedź bramki
+- Nie można symulować płatności już zakończonych (`COMPLETED`)
+
+**Status codes:**
+- `200 OK` - Symulacja zakończona pomyślnie
+- `400 Bad Request` - Błędy walidacji (nieprawidłowy email, email nie zgadza się z zamówieniem, zamówienie nie jest gościa)
+- `404 Not Found` - Płatność nie została znaleziona
+- `409 Conflict` - Płatność jest już zakończona (`COMPLETED`)
 
 ---
 

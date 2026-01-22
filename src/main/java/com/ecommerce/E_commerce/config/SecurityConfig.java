@@ -60,7 +60,12 @@ public class SecurityConfig {
                                     "/api/auth/activate",
                                     "/api/auth/resend-activation",
                                     "/api/auth/forgot-password",
-                                    "/api/auth/reset-password").permitAll()
+                                    "/api/auth/reset-password",
+                                    "/api/orders/guest",
+                                    "/api/payments/guest").permitAll()
+                            .requestMatchers(
+                                    HttpMethod.POST,
+                                    "/api/payments/guest/**/simulate").permitAll()
                             .requestMatchers(
                                     HttpMethod.GET,
                                     "/api/categories",

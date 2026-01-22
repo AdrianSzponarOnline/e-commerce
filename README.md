@@ -20,6 +20,8 @@ Kompleksowy system e-commerce zbudowany w Spring Boot z obsługą produktów, ka
 - **Migracje bazy danych** - Flyway migrations
 - **MapStruct** - Automatyczne mapowanie DTO ↔ Entity
 - **System zamówień** - Pełny system zamówień z pozycjami (Order, OrderItem)
+- **Zamówienia gości** - Możliwość składania zamówień przez niezalogowanych użytkowników
+- **Płatności gości** - Możliwość opłacania zamówień przez gości z weryfikacją email
 - **System płatności** - Obsługa płatności z różnymi metodami i statusami
 - **System adresów** - Zarządzanie adresami użytkowników z zabezpieczeniami
 - **System magazynu** - Zarządzanie stanem magazynowym z pesymistyczną blokadą
@@ -100,6 +102,12 @@ com.ecommerce.E_commerce/
 - **Operacje administracyjne** - Wymagają roli `ROLE_OWNER` (zmiana statusów, zarządzanie produktami, kategoriami)
 - **Operacje użytkownika** - USER może operować tylko na swoich zasobach (zamówienia, płatności, adresy)
 - **Walidacja właściciela** - Automatyczna walidacja czy USER jest właścicielem zasobu
+- **Publiczne endpointy** - Dostępne bez autoryzacji:
+  - `POST /api/orders/guest` - Tworzenie zamówień przez gości
+  - `POST /api/payments/guest` - Tworzenie płatności przez gości
+  - `POST /api/payments/guest/{paymentId}/simulate` - Symulacja płatności gości
+  - `POST /api/auth/register`, `POST /api/auth/login` - Rejestracja i logowanie
+  - `GET /api/products/**`, `GET /api/categories/**` - Przeglądanie produktów i kategorii
 - **JWT token** - Wymagany dla wszystkich operacji wymagających autoryzacji
 
 ##  Uruchamianie
@@ -158,7 +166,10 @@ mvn spring-boot:run -Dspring.profiles.active=test
 - **Product Attribute Values API:** `/api/product-attribute-values` - Wartości atrybutów
 - **Product Images API:** `/api/products/{productId}/images` - Zarządzanie obrazami produktów
 - **Orders API:** `/api/orders` - Zarządzanie zamówieniami z filtrowaniem i statystykami
+  - `/api/orders/guest` - Tworzenie zamówień przez gości (bez autoryzacji)
 - **Payments API:** `/api/payments` - Zarządzanie płatnościami z symulacją bramki płatniczej
+  - `/api/payments/guest` - Tworzenie płatności przez gości (bez autoryzacji)
+  - `/api/payments/guest/{paymentId}/simulate` - Symulacja płatności gości (bez autoryzacji)
 - **Addresses API:** `/api/addresses` - Zarządzanie adresami użytkowników
 - **Inventory API:** `/api/inventory` - Zarządzanie stanem magazynowym
 - **AI Chat API:** `/api/ai/chat` - Asystent sprzedażowy z AI (Gemini)
@@ -354,12 +365,27 @@ export MAIL_FROM=sklep@ecommerce.com
   - Endpoint `/api/payments/filter` - zaawansowane filtrowanie
   - Endpoint `/api/payments/stats/count` - statystyki płatności
   - Endpoint `/api/payments/{paymentId}/simulate` - symulacja bramki płatniczej
+  - Endpoint `/api/payments/guest` - tworzenie płatności przez gości (bez autoryzacji)
+  - Endpoint `/api/payments/guest/{paymentId}/simulate` - symulacja płatności gości (bez autoryzacji)
 - **Rozszerzone API zamówień**
   - Endpoint `/api/orders/me` - pobieranie własnych zamówień
   - Endpoint `/api/orders/user/{userId}` - zamówienia użytkownika
   - Endpoint `/api/orders/status/{status}` - filtrowanie po statusie
   - Endpoint `/api/orders/filter` - zaawansowane filtrowanie z datami
   - Endpoint `/api/orders/stats/count` - statystyki zamówień
+  - Endpoint `/api/orders/guest` - tworzenie zamówień przez gości (bez autoryzacji)
+- **Zamówienia gości (Guest Orders)**
+  - Obsługa zamówień przez niezalogowanych użytkowników
+  - Automatyczne tworzenie adresów dostawy dla gości
+  - Przechowywanie danych kontaktowych gości (email, imię, nazwisko, telefon) w zamówieniu
+  - Notyfikacje email dla zamówień gości
+  - Migracja bazy danych: `V16__make_address_user_id_nullable.sql` - adresy mogą być bez użytkownika
+  - Rozszerzenie modelu Order o pola: `guestEmail`, `guestFirstName`, `guestLastName`, `guestPhone`
+  - Aktualizacja serwisów notyfikacji do obsługi zamówień gości
+- **Płatności gości (Guest Payments)**
+  - Weryfikacja email gościa przy tworzeniu i symulacji płatności
+  - Obsługa płatności dla zamówień gości z pełną funkcjonalnością (symulacja, zmiana statusów)
+  - Aktualizacja metod `isPaymentOwner` i `isOrderOwner` do obsługi zamówień gości
 - **Nowe funkcjonalności**
   - AI Chat API (`/api/ai/chat`) - asystent sprzedażowy z integracją Gemini
   - Contact API (`/api/contact`) - formularz kontaktowy z wysyłką emaili
@@ -426,17 +452,20 @@ export MAIL_FROM=sklep@ecommerce.com
 ## Flow zamówienia
 
 ### 1. Tworzenie zamówienia
-- USER tworzy zamówienie z pozycjami
+- **Zalogowany użytkownik:** USER tworzy zamówienie z pozycjami przez `POST /api/orders`
+- **Gość:** Gość tworzy zamówienie przez `POST /api/orders/guest` (bez autoryzacji)
 - Automatyczna rezerwacja magazynu (pesymistyczna blokada)
 - Status: `NEW`
 
 ### 2. Płatność
-- USER tworzy płatność dla zamówienia
+- **Zalogowany użytkownik:** USER tworzy płatność dla zamówienia przez `POST /api/payments`
+- **Gość:** Gość tworzy płatność przez `POST /api/payments/guest` (bez autoryzacji, wymaga weryfikacji email)
 - Walidacja: kwota musi odpowiadać `totalAmount` zamówienia
 - Status płatności: `PENDING`
 
 ### 2.1 Symulacja płatności (Mock Payment Gateway)
-- Endpoint: `POST /api/payments/{paymentId}/simulate?scenario=SUCCESS`
+- **Zalogowany użytkownik:** `POST /api/payments/{paymentId}/simulate?scenario=SUCCESS`
+- **Gość:** `POST /api/payments/guest/{paymentId}/simulate?email=guest@example.com&scenario=SUCCESS` (bez autoryzacji, wymaga weryfikacji email)
 - Dostępne scenariusze:
   - `SUCCESS` - Płatność udana (status → `COMPLETED`, zamówienie → `CONFIRMED`)
   - `FAIL` - Odmowa banku (status → `FAILED`, zamówienie → `CANCELLED`)

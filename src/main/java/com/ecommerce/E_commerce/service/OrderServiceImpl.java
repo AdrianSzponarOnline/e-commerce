@@ -1,5 +1,6 @@
 package com.ecommerce.E_commerce.service;
 
+import com.ecommerce.E_commerce.dto.order.GuestOrderCreateDTO;
 import com.ecommerce.E_commerce.dto.order.OrderCreateDTO;
 import com.ecommerce.E_commerce.dto.order.OrderDTO;
 import com.ecommerce.E_commerce.dto.order.OrderUpdateDTO;
@@ -99,6 +100,79 @@ public class OrderServiceImpl implements OrderService {
                 savedOrder.getId(), userId, savedOrder.getTotalAmount());
 
         eventPublisher.publishEvent(new OrderCreatedEvent(savedOrder.getId()));
+        return orderMapper.toOrderDTO(savedOrder);
+    }
+
+    @Override
+    public OrderDTO createGuestOrder(GuestOrderCreateDTO dto) {
+        if (dto.items() == null || dto.items().isEmpty()) {
+            logger.error("Attempted to create guest order with no items");
+            throw new InvalidOperationException("Order must contain at least one item");
+        }
+
+        logger.info("Creating guest order for email={}, itemsCount={}", dto.email(), dto.items().size());
+
+        // Create address for guest order (without user)
+        Address address = new Address();
+        address.setUser(null); // Guest order - no user
+        address.setLine1(dto.addressLine1());
+        address.setLine2(dto.addressLine2());
+        address.setCity(dto.city());
+        address.setRegion(dto.region());
+        address.setPostalCode(dto.postalCode());
+        address.setCountry(dto.country());
+        address.setIsActive(true);
+        Address savedAddress = addressRepository.save(address);
+
+        Map<Long, Integer> quantitiesMap = dto.items().stream()
+                .collect(Collectors.toMap(
+                        OrderItemCreateDTO::productId,
+                        OrderItemCreateDTO::quantity,
+                        Integer::sum
+                ));
+
+        inventoryService.reserveStockBatch(quantitiesMap);
+
+        List<Product> products = productRepository.findAllById(quantitiesMap.keySet());
+
+        if (products.size() != quantitiesMap.size()) {
+            throw new ResourceNotFoundException("Some products specified in the order were not found");
+        }
+
+        Map<Long, Product> productMap = products.stream()
+                .collect(Collectors.toMap(Product::getId, Function.identity()));
+
+        // Create order without user
+        Order order = new Order();
+        order.setUser(null); // Guest order - no user
+        order.setAddress(savedAddress);
+        order.setStatus(OrderStatus.NEW);
+        // Store guest contact information
+        order.setGuestEmail(dto.email());
+        order.setGuestFirstName(dto.firstName());
+        order.setGuestLastName(dto.lastName());
+        order.setGuestPhone(dto.phone());
+
+        for (OrderItemCreateDTO itemDto : dto.items()) {
+            Product product = productMap.get(itemDto.productId());
+
+            if (Boolean.FALSE.equals(product.getIsActive())) {
+                throw new InvalidOperationException("Product " + itemDto.productId() + " is inactive");
+            }
+            order.addItem(product, itemDto.quantity());
+        }
+
+        Order savedOrder = orderRepository.save(order);
+
+        logger.info("Guest order created successfully: orderId={}, email={}, total={}",
+                savedOrder.getId(), dto.email(), savedOrder.getTotalAmount());
+
+        // Store guest contact info in order metadata or create a separate event
+        // For now, we'll handle notifications differently - they'll need email from DTO
+        eventPublisher.publishEvent(new OrderCreatedEvent(savedOrder.getId()));
+        
+        // Create a custom event with guest info for notifications
+        // We'll need to modify the event or create a new one
         return orderMapper.toOrderDTO(savedOrder);
     }
 
@@ -312,7 +386,17 @@ public class OrderServiceImpl implements OrderService {
     @Transactional(readOnly = true)
     public boolean isOrderOwner(Long orderId, String userEmail) {
         return orderRepository.findById(orderId)
-                .map(order -> order.getUser().getEmail().equals(userEmail))
+                .map(order -> {
+                    // For registered user orders
+                    if (order.getUser() != null) {
+                        return order.getUser().getEmail().equals(userEmail);
+                    }
+                    // For guest orders - check if email matches
+                    if (order.getGuestEmail() != null) {
+                        return order.getGuestEmail().equalsIgnoreCase(userEmail);
+                    }
+                    return false;
+                })
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
     }
 
@@ -323,9 +407,18 @@ public class OrderServiceImpl implements OrderService {
 
         if (newStatus == OrderStatus.CONFIRMED && oldStatus != OrderStatus.CONFIRMED) {
             logger.info("Sending order confirmation notification: orderId={}", order.getId());
-            String email = order.getUser().getEmail();
-            String name = order.getUser().getFirstName();
-            eventPublisher.publishEvent(new OrderConfirmedEvent(order.getId(), email, name));
+            String email;
+            String name;
+            if (order.getUser() != null) {
+                email = order.getUser().getEmail();
+                name = order.getUser().getFirstName();
+            } else {
+                email = order.getGuestEmail();
+                name = order.getGuestFirstName();
+            }
+            if (email != null) {
+                eventPublisher.publishEvent(new OrderConfirmedEvent(order.getId(), email, name));
+            }
         }
         if (newStatus == OrderStatus.SHIPPED && oldStatus != OrderStatus.SHIPPED) {
             logger.info("Sending order shipped notification: orderId={}", order.getId());

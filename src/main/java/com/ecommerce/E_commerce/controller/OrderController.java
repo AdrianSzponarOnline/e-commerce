@@ -1,5 +1,6 @@
 package com.ecommerce.E_commerce.controller;
 
+import com.ecommerce.E_commerce.dto.order.GuestOrderCreateDTO;
 import com.ecommerce.E_commerce.dto.order.OrderCreateDTO;
 import com.ecommerce.E_commerce.dto.order.OrderDTO;
 import com.ecommerce.E_commerce.dto.order.OrderUpdateDTO;
@@ -44,6 +45,15 @@ public class OrderController {
         logger.info("POST /api/orders - Creating order for userId={}, itemsCount={}", user.getId(), dto.items() != null ? dto.items().size() : 0);
         OrderDTO order = orderService.create(user.getId(), dto);
         logger.info("POST /api/orders - Order created successfully: orderId={}, userId={}, total={}", order.id(), user.getId(), order.totalAmount());
+        return ResponseEntity.status(HttpStatus.CREATED).body(order);
+    }
+
+    @PostMapping("/guest")
+    public ResponseEntity<OrderDTO> createGuestOrder(
+            @Valid @RequestBody GuestOrderCreateDTO dto) {
+        logger.info("POST /api/orders/guest - Creating guest order for email={}, itemsCount={}", dto.email(), dto.items() != null ? dto.items().size() : 0);
+        OrderDTO order = orderService.createGuestOrder(dto);
+        logger.info("POST /api/orders/guest - Guest order created successfully: orderId={}, email={}, total={}", order.id(), dto.email(), order.totalAmount());
         return ResponseEntity.status(HttpStatus.CREATED).body(order);
     }
     

@@ -30,6 +30,14 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // Find active orders
     @Query("SELECT o FROM Order o JOIN FETCH o.user WHERE o.id = :id")
     Optional<Order> findByIdWithUser(@Param("id") Long id);
+    
+    @Query("SELECT DISTINCT o FROM Order o " +
+           "LEFT JOIN FETCH o.user " +
+           "LEFT JOIN FETCH o.address " +
+           "LEFT JOIN FETCH o.items i " +
+           "LEFT JOIN FETCH i.product " +
+           "WHERE o.id = :id")
+    Optional<Order> findByIdWithDetails(@Param("id") Long id);
     Page<Order> findByIsActive(Boolean isActive, Pageable pageable);
     Page<Order> findByUserIdAndIsActive(Long userId, Boolean isActive, Pageable pageable);
 

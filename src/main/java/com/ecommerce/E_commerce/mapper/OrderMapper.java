@@ -4,6 +4,7 @@ import com.ecommerce.E_commerce.dto.order.OrderCreateDTO;
 import com.ecommerce.E_commerce.dto.order.OrderDTO;
 import com.ecommerce.E_commerce.dto.order.OrderUpdateDTO;
 import com.ecommerce.E_commerce.model.Order;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -14,9 +15,9 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface OrderMapper {
 
-    @Mapping(target = "userId", source = "user.id")
-    @Mapping(target = "firstName", source = "user.firstName")
-    @Mapping(target = "lastName", source = "user.lastName")
+    @Mapping(target = "userId", expression = "java(order.getUser() != null ? order.getUser().getId() : null)")
+    @Mapping(target = "firstName", expression = "java(order.getUser() != null ? order.getUser().getFirstName() : order.getGuestFirstName())")
+    @Mapping(target = "lastName", expression = "java(order.getUser() != null ? order.getUser().getLastName() : order.getGuestLastName())")
     @Mapping(target = "address", source = "address")
     @Mapping(target = "items", source = "items")
     @Mapping(target = "payments", source = "payments")

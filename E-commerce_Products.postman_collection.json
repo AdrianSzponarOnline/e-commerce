@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "e-commerce-products-collection",
 		"name": "E-commerce API - Complete Collection",
-		"description": "Complete collection for testing E-commerce API endpoints (Authentication, Products, Categories, Orders, Payments, Addresses, Product Attributes, Product Images, Search, Statistics)",
+		"description": "Complete collection for testing E-commerce API endpoints (Authentication, Products, Categories, Orders, Guest Orders, Guest Payments, Payments, Addresses, Product Attributes, Product Images, Search, Statistics)",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -1134,6 +1134,27 @@
 							}
 						},
 						{
+							"name": "Create Guest Order",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"guest@example.com\",\n    \"firstName\": \"Jan\",\n    \"lastName\": \"Kowalski\",\n    \"phone\": \"123456789\",\n    \"addressLine1\": \"ul. Przykładowa 1\",\n    \"addressLine2\": \"Mieszkanie 5\",\n    \"city\": \"Warszawa\",\n    \"region\": \"Mazowieckie\",\n    \"postalCode\": \"00-001\",\n    \"country\": \"Polska\",\n    \"items\": [\n        {\n            \"productId\": 1,\n            \"quantity\": 2\n        },\n        {\n            \"productId\": 3,\n            \"quantity\": 1\n        }\n    ]\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/orders/guest",
+									"host": ["{{base_url}}"],
+									"path": ["api", "orders", "guest"]
+								}
+							}
+						},
+						{
 							"name": "Update Order",
 							"request": {
 								"auth": {
@@ -1575,6 +1596,27 @@
 									"raw": "{{base_url}}/api/payments",
 									"host": ["{{base_url}}"],
 									"path": ["api", "payments"]
+								}
+							}
+						},
+						{
+							"name": "Create Guest Payment",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"orderId\": 13,\n    \"email\": \"guest@example.com\",\n    \"amount\": 299.98,\n    \"method\": \"CREDIT_CARD\",\n    \"transactionId\": \"TXN-123456\",\n    \"notes\": \"Guest payment\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/payments/guest",
+									"host": ["{{base_url}}"],
+									"path": ["api", "payments", "guest"]
 								}
 							}
 						},
@@ -2097,6 +2139,81 @@
 									]
 								},
 								"description": "Simulates a payment gateway connection error. Updates payment status to FAILED and order status to CANCELLED."
+							}
+						},
+						{
+							"name": "Simulate Guest Payment - SUCCESS",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/payments/guest/1/simulate?email=guest@example.com&scenario=SUCCESS",
+									"host": ["{{base_url}}"],
+									"path": ["api", "payments", "guest", "1", "simulate"],
+									"query": [
+										{
+											"key": "email",
+											"value": "guest@example.com",
+											"description": "Guest email for verification (must match order email)"
+										},
+										{
+											"key": "scenario",
+											"value": "SUCCESS",
+											"description": "Payment simulation scenario: SUCCESS, FAIL, ERROR"
+										}
+									]
+								},
+								"description": "Simulates a successful payment for guest order. Requires email verification. Automatically updates payment status to COMPLETED and order status to CONFIRMED."
+							}
+						},
+						{
+							"name": "Simulate Guest Payment - FAIL",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/payments/guest/1/simulate?email=guest@example.com&scenario=FAIL",
+									"host": ["{{base_url}}"],
+									"path": ["api", "payments", "guest", "1", "simulate"],
+									"query": [
+										{
+											"key": "email",
+											"value": "guest@example.com",
+											"description": "Guest email for verification (must match order email)"
+										},
+										{
+											"key": "scenario",
+											"value": "FAIL",
+											"description": "Payment simulation scenario: SUCCESS, FAIL, ERROR"
+										}
+									]
+								},
+								"description": "Simulates a failed payment for guest order (bank rejection). Requires email verification. Updates payment status to FAILED and order status to CANCELLED."
+							}
+						},
+						{
+							"name": "Simulate Guest Payment - ERROR",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/payments/guest/1/simulate?email=guest@example.com&scenario=ERROR",
+									"host": ["{{base_url}}"],
+									"path": ["api", "payments", "guest", "1", "simulate"],
+									"query": [
+										{
+											"key": "email",
+											"value": "guest@example.com",
+											"description": "Guest email for verification (must match order email)"
+										},
+										{
+											"key": "scenario",
+											"value": "ERROR",
+											"description": "Payment simulation scenario: SUCCESS, FAIL, ERROR"
+										}
+									]
+								},
+								"description": "Simulates a payment gateway connection error for guest order. Requires email verification. Updates payment status to FAILED and order status to CANCELLED."
 							}
 						}
 					]

@@ -76,6 +76,19 @@ public class Order {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
+    // Guest order contact information (nullable - only for guest orders)
+    @Column(name = "guest_email", length = 255)
+    private String guestEmail;
+
+    @Column(name = "guest_first_name", length = 100)
+    private String guestFirstName;
+
+    @Column(name = "guest_last_name", length = 100)
+    private String guestLastName;
+
+    @Column(name = "guest_phone", length = 20)
+    private String guestPhone;
+
     @PrePersist
     public void prePersist() {
         this.createdAt = Instant.now();

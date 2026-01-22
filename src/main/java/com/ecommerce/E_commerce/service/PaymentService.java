@@ -1,5 +1,6 @@
 package com.ecommerce.E_commerce.service;
 
+import com.ecommerce.E_commerce.dto.payment.GuestPaymentCreateDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentCreateDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentDTO;
 import com.ecommerce.E_commerce.dto.payment.PaymentUpdateDTO;
@@ -14,6 +15,8 @@ public interface PaymentService {
     
     @PreAuthorize("hasRole('USER') or hasRole('OWNER')")
     PaymentDTO create(PaymentCreateDTO dto);
+    
+    PaymentDTO createGuestPayment(GuestPaymentCreateDTO dto);
     
     @PreAuthorize("hasRole('OWNER')")
     PaymentDTO update(Long id, PaymentUpdateDTO dto);
@@ -40,6 +43,8 @@ public interface PaymentService {
     long countByStatus(String status);
 
     PaymentDTO simulatePayment(Long paymentId, String scenario);
+    
+    PaymentDTO simulateGuestPayment(Long paymentId, String email, String scenario);
     
     boolean isPaymentOwner(Long paymentId, String userEmail);
 }
