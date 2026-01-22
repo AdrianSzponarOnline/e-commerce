@@ -65,7 +65,7 @@ public class SecurityConfig {
                                     "/api/payments/guest").permitAll()
                             .requestMatchers(
                                     HttpMethod.POST,
-                                    "/api/payments/guest/**/simulate").permitAll()
+                                    "/api/payments/guest/*/simulate").permitAll()
                             .requestMatchers(
                                     HttpMethod.GET,
                                     "/api/categories",

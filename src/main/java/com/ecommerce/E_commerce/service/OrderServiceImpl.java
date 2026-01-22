@@ -167,12 +167,10 @@ public class OrderServiceImpl implements OrderService {
         logger.info("Guest order created successfully: orderId={}, email={}, total={}",
                 savedOrder.getId(), dto.email(), savedOrder.getTotalAmount());
 
-        // Store guest contact info in order metadata or create a separate event
-        // For now, we'll handle notifications differently - they'll need email from DTO
+      
         eventPublisher.publishEvent(new OrderCreatedEvent(savedOrder.getId()));
         
-        // Create a custom event with guest info for notifications
-        // We'll need to modify the event or create a new one
+        
         return orderMapper.toOrderDTO(savedOrder);
     }
 

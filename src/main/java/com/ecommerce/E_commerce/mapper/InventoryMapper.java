@@ -13,10 +13,13 @@ public interface InventoryMapper {
     
     @Mapping(target = "productId", source = "product.id")
     @Mapping(target = "productName", source = "product.name")
+    @Mapping(target = "thumbnailUrl", source = "product.thumbnailUrl")
     InventoryDTO toInventoryDTO(Inventory inventory);
     
     @Mapping(target = "productId", source = "product.id")
     @Mapping(target = "productName", source = "product.name")
+    @Mapping(target = "sku", source = "product.sku")
+    @Mapping(target = "thumbnailUrl", source = "product.thumbnailUrl")
     @Mapping(target = "belowMinimum", expression = "java(inventory.getAvailableQuantity() < inventory.getMinimumStockLevel())")
     InventorySummaryDTO toInventorySummaryDTO(Inventory inventory);
     

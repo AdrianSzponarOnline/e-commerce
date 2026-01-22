@@ -309,13 +309,11 @@ public class PaymentServiceImpl implements PaymentService {
 
         Order order = payment.getOrder();
         
-        // Verify that this is a guest order
         if (order.getUser() != null) {
             logger.warn("Attempted to simulate guest payment for registered user order: paymentId={}", paymentId);
             throw new InvalidOperationException("This endpoint is only for guest payments. Use /api/payments/{paymentId}/simulate for registered users.");
         }
 
-        // Verify email matches order guest email
         if (order.getGuestEmail() == null || !order.getGuestEmail().equalsIgnoreCase(email)) {
             logger.warn("Email mismatch for guest payment simulation: paymentId={}, providedEmail={}, orderEmail={}", 
                     paymentId, email, order.getGuestEmail());

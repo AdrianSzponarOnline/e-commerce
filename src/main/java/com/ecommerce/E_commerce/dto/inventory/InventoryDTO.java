@@ -6,6 +6,7 @@ public record InventoryDTO(
         Long id,
         Long productId,
         String productName,
+        String thumbnailUrl,
         Integer availableQuantity,
         Integer reservedQuantity,
         Integer minimumStockLevel,

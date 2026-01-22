@@ -2002,10 +2002,15 @@ curl -X POST "http://localhost:8080/api/payments/guest/5/simulate?email=guest@ex
 {
   "id": 1,
   "productId": 1,
+  "productName": "Produkt przykładowy",
+  "thumbnailUrl": "/uploads/products/1/thumbnail.jpg",
   "availableQuantity": 100,
   "reservedQuantity": 0,
+  "minimumStockLevel": 10,
   "createdAt": "2024-01-01T10:00:00Z",
-  "updatedAt": "2024-01-01T10:00:00Z"
+  "updatedAt": "2024-01-01T10:00:00Z",
+  "deletedAt": null,
+  "isActive": true
 }
 ```
 
@@ -2030,12 +2035,42 @@ curl -X POST "http://localhost:8080/api/payments/guest/5/simulate?email=guest@ex
 **Autoryzacja:** Public
 
 **Response:** `InventoryDTO`
+```json
+{
+  "id": 1,
+  "productId": 1,
+  "productName": "Produkt przykładowy",
+  "thumbnailUrl": "/uploads/products/1/thumbnail.jpg",
+  "availableQuantity": 100,
+  "reservedQuantity": 10,
+  "minimumStockLevel": 20,
+  "createdAt": "2024-01-01T10:00:00Z",
+  "updatedAt": "2024-01-01T10:00:00Z",
+  "deletedAt": null,
+  "isActive": true
+}
+```
 
 ### 18.5 Pobieranie stanu magazynowego po ID produktu
 **Endpoint:** `GET /api/inventory/product/{productId}`  
 **Autoryzacja:** Public
 
 **Response:** `InventoryDTO`
+```json
+{
+  "id": 1,
+  "productId": 1,
+  "productName": "Produkt przykładowy",
+  "thumbnailUrl": "/uploads/products/1/thumbnail.jpg",
+  "availableQuantity": 100,
+  "reservedQuantity": 10,
+  "minimumStockLevel": 20,
+  "createdAt": "2024-01-01T10:00:00Z",
+  "updatedAt": "2024-01-01T10:00:00Z",
+  "deletedAt": null,
+  "isActive": true
+}
+```
 
 ### 18.6 Lista wszystkich stanów magazynowych
 **Endpoint:** `GET /api/inventory`  
@@ -2048,6 +2083,29 @@ curl -X POST "http://localhost:8080/api/payments/guest/5/simulate?email=guest@ex
 - `sortDir` (string, default: "asc") - kierunek sortowania (asc/desc)
 
 **Response:** `Page<InventoryDTO>`
+```json
+{
+  "content": [
+    {
+      "id": 1,
+      "productId": 1,
+      "productName": "Produkt przykładowy",
+      "thumbnailUrl": "/uploads/products/1/thumbnail.jpg",
+      "availableQuantity": 100,
+      "reservedQuantity": 10,
+      "minimumStockLevel": 20,
+      "createdAt": "2024-01-01T10:00:00Z",
+      "updatedAt": "2024-01-01T10:00:00Z",
+      "deletedAt": null,
+      "isActive": true
+    }
+  ],
+  "totalElements": 1,
+  "totalPages": 1,
+  "size": 10,
+  "number": 0
+}
+```
 
 ### 18.7 Podsumowanie stanów magazynowych
 **Endpoint:** `GET /api/inventory/summary`  
@@ -2060,10 +2118,29 @@ curl -X POST "http://localhost:8080/api/payments/guest/5/simulate?email=guest@ex
 - `sortDir` (string, default: "asc") - kierunek sortowania (asc/desc)
 
 **Response:** `Page<InventorySummaryDTO>`
+```json
+{
+  "content": [
+    {
+      "productId": 1,
+      "productName": "Produkt przykładowy",
+      "sku": "PROD-001",
+      "thumbnailUrl": "/uploads/products/1/thumbnail.jpg",
+      "availableQuantity": 100,
+      "reservedQuantity": 10,
+      "belowMinimum": false
+    }
+  ],
+  "totalElements": 1,
+  "totalPages": 1,
+  "size": 10,
+  "number": 0
+}
+```
 
 **Uwagi:**
 - Zwraca uproszczone podsumowanie stanów magazynowych
-- `InventorySummaryDTO` zawiera podstawowe informacje o stanie magazynowym
+- `InventorySummaryDTO` zawiera podstawowe informacje o stanie magazynowym, w tym miniaturkę produktu (`thumbnailUrl`)
 
 ### 18.8 Sprawdzanie dostępności produktu
 **Endpoint:** `GET /api/inventory/product/{productId}/available`  

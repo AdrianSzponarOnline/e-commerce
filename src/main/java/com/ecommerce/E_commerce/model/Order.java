@@ -76,7 +76,6 @@ public class Order {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
-    // Guest order contact information (nullable - only for guest orders)
     @Column(name = "guest_email", length = 255)
     private String guestEmail;
 
