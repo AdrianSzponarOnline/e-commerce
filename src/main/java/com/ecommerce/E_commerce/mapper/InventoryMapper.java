@@ -13,6 +13,7 @@ public interface InventoryMapper {
     
     @Mapping(target = "productId", source = "product.id")
     @Mapping(target = "productName", source = "product.name")
+    @Mapping(target = "sku", source = "product.sku")
     @Mapping(target = "thumbnailUrl", source = "product.thumbnailUrl")
     InventoryDTO toInventoryDTO(Inventory inventory);
     
