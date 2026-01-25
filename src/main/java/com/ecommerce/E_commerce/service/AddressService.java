@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface AddressService {
 
-    AddressDTO create(AddressCreateDTO dto);
+    AddressDTO create(AddressCreateDTO dto, Long id);
 
     AddressDTO update(Long id, AddressUpdateDTO dto);
 

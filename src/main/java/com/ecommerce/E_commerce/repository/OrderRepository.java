@@ -28,7 +28,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Page<Order> findByUserIdAndCreatedAtBetween(Long userId, Instant startDate, Instant endDate, Pageable pageable);
     
     // Find active orders
-    @Query("SELECT o FROM Order o JOIN FETCH o.user WHERE o.id = :id")
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.user WHERE o.id = :id")
     Optional<Order> findByIdWithUser(@Param("id") Long id);
     
     @Query("SELECT DISTINCT o FROM Order o " +

@@ -55,10 +55,10 @@ public class AddressServiceImpl implements AddressService {
 
 
     @Override
-    public AddressDTO create(AddressCreateDTO dto) {
-        logger.info("Creating address for userId: {}, country: {}", dto.userId(), dto.country());
-        User user = userRepository.findById(dto.userId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + dto.userId()));
+    public AddressDTO create(AddressCreateDTO dto, Long id) {
+        logger.info("Creating address for userId: {}, country: {}", id, dto.country());
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
         Address address = addressMapper.toAddress(dto);
         address.setUser(user);

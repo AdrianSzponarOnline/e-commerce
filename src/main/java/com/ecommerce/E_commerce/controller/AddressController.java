@@ -37,17 +37,8 @@ public class AddressController {
             @Valid @RequestBody AddressCreateDTO dto,
             @AuthenticationPrincipal User user) {
         logger.info("POST /api/addresses - Creating address for userId={}", user.getId());
-        AddressCreateDTO dtoWithUserId = new AddressCreateDTO(
-                user.getId(),
-                dto.line1(),
-                dto.line2(),
-                dto.city(),
-                dto.region(),
-                dto.postalCode(),
-                dto.country(),
-                dto.isActive()
-        );
-        AddressDTO address = addressService.create(dtoWithUserId);
+
+        AddressDTO address = addressService.create(dto, user.getId());
         logger.info("POST /api/addresses - Address created successfully: addressId={}, userId={}", address.id(), user.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(address);
     }
