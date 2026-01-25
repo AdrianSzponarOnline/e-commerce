@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "e-commerce-products-collection",
 		"name": "E-commerce API - Complete Collection",
-		"description": "Complete collection for testing E-commerce API endpoints (Authentication, Products, Categories, Orders, Guest Orders, Guest Payments, Payments, Addresses, Product Attributes, Product Images, Search, Statistics)",
+		"description": "Complete collection for testing E-commerce API endpoints (Authentication, Products, Categories, Orders, Guest Orders, Guest Payments, Payments, Addresses, Product Attributes, Product Images, Search, Statistics, CMS: Pages, Shop Settings, Social Links, FAQ)",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -3367,6 +3367,790 @@
 									]
 								},
 								"description": "Get monthly sales statistics for a given period. Returns statistics grouped by month. Defaults to last 12 months if dates not specified."
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Pages",
+			"item": [
+				{
+					"name": "CRUD Operations",
+					"item": [
+						{
+							"name": "Create Page",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"slug\": \"test-page\",\n    \"title\": \"Test Page\",\n    \"content\": \"<h1>Test Page Content</h1><p>This is a test page content.</p>\",\n    \"isSystem\": false\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/pages",
+									"host": ["{{base_url}}"],
+									"path": ["api", "pages"]
+								}
+							}
+						},
+						{
+							"name": "Update Page",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"slug\": \"updated-test-page\",\n    \"title\": \"Updated Test Page\",\n    \"content\": \"<h1>Updated Content</h1><p>This is updated content.</p>\",\n    \"isActive\": true\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/pages/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "pages", "1"]
+								}
+							}
+						},
+						{
+							"name": "Delete Page",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"url": {
+									"raw": "{{base_url}}/api/pages/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "pages", "1"]
+								}
+							}
+						},
+						{
+							"name": "Get Page by ID (Owner)",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/pages/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "pages", "1"]
+								}
+							}
+						},
+						{
+							"name": "Get All Pages (Owner)",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/pages",
+									"host": ["{{base_url}}"],
+									"path": ["api", "pages"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Public Endpoints",
+					"item": [
+						{
+							"name": "Get Page by Slug",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/pages/slug/regulamin",
+									"host": ["{{base_url}}"],
+									"path": ["api", "pages", "slug", "regulamin"]
+								}
+							}
+						},
+						{
+							"name": "Get Active Pages",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/pages/active",
+									"host": ["{{base_url}}"],
+									"path": ["api", "pages", "active"]
+								}
+							}
+						},
+						{
+							"name": "Search Pages",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/pages/search",
+									"host": ["{{base_url}}"],
+									"path": ["api", "pages", "search"],
+									"query": [
+										{
+											"key": "slug",
+											"value": "regul",
+											"description": "Search by slug (partial match, case-insensitive)",
+											"disabled": false
+										},
+										{
+											"key": "title",
+											"value": "",
+											"description": "Search by title (partial match, case-insensitive)",
+											"disabled": true
+										},
+										{
+											"key": "page",
+											"value": "0",
+											"description": "Page number (default: 0)"
+										},
+										{
+											"key": "size",
+											"value": "10",
+											"description": "Page size (default: 10)"
+										},
+										{
+											"key": "sort",
+											"value": "title,asc",
+											"description": "Sort by field and direction (default: title,asc)"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Search Pages by Slug",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/pages/search/slug?slug=regul",
+									"host": ["{{base_url}}"],
+									"path": ["api", "pages", "search", "slug"],
+									"query": [
+										{
+											"key": "slug",
+											"value": "regul",
+											"description": "Search by slug (partial match, case-insensitive)"
+										},
+										{
+											"key": "page",
+											"value": "0",
+											"description": "Page number (default: 0)"
+										},
+										{
+											"key": "size",
+											"value": "10",
+											"description": "Page size (default: 10)"
+										},
+										{
+											"key": "sort",
+											"value": "slug,asc",
+											"description": "Sort by field and direction (default: slug,asc)"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Search Pages by Title",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/pages/search/title?title=O nas",
+									"host": ["{{base_url}}"],
+									"path": ["api", "pages", "search", "title"],
+									"query": [
+										{
+											"key": "title",
+											"value": "O nas",
+											"description": "Search by title (partial match, case-insensitive)"
+										},
+										{
+											"key": "page",
+											"value": "0",
+											"description": "Page number (default: 0)"
+										},
+										{
+											"key": "size",
+											"value": "10",
+											"description": "Page size (default: 10)"
+										},
+										{
+											"key": "sort",
+											"value": "title,asc",
+											"description": "Sort by field and direction (default: title,asc)"
+										}
+									]
+								}
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Shop Settings",
+			"item": [
+				{
+					"name": "CRUD Operations",
+					"item": [
+						{
+							"name": "Create Shop Setting",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"key\": \"test_setting\",\n    \"value\": \"Test Value\",\n    \"description\": \"Test setting description\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/settings",
+									"host": ["{{base_url}}"],
+									"path": ["api", "settings"]
+								}
+							}
+						},
+						{
+							"name": "Update Shop Setting by ID",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"value\": \"Updated Value\",\n    \"description\": \"Updated description\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/settings/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "settings", "1"]
+								}
+							}
+						},
+						{
+							"name": "Update Shop Setting by Key",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"value\": \"New Shop Name\",\n    \"description\": \"Updated shop name\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/settings/key/shop_name",
+									"host": ["{{base_url}}"],
+									"path": ["api", "settings", "key", "shop_name"]
+								}
+							}
+						},
+						{
+							"name": "Delete Shop Setting",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"url": {
+									"raw": "{{base_url}}/api/settings/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "settings", "1"]
+								}
+							}
+						},
+						{
+							"name": "Get Shop Setting by ID",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/settings/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "settings", "1"]
+								}
+							}
+						},
+						{
+							"name": "Get All Shop Settings",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/settings",
+									"host": ["{{base_url}}"],
+									"path": ["api", "settings"]
+								}
+							}
+						},
+						{
+							"name": "Get All Shop Settings as Map",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/settings/map",
+									"host": ["{{base_url}}"],
+									"path": ["api", "settings", "map"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Public Endpoints",
+					"item": [
+						{
+							"name": "Get Shop Setting by Key",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/settings/key/shop_name",
+									"host": ["{{base_url}}"],
+									"path": ["api", "settings", "key", "shop_name"]
+								}
+							}
+						},
+						{
+							"name": "Get Footer Data",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/settings/public/footer",
+									"host": ["{{base_url}}"],
+									"path": ["api", "settings", "public", "footer"]
+								}
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Social Links",
+			"item": [
+				{
+					"name": "CRUD Operations",
+					"item": [
+						{
+							"name": "Create Social Link",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"platformName\": \"LinkedIn\",\n    \"url\": \"https://linkedin.com/company/mojsklep\",\n    \"iconCode\": \"fa-linkedin\",\n    \"sortOrder\": 4\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/social-links",
+									"host": ["{{base_url}}"],
+									"path": ["api", "social-links"]
+								}
+							}
+						},
+						{
+							"name": "Update Social Link",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"platformName\": \"Facebook Updated\",\n    \"url\": \"https://facebook.com/newpage\",\n    \"iconCode\": \"fa-facebook-square\",\n    \"sortOrder\": 1,\n    \"isActive\": true\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/social-links/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "social-links", "1"]
+								}
+							}
+						},
+						{
+							"name": "Delete Social Link",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"url": {
+									"raw": "{{base_url}}/api/social-links/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "social-links", "1"]
+								}
+							}
+						},
+						{
+							"name": "Get Social Link by ID",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/social-links/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "social-links", "1"]
+								}
+							}
+						},
+						{
+							"name": "Get All Social Links",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/social-links",
+									"host": ["{{base_url}}"],
+									"path": ["api", "social-links"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Public Endpoints",
+					"item": [
+						{
+							"name": "Get Active Social Links",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/social-links/active",
+									"host": ["{{base_url}}"],
+									"path": ["api", "social-links", "active"]
+								}
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "FAQ",
+			"item": [
+				{
+					"name": "CRUD Operations",
+					"item": [
+						{
+							"name": "Create FAQ Item",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"question\": \"Jak mogę zmienić hasło?\",\n    \"answer\": \"Aby zmienić hasło, przejdź do ustawień konta i wybierz opcję zmiany hasła.\",\n    \"sortOrder\": 6\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/faq",
+									"host": ["{{base_url}}"],
+									"path": ["api", "faq"]
+								}
+							}
+						},
+						{
+							"name": "Update FAQ Item",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"question\": \"Jak złożyć zamówienie? (Updated)\",\n    \"answer\": \"Aby złożyć zamówienie, dodaj produkty do koszyka i przejdź do kasy. Możesz zamówić jako gość lub po zalogowaniu. (Updated answer)\",\n    \"sortOrder\": 1,\n    \"isActive\": true\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/faq/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "faq", "1"]
+								}
+							}
+						},
+						{
+							"name": "Delete FAQ Item",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"url": {
+									"raw": "{{base_url}}/api/faq/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "faq", "1"]
+								}
+							}
+						},
+						{
+							"name": "Get FAQ Item by ID",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/faq/1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "faq", "1"]
+								}
+							}
+						},
+						{
+							"name": "Get All FAQ Items",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/faq",
+									"host": ["{{base_url}}"],
+									"path": ["api", "faq"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Public Endpoints",
+					"item": [
+						{
+							"name": "Get Active FAQ Items",
+							"request": {
+								"method": "GET",
+								"url": {
+									"raw": "{{base_url}}/api/faq/active",
+									"host": ["{{base_url}}"],
+									"path": ["api", "faq", "active"]
+								}
 							}
 						}
 					]

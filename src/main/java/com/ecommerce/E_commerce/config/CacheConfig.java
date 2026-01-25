@@ -35,7 +35,16 @@ public class CacheConfig {
 
                 buildCache("product_attributes",Duration.ofHours(24) , 3000),
 
-                buildCache("ai_context_attributes", Duration.ofHours(24), 500)
+                buildCache("ai_context_attributes", Duration.ofHours(24), 500),
+
+                buildCache("pages", Duration.ofHours(24), 500),
+
+                buildCache("shop_settings", Duration.ofHours(24), 500),
+
+                buildCache("faq_items", Duration.ofHours(24), 500),
+
+                buildCache("footer_data", Duration.ofHours(24), 500)
+
         ));
         return manager;
     }

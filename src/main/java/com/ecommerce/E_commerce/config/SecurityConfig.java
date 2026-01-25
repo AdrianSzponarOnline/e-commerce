@@ -104,7 +104,17 @@ public class SecurityConfig {
                                     "/api/inventory/{id}",
                                     "/api/inventory/product/{productId}",
                                     "/api/inventory/summary",
-                                    "/api/inventory/product/{productId}/available"
+                                    "/api/inventory/product/{productId}/available",
+                                    "/api/pages",
+                                    "/api/pages/*",
+                                    "/api/pages/slug/*",
+                                    "/api/pages/active",
+                                    "/api/pages/search",
+                                    "/api/pages/search/*",
+                                    "/api/settings/public/footer",
+                                    "/api/settings/key/*",
+                                    "/api/social-links/active",
+                                    "/api/faq/active"
                             ).permitAll()
                             .requestMatchers(
                                     "/error",

@@ -10,24 +10,23 @@ import org.hibernate.annotations.ColumnDefault;
 @Getter
 @Setter
 @Entity
-@Table(name = "pages")
-public class Page {
+@Table(name = "shop_settings", uniqueConstraints = {
+        @UniqueConstraint(columnNames = "setting_key")
+})
+public class ShopSetting {
     @Id
-    @ColumnDefault("nextval('pages_id_seq'::regclass)")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
-    private Integer id;
+    private Long id;
 
     @Size(max = 100)
     @NotNull
-    @Column(name = "slug", nullable = false, length = 100)
-    private String slug;
+    @Column(name = "setting_key", nullable = false, unique = true, length = 100)
+    private String key;
 
-    @Size(max = 100)
-    @NotNull
-    @Column(name = "title", nullable = false, length = 100)
-    private String title;
+    @Column(name = "setting_value", length = 1000)
+    private String value;
 
-    @Column(name = "content", length = Integer.MAX_VALUE)
-    private String content;
+    @Column(name = "description", length = 500)
+    private String description;
 }

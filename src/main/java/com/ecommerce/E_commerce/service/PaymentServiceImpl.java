@@ -366,12 +366,10 @@ public class PaymentServiceImpl implements PaymentService {
 
         Order order = payment.getOrder();
         
-        // For registered user orders
         if (order.getUser() != null) {
             return order.getUser().getEmail().equals(userEmail);
         }
         
-        // For guest orders - check if email matches
         if (order.getGuestEmail() != null) {
             return order.getGuestEmail().equalsIgnoreCase(userEmail);
         }
