@@ -12,6 +12,7 @@ import java.util.Optional;
 
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, Long> {
+
     boolean existsBySeoSlug(String seoSlug);
 
     @Override
@@ -19,18 +20,16 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
 
     Optional<Category> findBySeoSlug(String seoSlug);
 
-    @Query(value =
-            "WITH RECURSIVE CategorySubtree AS ( " +
-                    "    SELECT * FROM categories WHERE id = :rootId AND deleted_at IS NULL " +
-                    "    UNION ALL " +
-                    "    SELECT c.* FROM categories c " +
-                    "    INNER JOIN CategorySubtree cs ON c.parent_id = cs.id " +
-                    "    WHERE c.deleted_at IS NULL " +
-                    ") " +
-                    "SELECT * FROM CategorySubtree",
-            nativeQuery = true
-    )
-    List<Category> findSubtreeByRootId(@Param("rootId") Long rootId);
+    @Query(value = """
+    WITH RECURSIVE category_tree AS (
+        SELECT id FROM categories WHERE id = :categoryId
+        UNION ALL
+        SELECT c.id FROM categories c
+        INNER JOIN category_tree ct ON c.parent_id = ct.id
+        )
+        SELECT id FROM category_tree
+    """, nativeQuery = true)
+    List<Long> findAllSubcategoryIds(@Param("categoryId") Long categoryId);
 
 
     List<Category> findAllByIsActiveTrue();

@@ -28,7 +28,7 @@ public class FaqServiceImpl implements FaqService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "faqItems", allEntries = true)
+    @CacheEvict(value = "faq_items", allEntries = true)
     public FaqItemDTO create(FaqItemCreateDTO dto) {
         logger.info("Creating FAQ item: question={}", dto.question());
         if (faqItemRepository.existsByQuestion(dto.question())) {
@@ -42,13 +42,12 @@ public class FaqServiceImpl implements FaqService {
 
     @Override
     @Transactional
-    @CacheEvict(value = "faqItems", allEntries = true)
+    @CacheEvict(value = "faq_items", allEntries = true)
     public FaqItemDTO update(Long id, FaqItemUpdateDTO dto) {
         logger.info("Updating FAQ item: id={}", id);
         FaqItem faqItem = faqItemRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("FAQ item not found: " + id));
         
-        // Check if question is being changed and if it conflicts with existing record
         if (dto.question() != null && !faqItem.getQuestion().equals(dto.question())) {
             if (faqItemRepository.existsByQuestion(dto.question())) {
                 throw new InvalidOperationException("FAQ item with question already exists: " + dto.question());

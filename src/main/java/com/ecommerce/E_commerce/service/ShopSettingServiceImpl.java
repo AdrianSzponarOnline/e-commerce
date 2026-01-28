@@ -148,6 +148,7 @@ public class ShopSettingServiceImpl implements ShopSettingService {
         
         return new FooterDataDTO(
                 settings.getOrDefault("shop_name", "E-Shop"),
+                settings.getOrDefault("shop_description", ""),
                 settings.getOrDefault("logo_url", ""),
                 settings.getOrDefault("footer_copyright", ""),
                 new FooterDataDTO.ContactInfoDTO(

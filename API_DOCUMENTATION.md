@@ -17,11 +17,8 @@ Kompletna dokumentacja API dla systemu e-commerce z obsługą produktów, katego
 - **Inventory API:** `/api/inventory`
 - **AI Chat API:** `/api/ai/chat`
 - **Contact API:** `/api/contact`
+- **Newsletter API:** `/api/newsletter` - Zapisy do newslettera (publiczne), lista i wysyłka (OWNER)
 - **Statistics API:** `/api/statistics` - Statystyki sprzedaży i produktów (tylko dla OWNER)
-- **CMS Pages API:** `/api/pages` - Zarządzanie stronami statycznymi (O nas, Regulamin, itp.)
-- **CMS Settings API:** `/api/settings` - Konfiguracja sklepu (nazwa, logo, dane kontaktowe)
-- **CMS Social Links API:** `/api/social-links` - Linki do mediów społecznościowych
-- **CMS FAQ API:** `/api/faq` - Sekcja pytań i odpowiedzi
 
 ## Autoryzacja
 - **Publiczne endpointy** - dostępne dla wszystkich użytkowników
@@ -2544,239 +2541,22 @@ Authorization: Bearer {token}
 
 ---
 
-## 22. CMS API - Pages (`/api/pages`)
+## 22. CMS API (Content Management System)
 
-API do zarządzania stronami statycznymi sklepu (O nas, Regulamin, Polityka prywatności, Cookies, itp.).
-
-### 22.1 Utworzenie strony
-
-**Endpoint:** `POST /api/pages`  
-**Autoryzacja:** `ROLE_OWNER`
-
-**Request Body:** `PageCreateDTO`
-```json
-{
-  "slug": "o-nas",
-  "title": "O nas",
-  "content": "<p>Jesteśmy super sklepem...</p>",
-  "isSystem": false
-}
-```
-
-**Response:** `PageDTO`
-```json
-{
-  "id": 1,
-  "slug": "o-nas",
-  "title": "O nas",
-  "content": "<p>Jesteśmy super sklepem...</p>",
-  "isSystem": false,
-  "createdAt": "2025-01-25T10:00:00Z",
-  "updatedAt": "2025-01-25T10:00:00Z",
-  "isActive": true
-}
-```
-
-**Walidacja:**
-- `slug` - wymagane, max 100 znaków, unikalne
-- `title` - wymagane, max 100 znaków
-- `content` - opcjonalne
-- `isSystem` - opcjonalne (domyślnie `false`), jeśli `true` - strona nie może być usunięta
-
-**Status codes:**
-- `201 Created` - Strona utworzona
-- `400 Bad Request` - Błędy walidacji
-- `403 Forbidden` - Brak uprawnień OWNER
-- `409 Conflict` - Slug już istnieje
+CMS API zapewnia zarządzanie treścią sklepu, w tym stronami statycznymi, ustawieniami sklepu, linkami społecznościowymi i FAQ. System obsługuje zarówno publiczne endpointy do odczytu, jak i zabezpieczone endpointy do zarządzania treścią (wymagają roli `ROLE_OWNER`).
 
 ---
 
-### 22.2 Aktualizacja strony
+## 22.1 Shop Settings API (`/api/settings`)
 
-**Endpoint:** `PUT /api/pages/{id}`  
-**Autoryzacja:** `ROLE_OWNER`
+Shop Settings API umożliwia zarządzanie ustawieniami sklepu w formie klucz-wartość. Ustawienia są używane do konfiguracji sklepu, takich jak nazwa sklepu, logo, dane kontaktowe, itp.
 
-**Request Body:** `PageUpdateDTO`
-```json
-{
-  "title": "O nas - Zaktualizowane",
-  "content": "<p>Nowa treść...</p>",
-  "isActive": true
-}
-```
-
-**Response:** `PageDTO`
-
-**Walidacja:**
-- `slug` - opcjonalne, max 100 znaków (jeśli zmienione, sprawdzana unikalność)
-- `title` - opcjonalne, max 100 znaków
-- `content` - opcjonalne
-- `isActive` - opcjonalne
-
-**Status codes:**
-- `200 OK` - Strona zaktualizowana
-- `400 Bad Request` - Błędy walidacji
-- `403 Forbidden` - Brak uprawnień OWNER
-- `404 Not Found` - Strona nie znaleziona
-- `409 Conflict` - Nowy slug już istnieje
-
----
-
-### 22.3 Usunięcie strony
-
-**Endpoint:** `DELETE /api/pages/{id}`  
-**Autoryzacja:** `ROLE_OWNER`
-
-**Response:** `204 No Content`
-
-**Uwagi:**
-- Strony z `isSystem = true` nie mogą być usunięte (zwraca `400 Bad Request`)
-- Wykonuje soft delete (ustawia `deletedAt` i `isActive = false`)
-
-**Status codes:**
-- `204 No Content` - Strona usunięta
-- `400 Bad Request` - Próba usunięcia strony systemowej
-- `403 Forbidden` - Brak uprawnień OWNER
-- `404 Not Found` - Strona nie znaleziona
-
----
-
-### 22.4 Pobranie strony po ID
-
-**Endpoint:** `GET /api/pages/{id}`  
-**Autoryzacja:** Public
-
-**Response:** `PageDTO`
-
-**Status codes:**
-- `200 OK` - Strona znaleziona
-- `404 Not Found` - Strona nie znaleziona
-
----
-
-### 22.5 Pobranie strony po slug
-
-**Endpoint:** `GET /api/pages/slug/{slug}`  
-**Autoryzacja:** Public
-
-**Response:** `PageDTO`
-
-**Przykład:**
-```bash
-GET /api/pages/slug/o-nas
-```
-
-**Status codes:**
-- `200 OK` - Strona znaleziona
-- `404 Not Found` - Strona nie znaleziona
-
----
-
-### 22.6 Lista wszystkich stron
-
-**Endpoint:** `GET /api/pages`  
-**Autoryzacja:** Public
-
-**Response:** `List<PageDTO>`
-
-**Status codes:**
-- `200 OK` - Lista stron
-
----
-
-### 22.7 Lista aktywnych stron
-
-**Endpoint:** `GET /api/pages/active`  
-**Autoryzacja:** Public
-
-**Response:** `List<PageDTO>`
-
-Zwraca tylko strony z `isActive = true`, posortowane alfabetycznie po tytule.
-
-**Status codes:**
-- `200 OK` - Lista aktywnych stron
-
----
-
-### 22.8 Wyszukiwanie stron
-
-**Endpoint:** `GET /api/pages/search`  
-**Autoryzacja:** Public
-
-**Query Parameters:**
-- `slug` (String, optional) - Fragment slugu do wyszukania
-- `title` (String, optional) - Fragment tytułu do wyszukania
-- `page` (Integer, optional) - Numer strony (domyślnie 0)
-- `size` (Integer, optional) - Rozmiar strony (domyślnie 10)
-- `sort` (String, optional) - Sortowanie (domyślnie "title")
-
-**Response:** `Page<PageDTO>` (Spring Data Page)
-
-**Przykłady:**
-```bash
-# Wyszukaj po slugu i tytule
-GET /api/pages/search?slug=regulamin&title=regulamin&page=0&size=10
-
-# Wyszukaj tylko po slugu
-GET /api/pages/search/slug?slug=regulamin&page=0&size=10
-
-# Wyszukaj tylko po tytule
-GET /api/pages/search/title?title=polityka&page=0&size=10
-```
-
-**Status codes:**
-- `200 OK` - Wyniki wyszukiwania
-
----
-
-### Modele danych Pages API
-
-#### PageDTO
-```json
-{
-  "id": 1,
-  "slug": "o-nas",
-  "title": "O nas",
-  "content": "<p>Treść strony...</p>",
-  "isSystem": false,
-  "createdAt": "2025-01-25T10:00:00Z",
-  "updatedAt": "2025-01-25T10:00:00Z",
-  "isActive": true
-}
-```
-
-#### PageCreateDTO
-```json
-{
-  "slug": "o-nas",
-  "title": "O nas",
-  "content": "<p>Treść strony...</p>",
-  "isSystem": false
-}
-```
-
-#### PageUpdateDTO
-```json
-{
-  "slug": "o-nas",
-  "title": "O nas - Zaktualizowane",
-  "content": "<p>Nowa treść...</p>",
-  "isActive": true
-}
-```
-
----
-
-## 23. CMS API - Shop Settings (`/api/settings`)
-
-API do zarządzania konfiguracją sklepu w formacie klucz-wartość (nazwa sklepu, logo, dane kontaktowe, copyright, itp.).
-
-### 23.1 Utworzenie ustawienia
+### 22.1.1 Tworzenie ustawienia sklepu
 
 **Endpoint:** `POST /api/settings`  
 **Autoryzacja:** `ROLE_OWNER`
 
-**Request Body:** `ShopSettingCreateDTO`
+**Request Body:**
 ```json
 {
   "key": "shop_name",
@@ -2785,7 +2565,7 @@ API do zarządzania konfiguracją sklepu w formacie klucz-wartość (nazwa sklep
 }
 ```
 
-**Response:** `ShopSettingDTO`
+**Response:**
 ```json
 {
   "id": 1,
@@ -2796,24 +2576,21 @@ API do zarządzania konfiguracją sklepu w formacie klucz-wartość (nazwa sklep
 ```
 
 **Walidacja:**
-- `key` - wymagane, max 100 znaków, unikalne, tylko małe litery, cyfry i podkreślenia (regex: `^[a-z0-9_]+$`)
+- `key` - wymagane, max 100 znaków, tylko małe litery, cyfry i podkreślenia (regex: `^[a-z0-9_]+$`)
 - `value` - opcjonalne, max 1000 znaków, nie może zawierać tagów HTML
 - `description` - opcjonalne, max 500 znaków, nie może zawierać tagów HTML
 
 **Status codes:**
-- `201 Created` - Ustawienie utworzone
-- `400 Bad Request` - Błędy walidacji
+- `201 Created` - Ustawienie zostało utworzone
+- `400 Bad Request` - Błędne dane wejściowe lub duplikat klucza
 - `403 Forbidden` - Brak uprawnień OWNER
-- `409 Conflict` - Klucz już istnieje
 
----
-
-### 23.2 Aktualizacja ustawienia po ID
+### 22.1.2 Aktualizacja ustawienia po ID
 
 **Endpoint:** `PUT /api/settings/{id}`  
 **Autoryzacja:** `ROLE_OWNER`
 
-**Request Body:** `ShopSettingUpdateDTO`
+**Request Body:**
 ```json
 {
   "value": "Nowa nazwa sklepu",
@@ -2821,152 +2598,106 @@ API do zarządzania konfiguracją sklepu w formacie klucz-wartość (nazwa sklep
 }
 ```
 
-**Response:** `ShopSettingDTO`
+**Response:**
+```json
+{
+  "id": 1,
+  "key": "shop_name",
+  "value": "Nowa nazwa sklepu",
+  "description": "Zaktualizowany opis"
+}
+```
 
-**Walidacja:**
-- `value` - opcjonalne, max 1000 znaków, nie może zawierać tagów HTML
-- `description` - opcjonalne, max 500 znaków, nie może zawierać tagów HTML
-
-**Status codes:**
-- `200 OK` - Ustawienie zaktualizowane
-- `400 Bad Request` - Błędy walidacji
-- `403 Forbidden` - Brak uprawnień OWNER
-- `404 Not Found` - Ustawienie nie znalezione
-
----
-
-### 23.3 Aktualizacja ustawienia po kluczu
+### 22.1.3 Aktualizacja ustawienia po kluczu
 
 **Endpoint:** `PUT /api/settings/key/{key}`  
 **Autoryzacja:** `ROLE_OWNER`
 
-**Request Body:** `ShopSettingUpdateDTO`
-```json
+**Przykład:**
+```bash
+PUT /api/settings/key/shop_name
 {
   "value": "Nowa nazwa sklepu",
   "description": "Zaktualizowany opis"
 }
 ```
 
-**Response:** `ShopSettingDTO`
-
-**Przykład:**
-```bash
-PUT /api/settings/key/shop_name
-```
-
-**Status codes:**
-- `200 OK` - Ustawienie zaktualizowane
-- `400 Bad Request` - Błędy walidacji
-- `403 Forbidden` - Brak uprawnień OWNER
-- `404 Not Found` - Ustawienie nie znalezione
-
----
-
-### 23.4 Usunięcie ustawienia
+### 22.1.4 Usuwanie ustawienia
 
 **Endpoint:** `DELETE /api/settings/{id}`  
 **Autoryzacja:** `ROLE_OWNER`
 
-**Response:** `204 No Content`
-
 **Status codes:**
-- `204 No Content` - Ustawienie usunięte
+- `204 No Content` - Ustawienie zostało usunięte
+- `404 Not Found` - Ustawienie nie istnieje
 - `403 Forbidden` - Brak uprawnień OWNER
-- `404 Not Found` - Ustawienie nie znalezione
 
----
-
-### 23.5 Pobranie ustawienia po ID
+### 22.1.5 Pobieranie ustawienia po ID
 
 **Endpoint:** `GET /api/settings/{id}`  
 **Autoryzacja:** `ROLE_OWNER`
 
 **Response:** `ShopSettingDTO`
 
-**Status codes:**
-- `200 OK` - Ustawienie znalezione
-- `403 Forbidden` - Brak uprawnień OWNER
-- `404 Not Found` - Ustawienie nie znalezione
-
----
-
-### 23.6 Pobranie ustawienia po kluczu
+### 22.1.6 Pobieranie ustawienia po kluczu
 
 **Endpoint:** `GET /api/settings/key/{key}`  
 **Autoryzacja:** Public
-
-**Response:** `ShopSettingDTO`
 
 **Przykład:**
 ```bash
 GET /api/settings/key/shop_name
 ```
 
-**Status codes:**
-- `200 OK` - Ustawienie znalezione
-- `404 Not Found` - Ustawienie nie znalezione
+**Response:**
+```json
+{
+  "id": 1,
+  "key": "shop_name",
+  "value": "Mój Super Sklep",
+  "description": "Nazwa sklepu wyświetlana w nagłówku"
+}
+```
 
----
-
-### 23.7 Lista wszystkich ustawień
+### 22.1.7 Lista wszystkich ustawień
 
 **Endpoint:** `GET /api/settings`  
 **Autoryzacja:** `ROLE_OWNER`
 
 **Response:** `List<ShopSettingDTO>`
 
-**Status codes:**
-- `200 OK` - Lista ustawień
-- `403 Forbidden` - Brak uprawnień OWNER
-
----
-
-### 23.8 Lista ustawień jako mapa
+### 22.1.8 Lista wszystkich ustawień jako mapa
 
 **Endpoint:** `GET /api/settings/map`  
 **Autoryzacja:** `ROLE_OWNER`
 
-**Response:** `Map<String, String>`
-
-Zwraca wszystkie ustawienia jako mapa `klucz -> wartość` dla łatwego dostępu.
-
-**Przykład odpowiedzi:**
+**Response:**
 ```json
 {
   "shop_name": "Mój Super Sklep",
   "logo_url": "/uploads/shop/logo.png",
-  "contact_phone": "+48 123 456 789",
   "contact_email": "kontakt@sklep.pl",
-  "footer_copyright": "© 2025 E-Shop. Wszelkie prawa zastrzeżone."
+  "contact_phone": "+48 123 456 789"
 }
 ```
 
-**Status codes:**
-- `200 OK` - Mapa ustawień
-- `403 Forbidden` - Brak uprawnień OWNER
-
----
-
-### 23.9 Pobranie danych stopki (publiczne)
+### 22.1.9 Pobieranie danych stopki
 
 **Endpoint:** `GET /api/settings/public/footer`  
 **Autoryzacja:** Public
 
 **Response:** `FooterDataDTO`
 
-Zwraca agregowane dane potrzebne do renderowania stopki strony (nazwa sklepu, logo, copyright, dane kontaktowe, linki społecznościowe).
-
-**Przykład odpowiedzi:**
+**Przykład:**
 ```json
 {
   "shopName": "Mój Super Sklep",
   "logoUrl": "/uploads/shop/logo.png",
-  "footerCopyright": "© 2025 E-Shop. Wszelkie prawa zastrzeżone.",
-  "contact": {
+  "footerCopyright": "© 2025 Mój Super Sklep. Wszelkie prawa zastrzeżone.",
+  "contactInfo": {
     "phone": "+48 123 456 789",
     "email": "kontakt@sklep.pl",
-    "address": "ul. Przykładowa 1, 00-000 Warszawa",
+    "address": "ul. Przykładowa 123, 00-000 Warszawa",
     "openingHours": "Pon-Pt: 9:00-17:00"
   },
   "socialLinks": [
@@ -2976,27 +2707,25 @@ Zwraca agregowane dane potrzebne do renderowania stopki strony (nazwa sklepu, lo
       "url": "https://facebook.com/mojsklep",
       "iconCode": "fa-facebook",
       "sortOrder": 1,
-      "isActive": true,
-      "createdAt": "2025-01-25T10:00:00Z",
-      "updatedAt": "2025-01-25T10:00:00Z"
+      "isActive": true
     }
   ]
 }
 ```
 
-**Status codes:**
-- `200 OK` - Dane stopki
-
----
-
-### 23.10 Upload logo sklepu
+### 22.1.10 Upload logo sklepu
 
 **Endpoint:** `POST /api/settings/logo`  
 **Autoryzacja:** `ROLE_OWNER`  
 **Content-Type:** `multipart/form-data`
 
 **Request:**
-- `file` (MultipartFile, required) - Plik logo
+- `file` (MultipartFile, required) - Plik logo do wgrania
+
+**Walidacja:**
+- Dozwolone typy: `image/jpeg`, `image/png`, `image/webp`, `image/svg+xml`
+- Maksymalny rozmiar: 5 MB (domyślnie, konfigurowalne przez `app.upload-max-bytes`)
+- Walidacja typu pliku odbywa się za pomocą Apache Tika
 
 **Response:**
 ```json
@@ -3005,40 +2734,28 @@ Zwraca agregowane dane potrzebne do renderowania stopki strony (nazwa sklepu, lo
 }
 ```
 
-**Walidacja pliku:**
-- Dozwolone typy: `image/jpeg`, `image/png`, `image/webp`, `image/svg+xml`
-- Maksymalny rozmiar: 5 MB (domyślnie, konfigurowalne przez `app.upload-max-bytes`)
-- Walidacja typu pliku przez Apache Tika
-
 **Uwagi:**
 - Logo jest zapisywane jako `logo.{extension}` w katalogu `uploads/shop/`
-- Jeśli logo już istnieje, stare zostaje usunięte przed uploadem nowego
+- Jeśli logo już istnieje, zostanie zastąpione nowym
 - URL logo jest automatycznie aktualizowany w ustawieniu `logo_url`
 - Logo jest dostępne publicznie pod `/uploads/shop/logo.{ext}`
 
 **Status codes:**
-- `201 Created` - Logo przesłane
-- `400 Bad Request` - Błędy walidacji pliku
+- `201 Created` - Logo zostało wgrane
+- `400 Bad Request` - Błędny plik (nieprawidłowy typ, za duży rozmiar)
 - `403 Forbidden` - Brak uprawnień OWNER
 
----
-
-### 23.11 Usunięcie logo sklepu
+### 22.1.11 Usuwanie logo sklepu
 
 **Endpoint:** `DELETE /api/settings/logo`  
 **Autoryzacja:** `ROLE_OWNER`
 
-**Response:** `204 No Content`
-
-**Uwagi:**
-- Usuwa plik logo z dysku
-- Czyści wartość ustawienia `logo_url`
-
 **Status codes:**
-- `204 No Content` - Logo usunięte
+- `204 No Content` - Logo zostało usunięte
 - `403 Forbidden` - Brak uprawnień OWNER
 
----
+**Uwagi:**
+- Usuwa plik logo z dysku oraz czyści wartość `logo_url` w ustawieniach
 
 ### Modele danych Shop Settings API
 
@@ -3061,24 +2778,33 @@ Zwraca agregowane dane potrzebne do renderowania stopki strony (nazwa sklepu, lo
 }
 ```
 
+**Walidacja:**
+- `key` - wymagane, max 100 znaków, tylko `[a-z0-9_]`
+- `value` - opcjonalne, max 1000 znaków, bez tagów HTML
+- `description` - opcjonalne, max 500 znaków, bez tagów HTML
+
 #### ShopSettingUpdateDTO
 ```json
 {
-  "value": "Nowa nazwa sklepu",
-  "description": "Zaktualizowany opis"
+  "value": "Nowa wartość",
+  "description": "Nowy opis"
 }
 ```
+
+**Walidacja:**
+- `value` - opcjonalne, max 1000 znaków, bez tagów HTML
+- `description` - opcjonalne, max 500 znaków, bez tagów HTML
 
 #### FooterDataDTO
 ```json
 {
   "shopName": "Mój Super Sklep",
   "logoUrl": "/uploads/shop/logo.png",
-  "footerCopyright": "© 2025 E-Shop. Wszelkie prawa zastrzeżone.",
-  "contact": {
+  "footerCopyright": "© 2025 Mój Super Sklep. Wszelkie prawa zastrzeżone.",
+  "contactInfo": {
     "phone": "+48 123 456 789",
     "email": "kontakt@sklep.pl",
-    "address": "ul. Przykładowa 1, 00-000 Warszawa",
+    "address": "ul. Przykładowa 123, 00-000 Warszawa",
     "openingHours": "Pon-Pt: 9:00-17:00"
   },
   "socialLinks": [
@@ -3088,9 +2814,7 @@ Zwraca agregowane dane potrzebne do renderowania stopki strony (nazwa sklepu, lo
       "url": "https://facebook.com/mojsklep",
       "iconCode": "fa-facebook",
       "sortOrder": 1,
-      "isActive": true,
-      "createdAt": "2025-01-25T10:00:00Z",
-      "updatedAt": "2025-01-25T10:00:00Z"
+      "isActive": true
     }
   ]
 }
@@ -3098,65 +2822,168 @@ Zwraca agregowane dane potrzebne do renderowania stopki strony (nazwa sklepu, lo
 
 ---
 
-## 24. CMS API - Social Links (`/api/social-links`)
+## 22.2 Pages API (`/api/pages`)
 
-API do zarządzania linkami do mediów społecznościowych sklepu.
+Pages API umożliwia zarządzanie stronami statycznymi sklepu (np. "O nas", "Regulamin", "Polityka prywatności").
 
-### 24.1 Utworzenie linku społecznościowego
+### 22.2.1 Tworzenie strony
+
+**Endpoint:** `POST /api/pages`  
+**Autoryzacja:** `ROLE_OWNER`
+
+**Request Body:**
+```json
+{
+  "slug": "o-nas",
+  "title": "O nas",
+  "content": "<h1>O nas</h1><p>Jesteśmy super sklepem...</p>",
+  "isSystem": false,
+  "isActive": true
+}
+```
+
+**Response:** `PageDTO`
+
+**Walidacja:**
+- `slug` - wymagane, max 100 znaków, unikalne
+- `title` - wymagane, max 100 znaków
+- `content` - opcjonalne, HTML/Markdown
+- `isSystem` - opcjonalne, domyślnie `false` (strony systemowe nie mogą być usunięte)
+- `isActive` - opcjonalne, domyślnie `true`
+
+### 22.2.2 Aktualizacja strony
+
+**Endpoint:** `PUT /api/pages/{id}`  
+**Autoryzacja:** `ROLE_OWNER`
+
+**Request Body:**
+```json
+{
+  "title": "Zaktualizowany tytuł",
+  "content": "<p>Zaktualizowana treść...</p>",
+  "isActive": true
+}
+```
+
+**Uwagi:**
+- `slug` i `isSystem` nie mogą być zmienione przez update
+- Jeśli podano nowy `slug`, system sprawdza czy nie jest duplikatem
+
+### 22.2.3 Usuwanie strony
+
+**Endpoint:** `DELETE /api/pages/{id}`  
+**Autoryzacja:** `ROLE_OWNER`
+
+**Uwagi:**
+- Strony systemowe (`isSystem: true`) nie mogą być usunięte
+- Usuwanie jest "soft delete" - strona jest oznaczana jako usunięta
+
+### 22.2.4 Pobieranie strony po ID
+
+**Endpoint:** `GET /api/pages/{id}`  
+**Autoryzacja:** Public
+
+**Response:** `PageDTO`
+
+### 22.2.5 Pobieranie strony po slug
+
+**Endpoint:** `GET /api/pages/slug/{slug}`  
+**Autoryzacja:** Public
+
+**Przykład:**
+```bash
+GET /api/pages/slug/o-nas
+```
+
+### 22.2.6 Lista wszystkich stron
+
+**Endpoint:** `GET /api/pages`  
+**Autoryzacja:** Public
+
+**Response:** `List<PageDTO>`
+
+### 22.2.7 Lista aktywnych stron
+
+**Endpoint:** `GET /api/pages/active`  
+**Autoryzacja:** Public
+
+**Response:** `List<PageDTO>` - posortowane alfabetycznie po tytule
+
+### 22.2.8 Wyszukiwanie stron
+
+**Endpoint:** `GET /api/pages/search`  
+**Autoryzacja:** Public
+
+**Query Parameters:**
+- `slug` (String, optional) - Wyszukiwanie po slugu (zawiera)
+- `title` (String, optional) - Wyszukiwanie po tytule (zawiera)
+- `page` (int, default: 0) - Numer strony
+- `size` (int, default: 10) - Rozmiar strony
+
+**Przykłady:**
+```bash
+GET /api/pages/search?slug=regulamin
+GET /api/pages/search?title=polityka
+GET /api/pages/search?slug=o&title=nas
+```
+
+**Response:** `Page<PageDTO>`
+
+### Modele danych Pages API
+
+#### PageDTO
+```json
+{
+  "id": 1,
+  "slug": "o-nas",
+  "title": "O nas",
+  "content": "<h1>O nas</h1><p>Jesteśmy super sklepem...</p>",
+  "isSystem": false,
+  "isActive": true,
+  "createdAt": "2025-01-01T10:00:00Z",
+  "updatedAt": "2025-01-01T10:00:00Z",
+  "deletedAt": null
+}
+```
+
+#### PageCreateDTO
+```json
+{
+  "slug": "o-nas",
+  "title": "O nas",
+  "content": "<h1>O nas</h1><p>Jesteśmy super sklepem...</p>",
+  "isSystem": false,
+  "isActive": true
+}
+```
+
+#### PageUpdateDTO
+```json
+{
+  "title": "Zaktualizowany tytuł",
+  "content": "<p>Zaktualizowana treść...</p>",
+  "isActive": true
+}
+```
+
+---
+
+## 22.3 Social Links API (`/api/social-links`)
+
+Social Links API umożliwia zarządzanie linkami do profili społecznościowych sklepu.
+
+### 22.3.1 Tworzenie linku społecznościowego
 
 **Endpoint:** `POST /api/social-links`  
 **Autoryzacja:** `ROLE_OWNER`
 
-**Request Body:** `SocialLinkCreateDTO`
+**Request Body:**
 ```json
 {
-  "platformName": "Facebook",
-  "url": "https://facebook.com/mojsklep",
-  "iconCode": "fa-facebook",
-  "sortOrder": 1
-}
-```
-
-**Response:** `SocialLinkDTO`
-```json
-{
-  "id": 1,
   "platformName": "Facebook",
   "url": "https://facebook.com/mojsklep",
   "iconCode": "fa-facebook",
   "sortOrder": 1,
-  "isActive": true,
-  "createdAt": "2025-01-25T10:00:00Z",
-  "updatedAt": "2025-01-25T10:00:00Z"
-}
-```
-
-**Walidacja:**
-- `platformName` - wymagane, max 100 znaków, unikalne
-- `url` - wymagane, max 500 znaków
-- `iconCode` - opcjonalne, max 100 znaków (np. kod ikony FontAwesome)
-- `sortOrder` - opcjonalne (domyślnie 0)
-
-**Status codes:**
-- `201 Created` - Link utworzony
-- `400 Bad Request` - Błędy walidacji
-- `403 Forbidden` - Brak uprawnień OWNER
-- `409 Conflict` - Platforma już istnieje
-
----
-
-### 24.2 Aktualizacja linku społecznościowego
-
-**Endpoint:** `PUT /api/social-links/{id}`  
-**Autoryzacja:** `ROLE_OWNER`
-
-**Request Body:** `SocialLinkUpdateDTO`
-```json
-{
-  "platformName": "Facebook",
-  "url": "https://facebook.com/mojsklepnowy",
-  "iconCode": "fa-facebook",
-  "sortOrder": 2,
   "isActive": true
 }
 ```
@@ -3164,78 +2991,38 @@ API do zarządzania linkami do mediów społecznościowych sklepu.
 **Response:** `SocialLinkDTO`
 
 **Walidacja:**
-- `platformName` - opcjonalne, max 100 znaków (jeśli zmienione, sprawdzana unikalność)
-- `url` - opcjonalne, max 500 znaków
-- `iconCode` - opcjonalne, max 100 znaków
-- `sortOrder` - opcjonalne
-- `isActive` - opcjonalne
+- `platformName` - wymagane, max 100 znaków, unikalne
+- `url` - wymagane, max 500 znaków, poprawny format URL
+- `iconCode` - opcjonalne, max 100 znaków (np. dla FontAwesome)
+- `sortOrder` - opcjonalne, domyślnie `0`
+- `isActive` - opcjonalne, domyślnie `true`
 
-**Status codes:**
-- `200 OK` - Link zaktualizowany
-- `400 Bad Request` - Błędy walidacji
-- `403 Forbidden` - Brak uprawnień OWNER
-- `404 Not Found` - Link nie znaleziony
-- `409 Conflict` - Nowa nazwa platformy już istnieje
+### 22.3.2 Aktualizacja linku społecznościowego
 
----
+**Endpoint:** `PUT /api/social-links/{id}`  
+**Autoryzacja:** `ROLE_OWNER`
 
-### 24.3 Usunięcie linku społecznościowego
+### 22.3.3 Usuwanie linku społecznościowego
 
 **Endpoint:** `DELETE /api/social-links/{id}`  
 **Autoryzacja:** `ROLE_OWNER`
 
-**Response:** `204 No Content`
-
-**Uwagi:**
-- Wykonuje soft delete (ustawia `deletedAt` i `isActive = false`)
-
-**Status codes:**
-- `204 No Content` - Link usunięty
-- `403 Forbidden` - Brak uprawnień OWNER
-- `404 Not Found` - Link nie znaleziony
-
----
-
-### 24.4 Pobranie linku po ID
+### 22.3.4 Pobieranie linku po ID
 
 **Endpoint:** `GET /api/social-links/{id}`  
 **Autoryzacja:** `ROLE_OWNER`
 
-**Response:** `SocialLinkDTO`
-
-**Status codes:**
-- `200 OK` - Link znaleziony
-- `403 Forbidden` - Brak uprawnień OWNER
-- `404 Not Found` - Link nie znaleziony
-
----
-
-### 24.5 Lista wszystkich linków
+### 22.3.5 Lista wszystkich linków
 
 **Endpoint:** `GET /api/social-links`  
 **Autoryzacja:** `ROLE_OWNER`
 
-**Response:** `List<SocialLinkDTO>`
-
-**Status codes:**
-- `200 OK` - Lista linków
-- `403 Forbidden` - Brak uprawnień OWNER
-
----
-
-### 24.6 Lista aktywnych linków (publiczne)
+### 22.3.6 Lista aktywnych linków
 
 **Endpoint:** `GET /api/social-links/active`  
 **Autoryzacja:** Public
 
-**Response:** `List<SocialLinkDTO>`
-
-Zwraca tylko linki z `isActive = true`, posortowane po `sortOrder` rosnąco.
-
-**Status codes:**
-- `200 OK` - Lista aktywnych linków
-
----
+**Response:** `List<SocialLinkDTO>` - posortowane po `sortOrder`
 
 ### Modele danych Social Links API
 
@@ -3248,8 +3035,9 @@ Zwraca tylko linki z `isActive = true`, posortowane po `sortOrder` rosnąco.
   "iconCode": "fa-facebook",
   "sortOrder": 1,
   "isActive": true,
-  "createdAt": "2025-01-25T10:00:00Z",
-  "updatedAt": "2025-01-25T10:00:00Z"
+  "createdAt": "2025-01-01T10:00:00Z",
+  "updatedAt": "2025-01-01T10:00:00Z",
+  "deletedAt": null
 }
 ```
 
@@ -3259,78 +3047,38 @@ Zwraca tylko linki z `isActive = true`, posortowane po `sortOrder` rosnąco.
   "platformName": "Facebook",
   "url": "https://facebook.com/mojsklep",
   "iconCode": "fa-facebook",
-  "sortOrder": 1
+  "sortOrder": 1,
+  "isActive": true
 }
 ```
 
 #### SocialLinkUpdateDTO
 ```json
 {
-  "platformName": "Facebook",
-  "url": "https://facebook.com/mojsklepnowy",
-  "iconCode": "fa-facebook",
+  "url": "https://facebook.com/nowyprofil",
+  "iconCode": "fa-facebook-square",
   "sortOrder": 2,
-  "isActive": true
+  "isActive": false
 }
 ```
 
 ---
 
-## 25. CMS API - FAQ (`/api/faq`)
+## 22.4 FAQ API (`/api/faq`)
 
-API do zarządzania sekcją pytań i odpowiedzi (FAQ).
+FAQ API umożliwia zarządzanie sekcją pytań i odpowiedzi (FAQ) na stronie sklepu.
 
-### 25.1 Utworzenie pozycji FAQ
+### 22.4.1 Tworzenie pytania FAQ
 
 **Endpoint:** `POST /api/faq`  
 **Autoryzacja:** `ROLE_OWNER`
 
-**Request Body:** `FaqItemCreateDTO`
+**Request Body:**
 ```json
 {
-  "question": "Jak mogę zwrócić produkt?",
-  "answer": "Produkt można zwrócić w ciągu 14 dni od zakupu...",
-  "sortOrder": 1
-}
-```
-
-**Response:** `FaqItemDTO`
-```json
-{
-  "id": 1,
-  "question": "Jak mogę zwrócić produkt?",
-  "answer": "Produkt można zwrócić w ciągu 14 dni od zakupu...",
+  "question": "Jak długo trwa dostawa?",
+  "answer": "Standardowa dostawa trwa 3-5 dni roboczych.",
   "sortOrder": 1,
-  "isActive": true,
-  "createdAt": "2025-01-25T10:00:00Z",
-  "updatedAt": "2025-01-25T10:00:00Z"
-}
-```
-
-**Walidacja:**
-- `question` - wymagane, max 500 znaków, unikalne
-- `answer` - wymagane, max 2000 znaków
-- `sortOrder` - opcjonalne (domyślnie 0)
-
-**Status codes:**
-- `201 Created` - Pozycja FAQ utworzona
-- `400 Bad Request` - Błędy walidacji
-- `403 Forbidden` - Brak uprawnień OWNER
-- `409 Conflict` - Pytanie już istnieje
-
----
-
-### 25.2 Aktualizacja pozycji FAQ
-
-**Endpoint:** `PUT /api/faq/{id}`  
-**Autoryzacja:** `ROLE_OWNER`
-
-**Request Body:** `FaqItemUpdateDTO`
-```json
-{
-  "question": "Jak mogę zwrócić produkt?",
-  "answer": "Zaktualizowana odpowiedź...",
-  "sortOrder": 2,
   "isActive": true
 }
 ```
@@ -3338,77 +3086,37 @@ API do zarządzania sekcją pytań i odpowiedzi (FAQ).
 **Response:** `FaqItemDTO`
 
 **Walidacja:**
-- `question` - opcjonalne, max 500 znaków (jeśli zmienione, sprawdzana unikalność)
-- `answer` - opcjonalne, max 2000 znaków
-- `sortOrder` - opcjonalne
-- `isActive` - opcjonalne
+- `question` - wymagane, max 500 znaków, unikalne
+- `answer` - wymagane, max 2000 znaków
+- `sortOrder` - opcjonalne, domyślnie `0`
+- `isActive` - opcjonalne, domyślnie `true`
 
-**Status codes:**
-- `200 OK` - Pozycja FAQ zaktualizowana
-- `400 Bad Request` - Błędy walidacji
-- `403 Forbidden` - Brak uprawnień OWNER
-- `404 Not Found` - Pozycja FAQ nie znaleziona
-- `409 Conflict` - Nowe pytanie już istnieje
+### 22.4.2 Aktualizacja pytania FAQ
 
----
+**Endpoint:** `PUT /api/faq/{id}`  
+**Autoryzacja:** `ROLE_OWNER`
 
-### 25.3 Usunięcie pozycji FAQ
+### 22.4.3 Usuwanie pytania FAQ
 
 **Endpoint:** `DELETE /api/faq/{id}`  
 **Autoryzacja:** `ROLE_OWNER`
 
-**Response:** `204 No Content`
-
-**Uwagi:**
-- Wykonuje soft delete (ustawia `deletedAt` i `isActive = false`)
-
-**Status codes:**
-- `204 No Content` - Pozycja FAQ usunięta
-- `403 Forbidden` - Brak uprawnień OWNER
-- `404 Not Found` - Pozycja FAQ nie znaleziona
-
----
-
-### 25.4 Pobranie pozycji FAQ po ID
+### 22.4.4 Pobieranie pytania po ID
 
 **Endpoint:** `GET /api/faq/{id}`  
 **Autoryzacja:** `ROLE_OWNER`
 
-**Response:** `FaqItemDTO`
-
-**Status codes:**
-- `200 OK` - Pozycja FAQ znaleziona
-- `403 Forbidden` - Brak uprawnień OWNER
-- `404 Not Found` - Pozycja FAQ nie znaleziona
-
----
-
-### 25.5 Lista wszystkich pozycji FAQ
+### 22.4.5 Lista wszystkich pytań
 
 **Endpoint:** `GET /api/faq`  
 **Autoryzacja:** `ROLE_OWNER`
 
-**Response:** `List<FaqItemDTO>`
-
-**Status codes:**
-- `200 OK` - Lista pozycji FAQ
-- `403 Forbidden` - Brak uprawnień OWNER
-
----
-
-### 25.6 Lista aktywnych pozycji FAQ (publiczne)
+### 22.4.6 Lista aktywnych pytań
 
 **Endpoint:** `GET /api/faq/active`  
 **Autoryzacja:** Public
 
-**Response:** `List<FaqItemDTO>`
-
-Zwraca tylko pozycje z `isActive = true`, posortowane po `sortOrder` rosnąco.
-
-**Status codes:**
-- `200 OK` - Lista aktywnych pozycji FAQ
-
----
+**Response:** `List<FaqItemDTO>` - posortowane po `sortOrder`
 
 ### Modele danych FAQ API
 
@@ -3416,31 +3124,147 @@ Zwraca tylko pozycje z `isActive = true`, posortowane po `sortOrder` rosnąco.
 ```json
 {
   "id": 1,
-  "question": "Jak mogę zwrócić produkt?",
-  "answer": "Produkt można zwrócić w ciągu 14 dni od zakupu...",
+  "question": "Jak długo trwa dostawa?",
+  "answer": "Standardowa dostawa trwa 3-5 dni roboczych.",
   "sortOrder": 1,
   "isActive": true,
-  "createdAt": "2025-01-25T10:00:00Z",
-  "updatedAt": "2025-01-25T10:00:00Z"
+  "createdAt": "2025-01-01T10:00:00Z",
+  "updatedAt": "2025-01-01T10:00:00Z",
+  "deletedAt": null
 }
 ```
 
 #### FaqItemCreateDTO
 ```json
 {
-  "question": "Jak mogę zwrócić produkt?",
-  "answer": "Produkt można zwrócić w ciągu 14 dni od zakupu...",
-  "sortOrder": 1
+  "question": "Jak długo trwa dostawa?",
+  "answer": "Standardowa dostawa trwa 3-5 dni roboczych.",
+  "sortOrder": 1,
+  "isActive": true
 }
 ```
 
 #### FaqItemUpdateDTO
 ```json
 {
-  "question": "Jak mogę zwrócić produkt?",
   "answer": "Zaktualizowana odpowiedź...",
   "sortOrder": 2,
-  "isActive": true
+  "isActive": false
+}
+```
+
+---
+
+## 22.5 Newsletter API (`/api/newsletter`)
+
+Newsletter API umożliwia zapisywanie użytkowników do newslettera (publicznie), przeglądanie listy subskrypcji oraz wysyłanie newslettera do wszystkich zapisanych (tylko OWNER).
+
+### 22.5.1 Zapisz się do newslettera (publiczne)
+
+**Endpoint:** `POST /api/newsletter/subscribe`  
+**Autoryzacja:** Public
+
+**Request Body:**
+```json
+{
+  "email": "uzytkownik@example.com"
+}
+```
+
+**Response:** `NewsletterSubscriptionDTO` (201 Created)
+
+**Walidacja:**
+- `email` – wymagany, poprawny format adresu e-mail
+
+**Błędy:**
+- `409 Conflict` – adres e-mail jest już zapisany do newslettera (Duplicate Resource)
+
+**Przykład odpowiedzi:**
+```json
+{
+  "id": 1,
+  "email": "uzytkownik@example.com",
+  "subscribedAt": "2025-01-25T12:00:00Z",
+  "userId": null
+}
+```
+
+### 22.5.2 Rezygnacja z newslettera (publiczne)
+
+**Endpoint:** `POST /api/newsletter/unsubscribe`  
+**Autoryzacja:** Public
+
+**Request Body:**
+```json
+{
+  "email": "uzytkownik@example.com"
+}
+```
+
+**Response:** `204 No Content`
+
+**Błędy:**
+- `404 Not Found` – brak subskrypcji dla podanego adresu e-mail
+
+### 22.5.3 Lista subskrypcji
+
+**Endpoint:** `GET /api/newsletter/subscriptions`  
+**Autoryzacja:** `ROLE_OWNER`
+
+**Response:** `List<NewsletterSubscriptionDTO>` – lista posortowana po dacie zapisu (najnowsze pierwsze)
+
+### 22.5.4 Wysłanie newslettera
+
+**Endpoint:** `POST /api/newsletter/send`  
+**Autoryzacja:** `ROLE_OWNER`
+
+**Request Body:**
+```json
+{
+  "subject": "Temat wiadomości",
+  "content": "Treść newslettera w formacie tekstowym."
+}
+```
+
+**Response:**
+```json
+{
+  "sentCount": 42,
+  "message": "Wysłano do 42 odbiorców."
+}
+```
+
+**Walidacja:**
+- `subject` – wymagany
+- `content` – wymagany
+
+Wiadomości są wysyłane przez skonfigurowany serwer SMTP (np. Mailtrap). W razie błędu wysyłki do pojedynczego odbiorcy pozostałe e-maile są nadal wysyłane; w odpowiedzi zwracana jest liczba faktycznie wysłanych wiadomości.
+
+### Modele danych Newsletter API
+
+#### NewsletterSubscribeRequestDTO
+```json
+{
+  "email": "uzytkownik@example.com"
+}
+```
+
+#### NewsletterSubscriptionDTO
+```json
+{
+  "id": 1,
+  "email": "uzytkownik@example.com",
+  "subscribedAt": "2025-01-25T12:00:00Z",
+  "userId": null
+}
+```
+`userId` jest wypełnione tylko wtedy, gdy subskrypcja została powiązana z kontem użytkownika.
+
+#### NewsletterSendRequestDTO
+```json
+{
+  "subject": "Temat wiadomości",
+  "content": "Treść newslettera."
 }
 ```
 
@@ -3449,11 +3273,11 @@ Zwraca tylko pozycje z `isActive = true`, posortowane po `sortOrder` rosnąco.
 ### Uwagi dotyczące CMS API
 
 - **Cache:** Wszystkie operacje odczytu są cache'owane. Operacje zapisu automatycznie czyszczą odpowiednie cache'e.
-- **Soft Delete:** Strony, linki społecznościowe i pozycje FAQ używają soft delete (ustawiają `deletedAt` i `isActive = false`).
-- **Strony systemowe:** Strony z `isSystem = true` nie mogą być usunięte, tylko edytowane.
-- **Unikalność:** Slug stron, klucze ustawień, nazwy platform i pytania FAQ muszą być unikalne.
-- **Walidacja HTML:** Wartości ustawień sklepu nie mogą zawierać tagów HTML (zabezpieczenie przed XSS).
-- **Logo:** Logo sklepu jest serwowane publicznie przez handler statyczny pod `/uploads/shop/logo.{ext}`.
+- **Soft Delete:** Strony, linki społecznościowe i FAQ używają "soft delete" - rekordy są oznaczane jako usunięte, ale nie są fizycznie usuwane z bazy.
+- **Publiczne endpointy:** Większość endpointów GET jest dostępna publicznie, co umożliwia frontendowi pobieranie treści bez autoryzacji.
+- **Walidacja:** Wszystkie DTO są walidowane przy użyciu Jakarta Validation (`@NotBlank`, `@Size`, `@Pattern`, itp.).
+- **Unikalność:** `slug` w Pages, `platformName` w SocialLinks i `question` w FAQ muszą być unikalne.
+- **System Pages:** Strony oznaczone jako `isSystem: true` nie mogą być usunięte, tylko edytowane.
 
 ---
 

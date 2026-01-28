@@ -62,7 +62,9 @@ public class SecurityConfig {
                                     "/api/auth/forgot-password",
                                     "/api/auth/reset-password",
                                     "/api/orders/guest",
-                                    "/api/payments/guest").permitAll()
+                                    "/api/payments/guest",
+                                    "/api/newsletter/subscribe",
+                                    "/api/newsletter/unsubscribe").permitAll()
                             .requestMatchers(
                                     HttpMethod.POST,
                                     "/api/payments/guest/*/simulate").permitAll()

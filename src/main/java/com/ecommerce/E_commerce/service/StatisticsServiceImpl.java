@@ -30,7 +30,6 @@ public class StatisticsServiceImpl implements StatisticsService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     
-    // Statuses that count as completed sales
     private static final List<OrderStatus> COMPLETED_STATUSES = Arrays.asList(
         OrderStatus.CONFIRMED,
         OrderStatus.PROCESSING,

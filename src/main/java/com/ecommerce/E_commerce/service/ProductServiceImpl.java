@@ -171,7 +171,8 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     @Cacheable(value = "product_lists", key = "'cat_' + #categoryId + '_' + #pageable.pageNumber + '_' + #pageable.sort.toString()")
     public Page<ProductSummaryDTO> findByCategory(Long categoryId, Pageable pageable) {
-        return productRepository.findByCategoryId(categoryId, pageable).map(productMapper::toProductSummaryDTO);
+        List<Long> categoryIds = categoryRepository.findAllSubcategoryIds(categoryId);
+        return productRepository.findByCategoryIdIn(categoryIds, pageable).map(productMapper::toProductSummaryDTO);
     }
 
     @Override

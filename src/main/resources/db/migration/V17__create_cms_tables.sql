@@ -1,8 +1,4 @@
--- CMS Tables Migration
--- Adds support for Pages, Shop Settings, Social Links, and FAQ
 
--- Create pages table if it doesn't exist (with all new columns)
--- Use EXECUTE for dynamic SQL in case table doesn't exist
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -26,10 +22,8 @@ BEGIN
     END IF;
 END $$;
 
--- Update existing pages table if it was created with INTEGER id or missing columns
 DO $$
 BEGIN
-    -- Change id column type from INTEGER to BIGINT if it's currently INTEGER
     IF EXISTS (
         SELECT 1 FROM information_schema.columns 
         WHERE table_schema = 'public' 
@@ -42,7 +36,6 @@ BEGIN
         ALTER TABLE public.pages ALTER COLUMN id SET DEFAULT nextval('public.pages_id_seq'::regclass);
     END IF;
     
-    -- Add new columns if they don't exist (for existing tables from V1)
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
         WHERE table_schema = 'public' 
@@ -88,7 +81,6 @@ BEGIN
         ALTER TABLE public.pages ADD COLUMN is_active BOOLEAN DEFAULT true NOT NULL;
     END IF;
     
-    -- Add unique constraint to slug if not exists
     IF NOT EXISTS (
         SELECT 1 FROM pg_constraint 
         WHERE conname = 'pages_slug_key'
@@ -97,7 +89,6 @@ BEGIN
     END IF;
 END $$;
 
--- Create shop_settings table
 CREATE TABLE IF NOT EXISTS public.shop_settings (
     id BIGSERIAL PRIMARY KEY,
     setting_key VARCHAR(100) NOT NULL UNIQUE,
@@ -105,7 +96,7 @@ CREATE TABLE IF NOT EXISTS public.shop_settings (
     description VARCHAR(500)
 );
 
--- Create social_links table
+
 CREATE TABLE IF NOT EXISTS public.social_links (
     id BIGSERIAL PRIMARY KEY,
     platform_name VARCHAR(100) NOT NULL UNIQUE,
@@ -118,7 +109,6 @@ CREATE TABLE IF NOT EXISTS public.social_links (
     deleted_at TIMESTAMP WITHOUT TIME ZONE
 );
 
--- Create faq_items table
 CREATE TABLE IF NOT EXISTS public.faq_items (
     id BIGSERIAL PRIMARY KEY,
     question VARCHAR(500) NOT NULL UNIQUE,
@@ -130,7 +120,6 @@ CREATE TABLE IF NOT EXISTS public.faq_items (
     deleted_at TIMESTAMP WITHOUT TIME ZONE
 );
 
--- Seed data: Shop Settings
 INSERT INTO public.shop_settings (setting_key, setting_value, description) VALUES
 ('shop_name', 'E-Shop', 'Nazwa sklepu wyświetlana w nagłówku'),
 ('logo_url', '/uploads/logo.png', 'URL do logo sklepu'),
@@ -141,7 +130,6 @@ INSERT INTO public.shop_settings (setting_key, setting_value, description) VALUE
 ('opening_hours', 'Pon-Pt: 9:00-17:00, Sob: 10:00-14:00', 'Godziny otwarcia')
 ON CONFLICT (setting_key) DO NOTHING;
 
--- Seed data: Pages (system pages)
 INSERT INTO public.pages (slug, title, content, is_system, is_active) VALUES
 ('o-nas', 'O nas', '<h1>O nas</h1><p>Jesteśmy super sklepem z rękodziełem...</p>', true, true),
 ('regulamin', 'Regulamin', '<h1>Regulamin</h1><p>Paragraf 1. Postanowienia ogólne...</p>', true, true),
@@ -150,14 +138,12 @@ INSERT INTO public.pages (slug, title, content, is_system, is_active) VALUES
 ('cookies', 'Polityka Cookies', '<h1>Polityka Cookies</h1><p>Informacje o wykorzystaniu plików cookies...</p>', true, true)
 ON CONFLICT (slug) DO NOTHING;
 
--- Seed data: Social Links
 INSERT INTO public.social_links (platform_name, url, icon_code, sort_order, is_active) VALUES
 ('Facebook', 'https://facebook.com/mojsklep', 'fa-facebook', 1, true),
 ('Instagram', 'https://instagram.com/mojsklep', 'fa-instagram', 2, true),
 ('Twitter', 'https://twitter.com/mojsklep', 'fa-twitter', 3, true)
 ON CONFLICT (platform_name) DO NOTHING;
 
--- Seed data: FAQ Items
 INSERT INTO public.faq_items (question, answer, sort_order, is_active) VALUES
 ('Jak złożyć zamówienie?', 'Aby złożyć zamówienie, dodaj produkty do koszyka i przejdź do kasy. Możesz zamówić jako gość lub po zalogowaniu.', 1, true),
 ('Jakie są metody płatności?', 'Akceptujemy płatności kartą kredytową, przelewem bankowym oraz płatności online.', 2, true),

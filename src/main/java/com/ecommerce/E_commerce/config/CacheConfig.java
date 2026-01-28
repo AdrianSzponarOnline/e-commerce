@@ -43,9 +43,10 @@ public class CacheConfig {
 
                 buildCache("faq_items", Duration.ofHours(24), 500),
 
-                buildCache("footer_data", Duration.ofHours(24), 500)
+                buildCache("footer_data", Duration.ofHours(24), 500),
 
-        ));
+                buildCache("social_links", Duration.ofHours(24), 500)
+                ));
         return manager;
     }
 

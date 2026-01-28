@@ -45,7 +45,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     long countByStatus(OrderStatus status);
     long countByUserIdAndStatus(Long userId, OrderStatus status);
     
-    // Advanced queries
+
     @Query("SELECT o FROM Order o WHERE " +
            "(:userId IS NULL OR o.user.id = :userId) AND " +
            "(:status IS NULL OR o.status = :status) AND " +
@@ -61,7 +61,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             Pageable pageable
     );
     
-    // Statistics queries
+
     @Query("SELECT SUM(o.totalAmount) " +
            "FROM Order o " +
            "WHERE o.status IN :statuses " +

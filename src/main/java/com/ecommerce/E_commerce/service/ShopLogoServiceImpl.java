@@ -57,13 +57,12 @@ public class ShopLogoServiceImpl implements ShopLogoService {
     public String uploadLogo(MultipartFile file) {
         logger.info("Uploading shop logo: fileName={}, size={}", file.getOriginalFilename(), file.getSize());
         
-        // Validate file using Tika (same logic as ProductImageService)
         String extension = validateAndAnalyzeFile(file);
         
-        // Delete old logo if exists
+        
         deleteOldLogoFile();
         
-        // Store new logo as "logo.{extension}"
+     
         String filename = "logo." + extension;
         Path shopDir = uploadRoot.resolve("shop");
         Path target = shopDir.resolve(filename);
@@ -77,7 +76,7 @@ public class ShopLogoServiceImpl implements ShopLogoService {
             throw new RuntimeException("Failed to store logo file on disk", e);
         }
         
-        // Update logo_url setting
+    
         String logoUrl = "/uploads/shop/" + filename;
         updateLogoUrlSetting(logoUrl);
         
@@ -94,15 +93,12 @@ public class ShopLogoServiceImpl implements ShopLogoService {
     public void deleteLogo() {
         logger.info("Deleting shop logo");
         
-        // Get current logo URL
         String currentLogoUrl = shopSettingRepository.findByKey(LOGO_SETTING_KEY)
                 .map(setting -> setting.getValue())
                 .orElse(null);
         
         if (currentLogoUrl != null && !currentLogoUrl.isEmpty()) {
-            // Delete file from disk
             try {
-                // Extract filename from URL (e.g., "/uploads/shop/logo.png" -> "logo.png")
                 String filename = currentLogoUrl.substring(currentLogoUrl.lastIndexOf('/') + 1);
                 Path logoFile = uploadRoot.resolve("shop").resolve(filename);
                 
@@ -112,11 +108,9 @@ public class ShopLogoServiceImpl implements ShopLogoService {
                 }
             } catch (IOException e) {
                 logger.warn("Failed to delete logo file from disk", e);
-                // Continue with removing the setting even if file deletion fails
             }
         }
         
-        // Remove or clear logo_url setting
         shopSettingRepository.findByKey(LOGO_SETTING_KEY)
                 .ifPresent(setting -> {
                     ShopSettingUpdateDTO updateDTO = new ShopSettingUpdateDTO("", null);
